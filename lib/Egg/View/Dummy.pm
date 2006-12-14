@@ -6,6 +6,7 @@ package Egg::View::Dummy;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Egg::View/;
 
 our $VERSION= '0.01';

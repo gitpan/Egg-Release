@@ -6,6 +6,7 @@ package Egg::Request::Apache::MP19;
 # $Id$
 #
 use strict;
+use warnings;
 use Apache2             ();
 use Apache::Request     ();
 use Apache::Response    ();

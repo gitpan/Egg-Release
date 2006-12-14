@@ -6,6 +6,7 @@ package Egg::Helper::Welcom;
 # $Id$
 #
 use strict;
+use warnings;
 use Egg::Release;
 
 our $VERSION= '0.01';

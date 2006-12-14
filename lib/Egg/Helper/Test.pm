@@ -6,6 +6,7 @@ package Egg::Helper::Test;
 # $Id$
 #
 use strict;
+use warnings;
 use Cwd;
 use File::Temp qw/tempdir/;
 use base qw/Class::Accessor::Fast/;

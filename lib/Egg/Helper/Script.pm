@@ -6,6 +6,7 @@ package Egg::Helper::Script;
 # $Id$
 #
 use strict;
+use warnings;
 use FileHandle;
 use File::Which;
 use UNIVERSAL::require;

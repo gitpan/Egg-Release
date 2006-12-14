@@ -6,6 +6,7 @@ package Egg::View::Template::Params;
 # $Id$
 #
 use strict;
+use warnings;
 
 our $VERSION= '0.01';
 

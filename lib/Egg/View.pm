@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw/Egg::Config/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub template_file {
 	my($view, $e)= @_;

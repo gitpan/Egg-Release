@@ -5,6 +5,7 @@
 # $Id$
 #
 use strict;
+use warnings;
 use lib qw(lib ../lib);
 use Egg::Helper::Script;
 

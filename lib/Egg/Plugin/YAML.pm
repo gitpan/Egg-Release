@@ -6,6 +6,7 @@ package Egg::Plugin::YAML;
 # $Id$
 #
 use strict;
+use warnings;
 use YAML;
 
 our $VERSION= '0.01';

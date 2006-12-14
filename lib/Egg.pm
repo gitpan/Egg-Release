@@ -1,7 +1,7 @@
 package Egg;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno <mizuno@bomcity.com>
+# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
 # $Id: Egg.pm 7 2006-12-01 06:02:48Z root $
 #
@@ -229,7 +229,6 @@ sub debug { $_[0]->flag('debug') }
 1;
 
 __END__
-
 
 =head1 NAME
 

@@ -6,6 +6,7 @@ package Egg::Request;
 # $Id$
 #
 use strict;
+use warnings;
 use Error;
 use base qw/Class::Accessor::Fast/;
 use CGI::Cookie;
@@ -13,7 +14,7 @@ use CGI::Cookie;
 __PACKAGE__->mk_accessors
  ( qw/e r debug parameters uploads secure scheme path/ );
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 *address= \&remote_addr;
 *port   = \&server_port;

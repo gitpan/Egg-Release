@@ -6,7 +6,10 @@ package Egg::Appli;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Class::Accessor::Fast/;
+
+our $VERSION= '0.02';
 
 __PACKAGE__->mk_accessors( qw/name params/ );
 

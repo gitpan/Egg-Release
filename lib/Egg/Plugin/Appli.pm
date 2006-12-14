@@ -6,10 +6,13 @@ package Egg::Plugin::Appli;
 # $Id$
 #
 use strict;
+use warnings;
 use UNIVERSAL::require;
 use Error;
 use NEXT;
 use base qw/Class::Data::Inheritable/;
+
+our $VERSION= '0.01';
 
 __PACKAGE__->mk_classdata('app');
 

@@ -6,6 +6,7 @@ package Egg::View::Template::Ex;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Egg::View::Template/;
 use HTML::Template::Ex;
 

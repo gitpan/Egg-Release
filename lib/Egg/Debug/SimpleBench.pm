@@ -6,6 +6,7 @@ package Egg::Debug::SimpleBench;
 # $Id$
 #
 use strict;
+use warnings;
 use Time::HiRes qw/gettimeofday tv_interval/;
 
 our $VERSION= '0.01';

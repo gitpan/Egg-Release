@@ -6,6 +6,7 @@ package Egg::Plugin::Filter;
 # $Id$
 #
 use strict;
+use warnings;
 use UNIVERSAL::require;
 use NEXT;
 use Error;

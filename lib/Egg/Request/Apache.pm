@@ -6,6 +6,7 @@ package Egg::Request::Apache;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Egg::Request/;
 
 our $VERSION= '0.01';

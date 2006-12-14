@@ -6,6 +6,7 @@ package Egg::Request::Apache::MP13;
 # $Id$
 #
 use strict;
+use warnings;
 use Apache          ();
 use Apache::Request ();
 use Apache::File    ();

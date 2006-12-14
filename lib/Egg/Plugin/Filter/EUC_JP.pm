@@ -6,11 +6,14 @@ package Egg::Plugin::Filter::EUC_JP;
 # $Id$
 #
 use strict;
+use warnings;
 use NEXT;
 use constant EGG=> 0;
 use constant VAL=> 1;
 use constant ARG=> 2;
 use base qw/Egg::Plugin::Filter/;
+
+our $VERSION= '0.01';
 
 my $Zspace= q{(?:\xA1\xA1)};
 

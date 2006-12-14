@@ -6,6 +6,7 @@ package Egg::Helper::Script::Project;
 # $Id$
 #
 use strict;
+use warnings;
 use Cwd;
 use Egg::Release;
 use File::Path;
@@ -461,14 +462,14 @@ sub egg_mod_perl {
 	my $value= <<PLAIN;
 LoadModule perl_module modules/mod_perl.so
 # PerlSwitches  -w
-PerlRequire $self->{base}/bin/egg_startup.pl
+PerlSwitches -I$self->{base}/lib
+PerlRequire  $self->{base}/bin/egg_startup.pl
 <VirtualHost $hostname.example.com:80>
   ServerName $hostname.example.com
   DocumentRoot $self->{base}/htdocs
   PerlModule  mod_perl2
   PerlModule  $self->{project}
 #  PerlInitHandler Apache2::Reload
-  PerlSwitches  -I$self->{base}/lib
   <LocationMatch "^/([A-Za-z0-9_\\\-\\\:/]+)?(\\\.html)?$">
    SetHandler          perl-script
    PerlResponseHandler $self->{project}

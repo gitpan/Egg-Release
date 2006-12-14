@@ -6,6 +6,7 @@ package Egg::Model::DBI;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Egg::Model/;
 use DBI;
 

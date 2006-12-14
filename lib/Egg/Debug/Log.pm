@@ -6,6 +6,7 @@ package Egg::Debug::Log;
 # $Id$
 #
 use strict;
+use warnings;
 use FileHandle;
 
 our $VERSION= '0.01';

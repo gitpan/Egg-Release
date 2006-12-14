@@ -6,6 +6,7 @@ package Egg::Helper::Script::YAML;
 # $Id$
 #
 use strict;
+use warnings;
 use Cwd;
 use YAML;
 use UNIVERSAL::require;

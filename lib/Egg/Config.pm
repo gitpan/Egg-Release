@@ -6,7 +6,10 @@ package Egg::Config;
 # $Id$
 #
 use strict;
+use warnings;
 use base qw/Egg::Appli/;
+
+our $VERSION= '0.01';
 
 sub setup {
 	my($class, $e, $config, $name)= @_;

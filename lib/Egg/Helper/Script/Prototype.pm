@@ -6,6 +6,7 @@ package Egg::Helper::Script::Prototype;
 # $Id$
 #
 use strict;
+use warnings;
 use Cwd;
 use HTML::Prototype;
 use FileHandle;

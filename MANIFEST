@@ -45,6 +45,8 @@ lib/Egg/View/Template/Params.pm
 Makefile.PL
 MANIFEST
 META.yml
+notes/pause.txt.en
+notes/pause.txt.ja
 README
 t/00base.t
 t/01request.t

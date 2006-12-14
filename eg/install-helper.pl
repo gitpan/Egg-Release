@@ -4,8 +4,9 @@
 #
 # $Id$
 #
-use lib qw(lib ../lib);
 use strict;
+use warnings;
+use lib qw(lib ../lib);
 use Egg::Helper::Script;
 
 our $VERSION= '0.01';
