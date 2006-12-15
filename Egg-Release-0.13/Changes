@@ -12,8 +12,5 @@ Revision history for Perl extension Egg::Release.
 	- The code is not corrected at all.
 
 0.13  2006/12/15
-	- Earliness Egg::Request was made to be done from the plugin in include.
+	- Earliness Egg::Request was made to be done from the plug-in in include.
 
-0.14  2006/12/16
-	- bugfix in dispatch switch code.
-	- Some functions of 'stash' are corrected.

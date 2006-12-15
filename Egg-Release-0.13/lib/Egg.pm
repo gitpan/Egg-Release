@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 50 2006-12-15 08:11:06Z lushe $
+# $Id: Egg.pm 35 2006-12-14 08:21:05Z lushe $
 #
 use strict;
 use warnings;
@@ -13,9 +13,9 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.13';
+our $VERSION= '0.11';
 
-__PACKAGE__->mk_accessors( qw/view snip request response/ );
+__PACKAGE__->mk_accessors( qw/view snip stash request response/ );
 
 BEGIN {
 	my $count;
@@ -109,7 +109,7 @@ sub import {
 	# dispatch is loaded.
 		my $d_class;
 		if ($d_class= $ENV{"$firstName\_DISPATCHER"}) {
-			$d_class= $flags->{D_CLASS}= "Egg::D::$d_class";
+			$flags->{D_CLASS} = "Egg::D::$d_class";
 		} elsif ($d_class= $ENV{"$firstName\_CUSTOM_DISPATCHER"}) {
 			$flags->{D_CLASS} = $d_class;
 		} elsif ($d_class= $ENV{"$firstName\_UNLOAD_DISPATCHER"}) {
@@ -205,13 +205,6 @@ sub new {
 	my $view_class= "Egg::View::". $e->flag('VIEW');
 	$e->view ( $view_class->new($e) );
 	$e;
-}
-sub stash {
-	my $e= shift;
-	return $e->{stash} if @_< 1;
-	my $key= shift;
-	$e->{stash}{$key}= shift if @_> 0;
-	$e->{stash}{$key};
 }
 sub dispatch {
 	my $e= shift;
@@ -359,12 +352,6 @@ The ARRAY reference into which the request passing is divided by/is returned.
 =head2 $e->stash->{[KEY NAME]};
 
 It is a preservation place to share data.
-
-=head2 $e->stash([KEY], [VALUE]);
-
-When [KEY] is given, the value of $e->stash->{[KEY]} is returned.
-
-When [VALUE] is given, the value is set in $e->stash->{[KEY]}.
 
 =head2 $e->finished([RESPONSE STATUS CODE]);
 
