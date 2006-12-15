@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 7 2006-12-01 06:02:48Z root $
+# $Id: Egg.pm 35 2006-12-14 08:21:05Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.10';
+our $VERSION= '0.11';
 
 __PACKAGE__->mk_accessors( qw/view snip stash request response/ );
 
@@ -44,6 +44,30 @@ sub import {
 	my $Name= caller(0);
 	${"$Name\::IMPORT_OK"} ||= 0;
 	return if ++${"$Name\::IMPORT_OK"}> 1;
+	my $firstName= uc($Name);
+
+	# Include does the request class.
+	my $r_class;
+	if ($ENV{"$firstName\_REQUEST"}) {
+		$r_class= $ENV{"$firstName\_REQUEST"};
+	} elsif ($ENV{MOD_PERL} && mod_perl->require) {
+		my $version= mod_perl->VERSION;
+		$version=~s/_//g;  $version=~ s/(\.\d+)\./$1/g;
+
+		$r_class=
+		   $version >= 1.99922 ? 'Egg::Request::Apache::MP20'
+		 : $version >= 1.9901  ? 'Egg::Request::Apache::MP19'
+		 : $version >= 1.24    ? 'Egg::Request::Apache::MP13'
+		 : throw Error::Simple qq/Unsupported mod_perl ver: $ENV{MOD_PERL}/;
+
+		($r_class=~/Apache/ && $version >= 1.9901)
+		  ? do { *handler= sub : method { shift; $Name->new(@_)->run } }
+		  : do { *handler= sub ($$) { shift; $Name->new(@_)->run } };
+	} else {
+		$r_class= 'Egg::Request::CGI';
+	}
+	$r_class->require or throw Error::Simple $@;
+
 	my %flags;
 	for (@args) {
 		if (/^\-(.+)/) {
@@ -55,6 +79,7 @@ sub import {
 		}
 	}
 	push @{"$Name\::ISA"}, __PACKAGE__;
+	$flags{R_CLASS}= $r_class;
 	${"$Name\::__EGG_FLAGS"}= \%flags;
 	*{"$Name\::debug_out"}= sub { } unless $flags{debug};
 }
@@ -79,7 +104,6 @@ sub import {
 		my $flags = ${"$Name\::__EGG_FLAGS"};
 		my $self  = bless { namespace=> $Name }, $Name;
 		$config->{character_in}= 'euc' unless exists($config->{character_in});
-
 		my $firstName= uc($Name);
 
 	# dispatch is loaded.
@@ -153,28 +177,6 @@ sub import {
 				$flags->{VIEW}= $v->[0];
 			}
 		  };
-
-	# Include does the request class.
-		my $pkg;
-		if ($ENV{"$firstName\_REQUEST"}) {
-			$pkg= $ENV{"$firstName\_REQUEST"};
-		} elsif ($ENV{MOD_PERL} && mod_perl->require) {
-			my $version= mod_perl->VERSION;
-			$version=~s/_//g;  $version=~ s/(\.\d+)\./$1/g;
-
-			$pkg= $version >= 1.99922 ? 'Egg::Request::Apache::MP20'
-			    : $version >= 1.9901  ? 'Egg::Request::Apache::MP19'
-			    : $version >= 1.24    ? 'Egg::Request::Apache::MP13'
-			    : throw Error::Simple qq/Unsupported mod_perl ver: $ENV{MOD_PERL}/;
-
-			($pkg=~/Apache/ && $version >= 1.9901)
-			  ? do { *handler= sub : method { shift; $Name->new(@_)->run } }
-			  : do { *handler= sub ($$) { shift; $Name->new(@_)->run } };
-		} else {
-			$pkg= 'Egg::Request::CGI';
-		}
-		$pkg->require or throw Error::Simple $@;
-		${"$Name\::__EGG_FLAGS"}->{R_CLASS}= $pkg;
 
 	# Include does the response class.
 		Egg::Response->setup($self);

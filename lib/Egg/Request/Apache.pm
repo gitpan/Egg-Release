@@ -3,7 +3,7 @@ package Egg::Request::Apache;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id$
+# $Id: Apache.pm 34 2006-12-14 08:17:52Z lushe $
 #
 use strict;
 use warnings;
