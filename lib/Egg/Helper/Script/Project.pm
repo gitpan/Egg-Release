@@ -3,16 +3,17 @@ package Egg::Helper::Script::Project;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Project.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Project.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
 use Cwd;
 use Egg::Release;
 use File::Path;
+use File::Spec;
 use MIME::Base64;
 
-our $VERSION= '0.01';
+our $VERSION= '0.03';
 
 my %files= (
   __root_files__=> [
@@ -294,7 +295,7 @@ This module requires these other modules and libraries:
 
 COPYRIGHT
 
-Copyright (C) 2006 by $self->{uname}
+Copyright (C) $self->{create_year} by $self->{uname}
 
 PLAIN
 	$self->output_file("$path/README", $value);
@@ -522,6 +523,12 @@ PLAIN
 # ====================================================================
 sub config {
 	my($self, $path)= @_;
+	my @base= split /[\\\/]+/, $self->{base};
+	my $root  = File::Spec->catfile(@base, 'root');
+	my $htdocs= File::Spec->catfile(@base, 'htdocs');
+	my $cache = File::Spec->catfile(@base, 'cache');
+	my $temp  = File::Spec->catfile(@base, 'tmp');
+	my $comp  = File::Spec->catfile(@base, 'comp');
 	my $value= <<PLAIN;
 package $self->{project}::config;
 use strict;
@@ -532,16 +539,16 @@ my \$C= {
   title=> '$self->{project}',
 
 # Template root directory. (only the main)
-  root => '$self->{base}/root',
+  root => '$root',
 
 # Static content root directory. (image, css, js, etc..)
-  static_root => '$self->{base}/htdocs',
+  static_root => '$htdocs',
 
 # Cache data directory.
-  cache_dir   => '$self->{base}/cache',
+  cache_dir   => '$cache',
 
 # Temporary directory.
-  temp_dir    => '$self->{base}/tmp',
+  temp_dir    => '$temp',
 
 # Character code for processing.
   character_in=> 'euc',  # euc or sjis or utf8
@@ -589,7 +596,7 @@ my \$C= {
       # * Please refer to document of HTML::Template.
       # http://search.cpan.org/~samtregar/HTML-Template-2.8/
       #
-        path => [qw( $self->{base}/root $self->{base}/comp )],
+        path => [qw( $root $comp )],
         cache=> 1,
         global_vars=> 1,
         die_on_bad_params=> 0,

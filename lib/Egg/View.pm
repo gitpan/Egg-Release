@@ -3,14 +3,23 @@ package Egg::View;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: View.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: View.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Config/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
+our %PARAMS= (
+  );
+
+sub new {
+	my $view = shift->SUPER::new(@_);
+	my %param= %PARAMS;
+	$view->{params}= \%param;
+	$view;
+}
 sub template_file {
 	my($view, $e)= @_;
 	if (my $template= $e->template) {
@@ -61,6 +70,17 @@ Egg::View - Common package for VIEW module.
 =head1 DESCRIPTION
 
 When the View module uses this, happiness can be tasted only just a little.
+
+The parameter can be set up beforehand.
+
+ package [MYPROJECT];
+ use strict;
+ use Egg::View;
+ 
+ $Egg::View::PARAMS{param1}= 'value1';
+
+ # The set value is acquired.
+ $e->view->param( 'param1' );
 
 =head1 METHODS
 

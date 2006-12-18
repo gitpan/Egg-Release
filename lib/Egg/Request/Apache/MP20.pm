@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP20;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP20.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: MP20.pm 55 2006-12-18 12:06:38Z lushe $
 #
 use strict;
 use warnings;
@@ -14,15 +14,15 @@ use Apache2::RequestUtil ();
 use Apache2::Response    ();
 use Apache2::Connection  ();
 use Apache2::Const -compile => qw/:common/;
-use Apache2::Upload;
 use APR::Table ();
 use base qw/Egg::Request::Apache/;
 
 our $VERSION= '0.01';
 
 sub new {
-	my $req= shift->SUPER::new(@_);
-	$req->r( Apache2::Request->new($req->r) );
+	my $req = shift->SUPER::new(@_);
+	my $conf= $req->e->config->{request} || {};
+	$req->r( Apache2::Request->new($req->r, %$conf) );
 	$req;
 }
 sub result_status {

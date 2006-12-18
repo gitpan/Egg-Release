@@ -1,22 +1,54 @@
 Revision history for Perl extension Egg::Release.
 
-0.01  Fri Dec  1 01:26:02 2006
-	- original version; created by h2xs 1.23 with options
-		-AX -n Egg::Release
+0.17  2006/12/18
+	- 'create_snip' method is added to Egg::Request.
+	    Egg::Request ( 0.02 => 0.03 )
+	- The bug of Egg::Request::CGI->prepare_params is corrected.
+	- Emergency measure to suspicious bug of Egg::Request::CGI->script_name.
+	    Egg::Request::CGI ( 0.01 => 0.03 )
 
-0.11  2006/12/12
-	- General opening to the public.
+0.16  2006/12/17
+	- Bug fix as for the occurrence of the error when an arbitrary module is
+	   specified for VIEW and MODEL.
+	    Egg ( 0.13 => 0.14 ),
+	    Egg::Engine ( 0.02 => 0.03 ),
+	- The parameter of default can have been set up to Egg::View.
+	    Egg::View ( 0.02 => 0.03 )
+	- Egg::View::Template::Params is changed as Egg::View changes.
+	    Egg::View::Template::Params ( 0.01 => 0.02 )
+	- MOD_PERL_VERSION was preserved in the flag.
+	    Egg ( 0.014 => 0.015 )
+	- Trifling bug fix of helper script.
+	    Egg::Script ( 0.02 => 0.03 ),
+	    Egg::Script::Project ( 0.02 => 0.03 ),
 
-0.12  2006/12/13
-	- The incompleteness of the document and the version mark, etc. was corrected.
-	- The code is not corrected at all.
+0.15  2006/12/16
+	- Trifling fix of Egg::Debug::Base.
+	    Egg::Debug::Base ( 0.01 => 0.02 )
+	- Correction of pod of Egg::Response and addition of 'attachment' method.
+	    Egg::Response ( 0.01 => 0.02 )
+	- Measures against the cross platform were done by using File::Spec.
+	    Egg::Helper::Script ( 0.01 => 0.02 ),
+	    Egg::Helper::Script::Project ( 0.01 => 0.02 )
 
-0.13  2006/12/15
-	- Earliness Egg::Request was made to be done from the plugin in include.
+0.141 2006/12/15
+	- The file that the package should not contain has mixed.
 
 0.14  2006/12/15
 	- bugfix in dispatch switch code.
 	- Some functions of 'stash' are corrected.
 
-0.141 2006/12/15
-	- The file that the package should not contain has mixed.
+0.13  2006/12/15
+	- Earliness Egg::Request was made to be done from the plugin in include.
+
+0.12  2006/12/13
+	- The incompleteness of the document and the version mark, etc. was corrected.
+	- The code is not corrected at all.
+
+0.11  2006/12/12
+	- General opening to the public.
+
+0.01  Fri Dec  1 01:26:02 2006
+	- original version; created by h2xs 1.23 with options
+		-AX -n Egg::Release
+

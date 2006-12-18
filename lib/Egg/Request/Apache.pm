@@ -3,7 +3,7 @@ package Egg::Request::Apache;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Apache.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Apache.pm 56 2006-12-18 12:25:28Z lushe $
 #
 use strict;
 use warnings;
@@ -37,6 +37,21 @@ __END__
 =head1 NAME
 
 Egg::Request::Apache - It is a common module for mod_perl.
+
+=head1 SYNOPSIS
+
+The parameter passed to ApacheX::Request can be written in the $e->config->{request}.
+
+ request=> {
+   POST_MAX       => 1024,
+   DISABLE_UPLOADS=>    1,
+   TEMP_DIR       => '/path/to/temp',
+   },
+
+When Egg::Plugin::Upload is used, this will become useful.
+
+* If the parameter to which ApacheX::Request cannot be understood is set, it becomes
+ an error.
 
 =head1 SEE ALSO
 

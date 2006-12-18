@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Engine.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Error;
 use NEXT;
 use HTML::Entities;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub setup    { $_[0] }
 sub prepare  { $_[0] }
@@ -48,12 +48,11 @@ sub run {
 		my $bench= Egg::Debug::SimpleBench->new;
 		my $Name = $e->namespace. ' v'. $e->VERSION;
 		my $model_class= join ', ', map{
-			my $pkg= "Egg::Model::$_";
+			my $pkg= $e->flag('MODEL_CLASS')->{$_};
 			"$_ v". $pkg->VERSION;
 		 } @{$e->flag('MODEL')};
-		my $view_class= $e->flag('VIEW');
-		my $view_pkg= "Egg::View::$view_class";
-		$view_class.= ' v'. $view_pkg->VERSION;
+		my $view_pkg  = $e->flag('VIEW_CLASS');
+		my $view_class= $e->flag('VIEW'). ' v'. $view_pkg->VERSION;
 		$bench->settime;
 		$e->request->prepare($e);
 		$e->debug_out(
@@ -152,14 +151,19 @@ sub plugin {
 }
 sub is_view {
 	my $e= shift;
-	$e->flag('VIEW') eq $_[0] ? 1: 0;
+	my $name= shift || return 0;
+	$name=~s/^Egg\:\:View\:\://;
+	$e->flag('VIEW') eq $name ? $e->flag('VIEW_CLASS'): 0;
 }
 sub is_model {
 	my $e= shift;
-	return (grep /^$_[0]$/, @{$e->flag('MODEL')})[0] ? 1: 0;
+	my $name= shift || return 0;
+	$name=~s/^Egg\:\:Model\:\://;
+	$e->flag('MODEL_CLASS')->{$name} || 0;
 }
-sub model { $_[1] ? $_[0]->{model}{$_[1]}: 0 }
-
+sub model {
+	$_[0]->{model}{$_[1]} || 0;
+}
 sub log {
 	$_[0]->{__egg_log} || do {
 		Egg::Debug::Log->require or die $@;
@@ -177,6 +181,7 @@ sub debug_out {
 }
 
 package Egg::DummyEncode;
+use strict;
 sub new {
 	my $class= shift;
 	my $self = bless {}, $class;

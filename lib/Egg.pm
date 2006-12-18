@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 50 2006-12-15 08:11:06Z lushe $
+# $Id: Egg.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.13';
+our $VERSION= '0.15';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -45,30 +45,7 @@ sub import {
 	${"$Name\::IMPORT_OK"} ||= 0;
 	return if ++${"$Name\::IMPORT_OK"}> 1;
 	my $firstName= uc($Name);
-
-	# Include does the request class.
-	my $r_class;
-	if ($ENV{"$firstName\_REQUEST"}) {
-		$r_class= $ENV{"$firstName\_REQUEST"};
-	} elsif ($ENV{MOD_PERL} && mod_perl->require) {
-		my $version= mod_perl->VERSION;
-		$version=~s/_//g;  $version=~ s/(\.\d+)\./$1/g;
-
-		$r_class=
-		   $version >= 1.99922 ? 'Egg::Request::Apache::MP20'
-		 : $version >= 1.9901  ? 'Egg::Request::Apache::MP19'
-		 : $version >= 1.24    ? 'Egg::Request::Apache::MP13'
-		 : throw Error::Simple qq/Unsupported mod_perl ver: $ENV{MOD_PERL}/;
-
-		($r_class=~/Apache/ && $version >= 1.9901)
-		  ? do { *handler= sub : method { shift; $Name->new(@_)->run } }
-		  : do { *handler= sub ($$) { shift; $Name->new(@_)->run } };
-	} else {
-		$r_class= 'Egg::Request::CGI';
-	}
-	$r_class->require or throw Error::Simple $@;
-
-	my %flags;
+	my %flags= ( MOD_PERL_VERSION=> 0 );
 	for (@args) {
 		if (/^\-(.+)/) {
 			$flags{lc($1)}= 1;
@@ -79,7 +56,6 @@ sub import {
 		}
 	}
 	push @{"$Name\::ISA"}, __PACKAGE__;
-	$flags{R_CLASS}= $r_class;
 	${"$Name\::__EGG_FLAGS"}= \%flags;
 	*{"$Name\::debug_out"}= sub { } unless $flags{debug};
 }
@@ -105,6 +81,29 @@ sub import {
 		my $self  = bless { namespace=> $Name }, $Name;
 		$config->{character_in}= 'euc' unless exists($config->{character_in});
 		my $firstName= uc($Name);
+
+	# Include does the request class.
+		my $r_class;
+		if ($ENV{"$firstName\_REQUEST"}) {
+			$r_class= $ENV{"$firstName\_REQUEST"};
+		} elsif ($ENV{MOD_PERL} && mod_perl->require) {
+			my $version= mod_perl->VERSION;
+			$version=~s/_//g;  $version=~ s/(\.\d+)\./$1/g;
+			$r_class=
+			   $version >= 1.99922 ? 'Egg::Request::Apache::MP20'
+			 : $version >= 1.9901  ? 'Egg::Request::Apache::MP19'
+			 : $version >= 1.24    ? 'Egg::Request::Apache::MP13'
+			 : throw Error::Simple qq/Unsupported mod_perl ver: $ENV{MOD_PERL}/;
+			($r_class=~/Apache/ && $version >= 1.9901)
+			  ? do { *handler= sub : method { shift; $Name->new(@_)->run } }
+			  : do { *handler= sub ($$) { shift; $Name->new(@_)->run } };
+			$flags->{MOD_PERL_VERSION}= $version;
+		} else {
+			$r_class= 'Egg::Request::CGI';
+		}
+		$r_class->require or throw Error::Simple $@;
+		$flags->{R_CLASS}= $r_class;
+		Egg::Response->setup($self);
 
 	# dispatch is loaded.
 		my $d_class;
@@ -144,42 +143,43 @@ sub import {
 
 	# Include does the model module.
 		{
-			my @models;
+			my(@models, %model_class);
 			for (@{$config->{MODEL}}) {
 				my($name, $model)= $_->[0]=~/^\+(.+)/
 				  ? ($_->[0], $_->[0]): ($_->[0], "Egg::Model::$_->[0]");
-				my $c_name= $_->[1]->{conf_name} || $name;
+				$name= $_->[1]->{conf_name} if $_->[1]->{conf_name};
 				$model->require or throw Error::Simple $@;
-				$model->setup($self, $_->[1], "model_$c_name");
+				$model->setup($self, $_->[1], "model_$name");
 				push @models, $name;
+				$model_class{$name}= $model;
 			}
 			if (my $model= $ENV{"$firstName\_MODEL"}) {
 				for (split /\s*[\,\;]\s*/, $model) {
 					$_->require or throw Error::Simple $@;
 					$_->setup($self);
 					push @models, $_;
+					$model_class{$_}= $_;
 				}
 			}
 			$flags->{MODEL}= \@models;
+			$flags->{MODEL_CLASS}= \%model_class;
 
 	# Include does the view module.
 			if (my $view= $ENV{"$firstName\_VIEW"}) {
 				$view->require or throw Error::Simple $@;
 				$view->setup($self);
-				$flags->{VIEW}= $view;
+				$flags->{VIEW_CLASS}= $flags->{VIEW}= $view;
 			} else {
 				my $v= $config->{VIEW}->[0] || [ 'Dummy'=> {} ];
 				my($name, $view)= $v->[0]=~/^\+(.+)/
 				  ? ($v->[0], $v->[0]): ($v->[0], "Egg::View::$v->[0]");
-				my $c_name= $_->[1]->{conf_name} || $name;
+				$name= $_->[1]->{conf_name} if $_->[1]->{conf_name};
 				$view->require or throw Error::Simple $@;
-				$view->setup($self, $v->[1], "view_$c_name");
+				$view->setup($self, $v->[1], "view_$name");
 				$flags->{VIEW}= $v->[0];
+				$flags->{VIEW_CLASS}= $view;
 			}
 		  };
-
-	# Include does the response class.
-		Egg::Response->setup($self);
 
 	# They are the plugin other setups.
 		$self->setup;
@@ -199,10 +199,10 @@ sub new {
 	$e->request ( $r_class->new($e, $r) );
 	$e->response( Egg::Response->new($e) );
 	for (@{$e->flag('MODEL')}) {
-		my $pkg= "Egg::Model::$_";
+		my $pkg= $e->flag('MODEL_CLASS')->{$_} || next;
 		$e->{model}{$_}= $pkg->new($e);
 	}
-	my $view_class= "Egg::View::". $e->flag('VIEW');
+	my $view_class= $e->flag('VIEW_CLASS');
 	$e->view ( $view_class->new($e) );
 	$e;
 }

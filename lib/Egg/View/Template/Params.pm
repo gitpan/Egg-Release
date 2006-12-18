@@ -3,29 +3,30 @@ package Egg::View::Template::Params;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Params.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Params.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub in {
 	my($class, $view, $e)= @_;
 	my($req, $cf)= ($e->request, $e->config);
-	$view->{params}= {
-	 title          => sub { $cf->{title} || '' },
-	 content_charset=> sub { $cf->{content_charset} || '' },
-	 script_name    => sub { $req->script_name },
-	 is_secure      => sub { $req->secure },
-	 remote_addr    => sub { $req->remote_addr },
-	 server_name    => sub { $req->server_name },
-	 server_port    => sub { $req->port },
-	 http_referer   => sub { $req->referer },
-	 http_agent     => sub { $req->agent },
-	 request_uri    => sub { $req->uri },
-	 copy_label     => sub { $e->namespace. " Ver:". $e->VERSION },
-	 };
+	my %params= (
+	  title          => sub { $cf->{title} || '' },
+	  content_charset=> sub { $cf->{content_charset} || '' },
+	  script_name    => sub { $req->script_name },
+	  is_secure      => sub { $req->secure },
+	  remote_addr    => sub { $req->remote_addr },
+	  server_name    => sub { $req->server_name },
+	  server_port    => sub { $req->port },
+	  http_referer   => sub { $req->referer },
+	  http_agent     => sub { $req->agent },
+	  request_uri    => sub { $req->uri },
+	  copy_label     => sub { $e->namespace. " Ver:". $e->VERSION },
+	  );
+	@{$view->{params}}{keys %params}= values %params;
 }
 
 1;

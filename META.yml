@@ -18,7 +18,9 @@ requires:
   DBI: 0
   Data::Dump: 0
   Error: 0
+  File::Copy: 0
   File::Path: 0
+  File::Spec: 0
   File::Temp: 0
   File::Which: 0
   FileHandle: 0
@@ -35,4 +37,4 @@ requires:
   UNIVERSAL::require: 0
   URI: 0
   YAML: 0
-version: 0.141
+version: 0.17

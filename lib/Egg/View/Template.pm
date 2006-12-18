@@ -3,7 +3,7 @@ package Egg::View::Template;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Template.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Template.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
@@ -102,8 +102,6 @@ When you want to use it individually.
 
 =head1 DESCRIPTION
 
-The parameter of default is taken from Egg::View::Common::Params.
-
 The option that can be specified for HTML::Template
 
  - strict
@@ -117,6 +115,12 @@ The option that can be specified for HTML::Template
  ... etc.
 
 Please see the document of L<HTML::Template> in detail.
+
+The parameter of default is taken from Egg::View::Template::Params.
+
+Please treat %Egg::View::PARAMS when you want to set a fixed parameter arbitrarily.
+
+Please see L<Egg::View> in detail.
 
 =head1 METHODS
 

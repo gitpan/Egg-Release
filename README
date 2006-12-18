@@ -1,5 +1,5 @@
 Egg::Release - WEB application framework.
-================
+=================================================
 
 The README is used to introduce the module and provide instructions on
 how to install the module, any machine dependencies it may have (for
@@ -39,6 +39,12 @@ INSTALLATION
 
    # export PERL_PATH=/usr/bin/perl
 
+   * Please make the script as follows if install-helper.pl is not found. 
+
+   ----- install-helper.pl -----
+   use Egg::Helper::Script;
+   Egg::Helper::Script->run('install');
+   -----------------------------
 
 COPYRIGHT AND LICENCE
 

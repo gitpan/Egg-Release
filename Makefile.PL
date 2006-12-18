@@ -13,7 +13,10 @@ requires 'Class::Data::Inheritable';
 requires 'DBI';
 requires 'Data::Dump';
 requires 'Error';
+requires 'File::Copy';
 requires 'File::Path';
+requires 'File::Spec';
+requires 'File::Temp';
 requires 'File::Which';
 requires 'FileHandle';
 requires 'HTML::Entities';
@@ -21,15 +24,14 @@ requires 'HTML::Prototype';
 requires 'HTML::Template';
 requires 'HTTP::Date';
 requires 'HTTP::Headers';
+requires 'IO::Scalar';
 requires 'Jcode';
 requires 'NEXT';
+requires 'Test::More';
 requires 'Time::HiRes';
 requires 'UNIVERSAL::require';
 requires 'URI';
 requires 'YAML';
-requires 'Test::More';
-requires 'File::Temp';
-requires 'IO::Scalar';
 
 build_requires 'Test::Pod';
 

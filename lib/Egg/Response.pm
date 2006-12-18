@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Response.pm 52 2006-12-16 04:58:42Z lushe $
 #
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ use base qw/Class::Accessor::Fast/;
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache/ );
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -52,6 +52,12 @@ sub body {
 	my($body)= @_;
 	$res->{body}= ref($body) ? $body: \$body;
 	1;
+}
+sub attachment {
+	my $res= shift;
+	$res->headers->header
+	  ( 'content-disposition'=> "attachment; filename=$_[0]" ) if @_> 0;
+	$res->headers->{'content-disposition'} || "";
 }
 sub create_header {
 	my $res = shift; my $e= $res->{e};
@@ -211,95 +217,104 @@ Egg::Response - It processes it concerning the response of Egg.
 
  # Access from Egg to this object.
  $e->response;  or $e->res;
-
+ 
  # Content-Type is set.
  $responce->content_type('image/png');
-
+ 
  # Contents are output.
  $responce->body('Hello, world!');
-
+ 
  # An original header is set.
  $responce->header( 'X-Orign' => 'foooo' );
    or
  $responce->push_header( 'X-Orign' => 'foooo' );
-
+ 
  # Redirect
  $response->redirect('http://domainname/', 307);
-
+ 
  etc..
 
 =head1 DESCRIPTION
 
  It is a module that takes charge of the contents output of Egg. 
 
-=head2 METHODS
+=head1 METHODS
 
-$response->content_type([content type]);
+=head2 $response->content_type([content type]);
 
-* output content type is set.
-* Please set $e->config->{content_type}. default is 'text/html'.
+output content type is set.
 
-$response->no_cache([1 or 0]);
+Please set $e->config->{content_type}. default is 'text/html'.
 
-* We will cast a spell so that a browser of the client should not cache it.
+=head2 $response->no_cache([1 or 0]);
 
-$response->set_cache([1 or 0]);
+We will cast a spell so that a browser of the client should not cache it.
 
-* We will cast a spell so that a browser of the client may cache it.
+=head2 $response->set_cache([1 or 0]);
 
-$response->body([content]);  or $response->output([content]);
+We will cast a spell so that a browser of the client may cache it.
 
-* It keeps it temporarily until contents are output.
-* It maintains it internally by the Scalar reference.
+=head2 $response->attachment([file_name]);
 
-$response->create_header( $response->body );
+The 'Content-Disposition' header is set.
 
-* Response header is assembled and it returns it.
+ content-disposition: attachment; filename=[file_name]
 
-$response->cookie([KEY NAME], [VALUE]);
+=head2 $response->body([content]);  or $response->output([content]);
 
-* Cookie is set with each key.
+It keeps it temporarily until contents are output.
 
-$response->cookies;
+It maintains it internally by the Scalar reference.
 
-* Set cookie is returned by HASH reference.
+=head2 $response->create_header( $response->body );
 
-$response->clear_cookies;
+Response header is assembled and it returns it.
 
-* All set cookie is canceled.
+=head2 $response->cookie([KEY NAME], [VALUE]);
 
-$response->create_cookies;
+Cookie is set with each key.
 
-* Set-Cookie header is assembled and it returns it.
+=head2 $response->cookies;
 
-$response->redirect([URL], [status code]);
+Set cookie is returned by HASH reference.
 
-* Screen is forward to passed URL.
-* Status code can be set by the second argument. default is 302.
+=head2 $response->clear_cookies;
 
-$response->redirect_page([URL], [MESSAGE], [OPTION]);
+All set cookie is canceled.
 
-* Screen is output and when changing, the fixed form contents are
-  output once.
-* URL and message and option in argument.
-* Please pass the option by HASH reference.
-* Following values can be specified for option. 
+=head2 $response->create_cookies;
 
-  - wait      = Time until changing the screen every second. default is 0
-  - alert     = Message is output with alert of JAVA script.
-  - body_style= style of <body> is defined.
-  - div_style = style of container is defined.
-  - h1_style  = background of message and style of frame line are defined.
+'Set-Cookie' header is assembled and it returns it.
 
-* Configuration can do default.
+=head2 $response->redirect([URL], [status code]);
 
-  In the name of key, it is redirect_page and the content is HAHS reference.
-  - default_url = Default when URL is not passed.
-  - default_msg = Default when message is not passed.
-  - default_wait= Time until changing the screen every second. default is 0
-  - body_style, div_style, h1_style, etc.
+Screen is forward to passed URL.
 
-* Setting example.
+Status code can be set by the second argument. default is 302.
+
+=head2 $response->redirect_page([URL], [MESSAGE], [OPTION]);
+
+Screen is output and when changing, the fixed form contents are output once.
+
+URL and message and option in argument.
+Please pass the option by HASH reference.
+Following values can be specified for option. 
+
+ - wait      = Time until changing the screen every second. default is 0
+ - alert     = Message is output with alert of JAVA script.
+ - body_style= style of <body> is defined.
+ - div_style = style of container is defined.
+ - h1_style  = background of message and style of frame line are defined.
+
+Configuration can do default.
+
+ In the name of key, it is redirect_page and the content is HAHS reference.
+ - default_url = Default when URL is not passed.
+ - default_msg = Default when message is not passed.
+ - default_wait= Time until changing the screen every second. default is 0
+ - body_style, div_style, h1_style, etc.
+
+Setting example.
 
  redirect_page=> {
    default_url => '/',
@@ -310,26 +325,28 @@ $response->redirect_page([URL], [MESSAGE], [OPTION]);
    h1_style    => 'font:bold 20px sans-serif;',
    },
 
-$response->status([status code]);
+=head2 $response->status([status code]);
 
-* HTTP status code that wants to be returned at the end of processing is set.
-  (200, 404, 403, 500 etc..)
+HTTP status code that wants to be returned at the end of processing is set.
+(200, 404, 403, 500 etc..)
 
-$response->headers;
+=head2 $response->headers;
 
-* Accessor to HTTP::Headers object.
+Accessor to HTTP::Headers object.
 
 =head1 SEE ALSO
 
-L<HTTP::Headers>, L<Egg::Request>
+L<HTTP::Headers>,
+L<Egg::Request>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, <lt>L<mizunoE<64>bomcity.com><gt>
+Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. <L<http://egg.bomcity.com/>>, All Rights Reserved.
+Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

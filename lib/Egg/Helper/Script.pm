@@ -3,17 +3,18 @@ package Egg::Helper::Script;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Script.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Script.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
 use FileHandle;
+use File::Spec;
 use File::Which;
 use UNIVERSAL::require;
 use Getopt::Std;
 use Egg::Release;
 
-our $VERSION= '0.01';
+our $VERSION= '0.03';
 
 sub run {
 	my $class = shift;
@@ -66,7 +67,6 @@ sub comp {
 	# ---
 	$self->{output} ||= "";
 	$self->{output}= $self->{o} if $self->{o};
-	$self->{output}=~s{[\\\/]+$} [];
 	# ---
 	$self->{project} ||= $option->{p} || "";
 	$self->{project}= ucfirst($self->{project});
@@ -76,6 +76,7 @@ sub comp {
 	}
 	# ---
 	$self->{egg_version}= Egg::Release->VERSION;
+	$self->{create_year}= (localtime time)[5]+ 1900;
 	$self;
 }
 sub setup_uname {
@@ -86,7 +87,9 @@ sub output_file {
 	my $self = shift;
 	my $path = shift || die q/I want Path./;
 	my $value= shift || "";
-	my $fh= FileHandle->new(">$path") || die "File Open Error: $path - $!";
+	my @path = split /[\\\/]+/, $path;
+	my $fh= FileHandle->new(">". File::Spec->catfile(@path) )
+	  || die "File Open Error: $path - $!";
 	binmode($fh);
 	print $fh $value;
 	$fh->close;
@@ -96,7 +99,6 @@ sub output_file {
 sub document_default {
 	MIME::Base64->require;
 	my($self)= @_;
-	$self->{create_year} ||= (localtime time)[5];
 	my $value= <<END_OF_TEXT;
 IyBCZWxvdyBpcyBzdHViIGRvY3VtZW50YXRpb24gZm9yIHlvdXIgbW9kdWxlLiBZb3UnZCBiZXR0
 ZXIgZWRpdCBpdCENCg0KPWhlYWQxIE5BTUUNCg0KPCUgcHJvamVjdCAlPiAtIFBlcmwgZXh0ZW5z

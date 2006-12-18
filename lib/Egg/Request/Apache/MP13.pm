@@ -3,14 +3,13 @@ package Egg::Request::Apache::MP13;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP13.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: MP13.pm 55 2006-12-18 12:06:38Z lushe $
 #
 use strict;
 use warnings;
 use Apache          ();
 use Apache::Request ();
 use Apache::File    ();
-use Apache::Upload  ();
 use Apache::Constants qw/:common/;
 use base qw/Egg::Request::Apache/;
 
@@ -18,7 +17,8 @@ our $VERSION= '0.01';
 
 sub new {
 	my $req= shift->SUPER::new(@_);
-	$req->r( Apache::Request->new($req->r) );
+	my $conf= $req->e->config->{request} || {};
+	$req->r( Apache::Request->new($req->r, %$conf) );
 	$req;
 }
 sub result_status {

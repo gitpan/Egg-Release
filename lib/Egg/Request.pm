@@ -3,25 +3,24 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Request.pm 54 2006-12-18 06:16:37Z lushe $
 #
 use strict;
 use warnings;
 use Error;
+use UNIVERSAL::require;
 use base qw/Class::Accessor::Fast/;
 use CGI::Cookie;
 
 __PACKAGE__->mk_accessors
- ( qw/e r debug parameters uploads secure scheme path/ );
+  ( qw/e r debug parameters secure scheme path/ );
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 *address= \&remote_addr;
 *port   = \&server_port;
 *agent  = \&user_agent;
 *params = \&parameters;
-
-sub setup { }
 
 sub new {
 	my $class= shift;
@@ -29,7 +28,7 @@ sub new {
 	my $r= shift || undef;
 	bless {
 	 e=> $e, r=> $r, debug=> $e->debug,
-	 parameters=> {}, args=> {}, uploads=> {},
+	 parameters=> {}, args=> {},
 	 }, $class;
 }
 sub param {
@@ -73,10 +72,15 @@ sub prepare {
 	$path=~m{^/} ? do { $req->path($path); $path=~s{^/} [] }
 	             : do { $req->path("/$path") };
 
-	$req->e->snip([(split /\//, $path)]);
-
+	$req->create_snip($path);
 	$req->prepare_params("$config->{character_in}_conv");
 	1;
+}
+sub create_snip {
+	my $req = shift;
+	my $path= shift || "";
+	$path=~s/^\s+//; $path=~s/\s+$//; $path=~s/^\/+//;
+	$req->e->snip( [split /\//, $path] );
 }
 sub prepare_params {
 	my($req)= @_;
@@ -112,6 +116,7 @@ sub user        { $ENV{REMOTE_USER} || "" }
 sub method      { $ENV{REQUEST_METHOD} || 'GET' }
 sub server_port { $ENV{SERVER_PORT} || 80 }
 sub server_name { $ENV{SERVER_NAME} }
+sub script_name { $ENV{SCRIPT_NAME} || "" }
 sub request_uri { $ENV{REQUEST_URI} || "" }
 sub path_info   { $ENV{PATH_INFO} || "" }
 sub https       { $ENV{HTTPS} || "" }
@@ -141,7 +146,6 @@ sub result_status { $_[1] || 403 }
 
 __END__
 
-
 =head1 NAME
 
 Egg::Request - Exclusive module of WEB request processing.
@@ -150,154 +154,169 @@ Egg::Request - Exclusive module of WEB request processing.
 
  # Access from Egg to this object.
  $e->request  or $e->res;
-
+ 
  # get query.
  my $param= $request->params;
  my $foo= $param->{foo};
    or
  my $foo= $request->param('foo');
-
+ 
  # get cookie string.
  my $cookie= $request->cookie([COOKIE NAME]);
    or
  my $cookie= $request->cookies->{[COOKIE NAME]};
    and
  my $foge= $cookie->value;
-
+ 
  # get request path
  # * / enters the head without fail.
  my $path= $request->path;
-
+ 
  etc..
 
 =head1 DESCRIPTION
 
- Query parameters are united by the character-code set with $e->config->
- {character_in}.
- If $e->config->{character_in} is undefined, it treats as 'euc'.
+Query parameters are united by the character-code set with $e->config->{character_in}.
 
-=head2 METHODS
+If $e->config->{character_in} is undefined, it treats as 'euc'.
 
-$request->r;
+=head1 METHODS
 
-* Accessor to object for Request processing.
+=head2 $request->r;
 
-$request->parameters  or $request->params;
+Accessor to object for Request processing.
 
-* Request query is returned by the HAHS reference.
+=head2 $request->parameters  or $request->params;
 
-$request->param([PARAM NAME]);
+Request query is returned by the HAHS reference.
 
-* Request query is returned. does general operation.
+=head2 $request->param([PARAM NAME]);
 
-$request->secure;
+Request query is returned. does general operation.
 
-* It becomes true at the request to SSL or Port 443.
+=head2 $request->create_snip([PATH]);
 
-$request->scheme;
+It tries to make $e->snip.
 
-* Scheme of URL is returned.  http or https
+example of dispatch.
 
-$request->path;
+ $e->request->create_snip( $e->request->param('path') );
+ 
+ my $dir= $e->snip->[0] || return qw{ Root };
+ 
+ ... ban, ban, ban.
 
-* request path is returned.
-* / enters the head without fail.
+=head2 $request->secure;
 
-$request->cookie([COOKIE NAME]);
+It becomes true at the request to SSL or Port 443.
 
-* scalar object of cookie is restored.
-* In addition, when the value is taken out, value is used.
+=head2 $request->scheme;
 
-$request->cookies;
+Scheme of URL is returned.  http or https
 
-* HASH reference of Cookie is returned.
+=head2 $request->path;
 
-$request->header([NAME]);
+request path is returned. '/' enters the head without fail.
 
-* It moves like wrapper to the methods such as $request->uri and
-  $request->user_agent.
-* It is scheduled to change to HTTP::Headers->header here.
+=head2 $request->cookie([COOKIE NAME]);
 
-$request->uri;
+scalar object of cookie is restored.
 
-* Request uri assembled by the URI module is returned.
+In addition, when the value is taken out, value is used.
 
-$request->remote_addr  or $request->address;
+=head2 $request->cookies;
 
-* $ENV{REMOTE_ADDR} is returned.
+HASH reference of Cookie is returned.
 
-$request->args;
+=head2 $request->header([NAME]);
 
-* $ENV{QUERY_STRING} の内容をそのまま返します。
+It moves like wrapper to the methods such as $request->uri and $request->user_agent.
 
-$request->user_agent  or $request->agent;
+It is scheduled to change to HTTP::Headers->header here.
 
-* $ENV{HTTP_USER_AGENT} is returned.
+=head2 $request->uri;
 
-$request->protocol;
+Request uri assembled by the URI module is returned.
 
-* $ENV{SERVER_PROTOCOL} is returned.
+=head2 $request->remote_addr  or $request->address;
 
-$request->user;
+$ENV{REMOTE_ADDR} is returned.
 
-* $ENV{REMOTE_USER} is returned.
+=head2 $request->args;
 
-$request->method;
+$ENV{QUERY_STRING} is returned.
 
-* $ENV{REQUEST_METHOD} is returned.
+=head2 $request->user_agent  or $request->agent;
 
-$request->server_port  or $request->port;
+$ENV{HTTP_USER_AGENT} is returned.
 
-* $ENV{SERVER_PORT} is returned.
+=head2 $request->protocol;
 
-$request->server_name;
+$ENV{SERVER_PROTOCOL} is returned.
 
-* $ENV{SERVER_NAME} is returned.
+=head2 $request->user;
 
-$request->request_uri;
+$ENV{REMOTE_USER} is returned.
 
-* $ENV{REQUEST_URI} is returned.
+=head2 $request->method;
 
-$request->path_info;
+$ENV{REQUEST_METHOD} is returned.
 
-* $ENV{PATH_INFO} is returned.
+=head2 $request->server_port  or $request->port;
 
-$request->https
+$ENV{SERVER_PORT} is returned.
 
-* $ENV{HTTPS} is returned.
+=head2 $request->server_name;
 
-$request->referer;
+$ENV{SERVER_NAME} is returned.
 
-* $ENV{HTTP_REFERER} is returned.
+=head2 $request->request_uri;
 
-$request->accept_encoding;
+$ENV{REQUEST_URI} is returned.
 
-* $ENV{HTTP_ACCEPT_ENCODING} is returned.
+=head2 $request->path_info;
 
-$request->host;
+$ENV{PATH_INFO} is returned.
 
-* $ENV{HTTP_HOST} or $ENV{SERVER_NAME} is returned.
+=head2 $request->https
 
-$request->host_name;
+$ENV{HTTPS} is returned.
 
-* Host name of the WEB server is returned.
+=head2 $request->referer;
 
-$request->remote_host;
+$ENV{HTTP_REFERER} is returned.
 
-* $ENV{REMOTE_HOST} is returned.
-* When hostname_lookup is off, acquisition is tried by gethostbyaddr().
+=head2 $request->accept_encoding;
+
+$ENV{HTTP_ACCEPT_ENCODING} is returned.
+
+=head2 $request->host;
+
+$ENV{HTTP_HOST} or $ENV{SERVER_NAME} is returned.
+
+=head2 $request->host_name;
+
+Host name of the WEB server is returned.
+
+=head2 $request->remote_host;
+
+$ENV{REMOTE_HOST} is returned.
+
+When hostname_lookup is off, acquisition is tried by gethostbyaddr().
 
 =head1 SEE ALSO
 
-L<CGI::Cookie>, L<Egg::Response>
+L<CGI::Cookie>,
+L<Egg::Response>
+L<Egg::Release>
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, <lt>L<mizunoE<64>bomcity.com><gt>
+Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. <L<http://egg.bomcity.com/>>, All Rights Reserved.
+Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

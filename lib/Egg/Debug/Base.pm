@@ -3,12 +3,13 @@ package Egg::Debug::Base;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Base.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Base.pm 52 2006-12-16 04:58:42Z lushe $
 #
 use strict;
 use warnings;
+use Egg::Release;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub debug_out {
 	my($class, $e, $msg)= @_;
@@ -21,7 +22,7 @@ sub disp_error {
 	my $err  = shift || return 0;
 	$err=~s{(?:\r?\n|\r)} [<br />]sg;
 	my $res= $e->response;
-	my $eggver= "Egg v". Egg->VERSION;
+	my $eggver= "Egg::Release v". Egg::Release->VERSION;
 	my $myname= $e->namespace. ' v'. $e->VERSION;
 	my $clang = $e->config->{content_language} || 'en';
 	my $ctype = $e->config->{content_type} || 'text/html';

@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP19;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP19.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: MP19.pm 56 2006-12-18 12:25:28Z lushe $
 #
 use strict;
 use warnings;
@@ -15,15 +15,15 @@ use Apache::RequestRec  ();
 use Apache::RequestUtil ();
 use Apache::Connection  ();
 use Apache::Compat      ();
-use Apache::Upload      ();
-use Apache::Const -compile => qw/:common/;
+use Apache::Constants qw/:common/;
 use base qw/Egg::Request::Apache/;
 
 our $VERSION= '0.01';
 
 sub new {
-	my $req= shift->SUPER::new(@_);
-	$req->r( Apache::Request->new($req->r) );
+	my $req = shift->SUPER::new(@_);
+	my $conf= $req->e->config->{request} || {};
+	$req->r( Apache::Request->new($req->r, %$conf) );
 	$req;
 }
 sub result_status {
