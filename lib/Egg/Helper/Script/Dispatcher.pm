@@ -3,7 +3,7 @@ package Egg::Helper::Script::Dispatcher;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Dispatcher.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Dispatcher.pm 62 2006-12-19 11:51:17Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Cwd;
 use FileHandle;
 use File::Path;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub generate {
 	my($self)= @_;
@@ -99,10 +99,10 @@ END_OF_TEST
 		}
 	}
 
-	print STDERR "Complete.\n";
-	print STDERR "*warn: Test script was not generable.\n"
+	print "Complete.\n";
+	print "*warn: Test script was not generable.\n"
 	  unless $test_ok;
-	print STDERR "*warn: MANIFEST was not able to be checked.\n"
+	print "*warn: MANIFEST was not able to be checked.\n"
 	  unless $manifest_ok;
 }
 

@@ -3,7 +3,7 @@ package Egg::Helper::Script::Project;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Project.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Project.pm 62 2006-12-19 11:51:17Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use File::Path;
 use File::Spec;
 use MIME::Base64;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 my %files= (
   __root_files__=> [
@@ -86,11 +86,11 @@ sub generate {
 	-d $self->{base} and die qq/$self->{project} project already exists./;
 	mkdir $self->{base}, 0755;
 	chmod 0755, $self->{base};
-	print STDERR "# makedir: $self->{base}\n";
+	print "# makedir: $self->{base}\n";
 	eval { $self->create_files($self->{base}, \%files) };
 	if (my $err= $@) {
 		File::Path::rmtree($self->{base});
-		print STDERR <<ERROR;
+		print <<ERROR;
 
   project name: $self->{project}
   target Path : $self->{base}
@@ -100,7 +100,7 @@ ERROR
 		die qq/* Project was not generate !!/;
 		return 0;
 	} else {
-		print STDERR <<PLAIN;
+		print <<PLAIN;
 = Success.
 
   project name: $self->{project}
@@ -122,7 +122,7 @@ sub create_files {
 		if (! -d $path) {
 			mkdir $path, 0755;
 			chmod 0755, $path;
-			print STDERR "# makedir: $path\n";
+			print "# makedir: $path\n";
 		}
 		for my $code (@$array) {
 			if (ref($code) eq 'CODE') {

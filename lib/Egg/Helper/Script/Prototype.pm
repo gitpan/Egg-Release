@@ -3,7 +3,7 @@ package Egg::Helper::Script::Prototype;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Prototype.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Prototype.pm 62 2006-12-19 11:51:17Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Cwd;
 use HTML::Prototype;
 use FileHandle;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub generate {
 	my($self)= @_;
@@ -33,7 +33,7 @@ sub generate {
 	print $fh $script;
 	$fh->close;
 
-	print STDERR <<END_OF_INFO;
+	print <<END_OF_INFO;
  ... completed.
 
 * HTML header example.

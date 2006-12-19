@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Engine.pm 57 2006-12-18 15:59:09Z lushe $
 #
 use strict;
 use warnings;
@@ -122,8 +122,9 @@ sub output_content {
 	my $res= $e->response;
 	return if $e->finished;
 	if ($res->status=~/^(30[1237])/) {
-		my $location= $res->location || return $e->finished(500);
-		my $header= $res->create_cookies;
+		my $location= $res->location
+		  || return $e->finished(500, q/Location is not specified./);
+		my $header= $res->cookies_ok ? $res->create_cookies: "";
 		$header.= "Status: $1 Found$Egg::CRLF"
 		       .  "Location: $location$Egg::CRLF$Egg::CRLF";
 		$e->request->output(\$header);

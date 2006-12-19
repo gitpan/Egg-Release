@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 52 2006-12-16 04:58:42Z lushe $
+# $Id: Response.pm 57 2006-12-18 15:59:09Z lushe $
 #
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use CGI::Cookie;
 use base qw/Class::Accessor::Fast/;
 
 __PACKAGE__->mk_accessors
- ( qw/headers status location content_type no_cache ok_cache/ );
+ ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
 our $VERSION= '0.02';
 our $AUTOLOAD;
@@ -81,7 +81,7 @@ sub create_header {
 		}
 		$header.= "Conetnt-Length: ". length($$body). $CL;
 	}
-	$header.= $res->create_cookies if %{$res->cookies};
+	$header.= $res->create_cookies if $res->cookies_ok;
 	$header.= "Content-Type: $ctype$CL";
 	$header.= 'X-Egg-'. $e->namespace. ': '. $e->VERSION
 	       .  "$CL$CL";
@@ -129,6 +129,7 @@ sub cookies {
 		my $conv= $res->{e}->config->{character_in}. '_conv';
 		tie %cookies, 'Egg::Response::TieCookie', sub { $res->{e}->$conv(@_) };
 		$res->{cookies}= \%cookies;
+		$res->{cookies_ok}= 1;
 		$res->{cookies};
 	  };
 }

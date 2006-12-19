@@ -3,12 +3,12 @@ package Egg::View::Template::Params;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Params.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Params.pm 63 2006-12-19 12:39:14Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub in {
 	my($class, $view, $e)= @_;
@@ -26,7 +26,7 @@ sub in {
 	  request_uri    => sub { $req->uri },
 	  copy_label     => sub { $e->namespace. " Ver:". $e->VERSION },
 	  );
-	@{$view->{params}}{keys %params}= values %params;
+	@{$view->params}{keys %params}= values %params;
 }
 
 1;

@@ -3,7 +3,7 @@ package Egg::Helper::Script;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Script.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Script.pm 63 2006-12-19 12:39:14Z lushe $
 #
 use strict;
 use warnings;
@@ -14,11 +14,11 @@ use UNIVERSAL::require;
 use Getopt::Std;
 use Egg::Release;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 sub run {
 	my $class = shift;
-	my $cmd   = shift || shift(@ARGV);
+	my $cmd   = shift || shift(@ARGV) || "none.";
 	my $option= shift || {};
 	my %opts;
 	getopt('hpvobd?', \%opts);
@@ -93,7 +93,7 @@ sub output_file {
 	binmode($fh);
 	print $fh $value;
 	$fh->close;
-	print STDERR "+ create: $path\n";
+	print "+ create: $path\n";
 	1;
 }
 sub document_default {
@@ -120,11 +120,11 @@ END_OF_TEXT
 }
 sub help {
 	my($self)= @_;
-	print STDERR "* Egg::Helper v$VERSION\n";
-	print STDERR "* Target-project: $self->{project}\n" if $self->{project};
-	print STDERR "\n";
+	print "* Egg::Helper v$VERSION\n";
+	print "* Target-project: $self->{project}\n" if $self->{project};
+	print "\n";
 	if ($self->{mode}=~/^install/i) {
-		print STDERR <<HELP;
+		print <<HELP;
 Usage: perl install_helper.pl [option]
 
 * Please set environment variable 'PERL_PATH'.
@@ -140,7 +140,7 @@ HELP
 
 	} elsif ($self->{mode}=~/^project/i) {
 		my $options= $self->common_options_disp;
-		print STDERR <<HELP;
+		print <<HELP;
 # Usage: egg_helper.pl project [options]
 $options
 HELP
@@ -148,7 +148,7 @@ HELP
 	} elsif ($self->{mode}=~/^yaml/i) {
 
 		my $options= $self->common_options_disp;
-		print STDERR <<HELP;
+		print <<HELP;
 # Usage: yaml_generator.pl [options]
 $options
 HELP
@@ -156,7 +156,7 @@ HELP
 	} elsif ($self->{mode}=~/^prototype/i) {
 
 		my $options= $self->common_options_disp;
-		print STDERR <<HELP;
+		print <<HELP;
 # Usage: prototype_generator.pl [options]
 $options
 HELP
@@ -164,14 +164,14 @@ HELP
 	} elsif ($self->{mode}=~/^dispatch/) {
 
 		my $options= $self->common_options_disp;
-		print STDERR <<HELP;
+		print <<HELP;
 # Usage: create_dispatch.pl -d [dispatch_name] [options]
 $options
 HELP
 
 	} else {
 		my $options= $self->common_options_disp;
-		print STDERR <<HELP;
+		print <<HELP;
 # Usage: egg_helper.pl [command] [options]
 
  command:

@@ -3,40 +3,32 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Request.pm 57 2006-12-18 15:59:09Z lushe $
 #
 use strict;
 use warnings;
 use Error;
 use UNIVERSAL::require;
-use base qw/Class::Accessor::Fast/;
+use base qw/Egg::Appli/;
 use CGI::Cookie;
 
-__PACKAGE__->mk_accessors
-  ( qw/e r debug parameters secure scheme path/ );
+__PACKAGE__->mk_accessors( qw/r debug secure scheme path/ );
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 *address= \&remote_addr;
 *port   = \&server_port;
 *agent  = \&user_agent;
-*params = \&parameters;
 
 sub new {
 	my $class= shift;
 	my $e= shift || throw Error::Simple q/I want Egg object./;
 	my $r= shift || undef;
-	bless {
-	 e=> $e, r=> $r, debug=> $e->debug,
-	 parameters=> {}, args=> {},
-	 }, $class;
-}
-sub param {
-	my $req= shift;
-	return keys %{$req->{parameters}} if @_< 1;
-	my $key= shift;
-	$req->{parameters}{$key}= shift if @_> 0;
-	$req->{parameters}{$key};
+	my $req= $class->SUPER::new($e);
+	$req->{r} = $r;
+	$req->{args}= {};
+	$req->{debug}= $e->debug;
+	$req;
 }
 sub cookie {
 	my $req= shift;
@@ -50,6 +42,10 @@ sub cookies {
 		$req->{cookies}= fetch CGI::Cookie || {};
 		$req->{cookies};
 	  };
+}
+sub prepare_params {
+	my($req)= @_;
+	$req->{params}{$_}= $req->r->param($_) for $req->r->param;
 }
 sub prepare {
 	my($req)= @_;
@@ -81,11 +77,6 @@ sub create_snip {
 	my $path= shift || "";
 	$path=~s/^\s+//; $path=~s/\s+$//; $path=~s/^\/+//;
 	$req->e->snip( [split /\//, $path] );
-}
-sub prepare_params {
-	my($req)= @_;
-	my $r= $req->r;
-	$req->{params}{$_}= $r->param($_) for $r->param;
 }
 sub header {
 	my $req = shift;

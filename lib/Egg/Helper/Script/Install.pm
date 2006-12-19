@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Cwd;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub generate {
 	my $self= shift;
@@ -18,7 +18,7 @@ Egg::Helper::Script->run(0, { perl_path=> '$self->{perl_path}' });
 PLAIN
 	$self->output_file($file, $value);
 	chmod 0755, $file;
-	print STDERR <<END_OF_BODY;
+	print <<END_OF_BODY;
 ... Done.
 
 * Please do as follows and make Project.

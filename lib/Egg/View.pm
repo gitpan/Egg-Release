@@ -3,13 +3,13 @@ package Egg::View;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: View.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: View.pm 63 2006-12-19 12:39:14Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Config/;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 our %PARAMS= (
   );
@@ -17,7 +17,7 @@ our %PARAMS= (
 sub new {
 	my $view = shift->SUPER::new(@_);
 	my %param= %PARAMS;
-	$view->{params}= \%param;
+	$view->params( \%param );
 	$view;
 }
 sub template_file {

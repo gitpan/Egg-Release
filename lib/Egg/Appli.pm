@@ -3,15 +3,17 @@ package Egg::Appli;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Appli.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Appli.pm 57 2006-12-18 15:59:09Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
-__PACKAGE__->mk_accessors( qw/name params/ );
+__PACKAGE__->mk_accessors( qw/name e parameters/ );
+
+*params= \&parameters;
 
 sub setup    { 0 }
 sub prepare  { 0 }
@@ -19,15 +21,17 @@ sub action   { $_[0] }
 sub finalize { $_[0] }
 
 sub new {
-	my($class, $e)= @_;
-	bless { e=> $e, name=> $class, params=> {} }, $class;
+	my $class= shift;
+	my $e    = shift;
+	my $hash = shift || {};
+	bless { name=> $class, e=> $e, parameters=> $hash }, $class;
 }
 sub param {
 	my $self= shift;
-	return keys %{$self->{params}} if @_< 1;
+	return keys %{$self->{parameters}} if @_< 1;
 	my $key = shift;
-	$self->{params}{$key}= shift if @_> 0;
-	$self->{params}{$key};
+	$self->{parameters}{$key}= shift if @_> 0;
+	$self->{parameters}{$key};
 }
 
 1;

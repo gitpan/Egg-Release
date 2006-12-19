@@ -3,7 +3,7 @@ package Egg::Helper::Script::YAML;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: YAML.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: YAML.pm 62 2006-12-19 11:51:17Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use YAML;
 use UNIVERSAL::require;
 use FileHandle;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub generate {
 	my($self)= @_;
@@ -34,10 +34,10 @@ sub generate {
 	print $fh YAML::Dump( $pkg->out );
 	$fh->close;
 
-	print STDERR "... completed.\n\n";
+	print "... completed.\n\n";
 
 	if ($is_yaml) {
-		print STDERR <<END_OF_INFO;
+		print <<END_OF_INFO;
 * Edit '$self->{base}/lib/$self->{project}.pm' as follows.
 
 - is old.
