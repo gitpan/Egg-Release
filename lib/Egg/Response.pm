@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 57 2006-12-18 15:59:09Z lushe $
+# $Id: Response.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -195,7 +195,7 @@ sub result {
 sub AUTOLOAD {
 	my $res= shift;
 	my($method)= $AUTOLOAD=~/([^\:]+)$/;
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	*{__PACKAGE__."::$method"}= sub { shift->{headers}->$method(@_) };
 	$res->$method(@_);

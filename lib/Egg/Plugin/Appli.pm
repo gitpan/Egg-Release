@@ -3,7 +3,7 @@ package Egg::Plugin::Appli;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Appli.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Appli.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ our $VERSION= '0.01';
 __PACKAGE__->mk_classdata('app');
 
 {
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	sub setup {
 		my($e)= @_;
 		my $config= $e->config->{plugin_appli} ||= {};
@@ -60,7 +60,7 @@ use base qw/Class::Data::Inheritable/;
 __PACKAGE__->mk_classdata( qw/names objects/ );
 
 {
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	sub new {
 		my($class, $e)= @_;
 		my $Name= $e->namespace;

@@ -3,18 +3,20 @@ package Egg::Helper::Script;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Script.pm 63 2006-12-19 12:39:14Z lushe $
+# $Id: Script.pm 70 2006-12-21 16:40:31Z lushe $
 #
 use strict;
 use warnings;
 use FileHandle;
+use File::Path;
 use File::Spec;
 use File::Which;
+use File::Basename;
 use UNIVERSAL::require;
 use Getopt::Std;
 use Egg::Release;
 
-our $VERSION= '0.04';
+our $VERSION= '0.03';
 
 sub run {
 	my $class = shift;
@@ -43,13 +45,22 @@ sub run {
 	: $class->comp(\%opts)->help;
 	1;
 }
+sub out {
+	my $perl_path= $ENV{PERL_PATH} || which('perl')
+	  || die q/Please set environment variable 'PERL_PATH'./;
+	print <<SCRIPT;
+#!$perl_path
+use Egg::Helper::Script;
+Egg::Helper::Script->run('install');
+SCRIPT
+}
 sub comp {
 	my($class, $option, $base)= @_;
 	my $pkg;
 	if ($base) {
 		$base->require or die $@;
 		$pkg= $base;
-		no strict 'refs';
+		no strict 'refs';  ## no critic
 		@{"$base\::ISA"}= __PACKAGE__;
 	} else {
 		$pkg= __PACKAGE__;
@@ -76,46 +87,76 @@ sub comp {
 	}
 	# ---
 	$self->{egg_version}= Egg::Release->VERSION;
-	$self->{create_year}= (localtime time)[5]+ 1900;
+	$self->{egg_label}= 'Egg::Release v'. Egg::Release->VERSION;
+	$self->{gmt} = scalar(gmtime time). ' GMT';
+	$self->{year}= (localtime time)[5]+ 1900;
 	$self;
 }
 sub setup_uname {
 	my($self)= @_;
 	$self->{uname}= $ENV{LOGNAME} || $ENV{USER} || $self->{project};
 }
+sub create_dir {
+	my $self= shift;
+	my $path= shift || die q/I want dir./;
+	my $result= File::Path::mkpath($path, 1, 0755);  ## no critic
+#	print "+ create dir : $path\n";
+	$result || 0;
+}
+sub remove_dir {
+	my $self= shift;
+	my $path= shift || die q/I want dir./;
+	my $result= File::Path::rmtree($path);
+	print "- remove dir : $path\n";
+	$result || 0;
+}
 sub output_file {
 	my $self = shift;
-	my $path = shift || die q/I want Path./;
-	my $value= shift || "";
-	my @path = split /[\\\/]+/, $path;
+	my $param= shift || die q/I want param./;
+	my $data = shift || return "";
+	my $value= ($data->{filetype} && $data->{filetype}=~/^bin/i) ? do {
+		MIME::Base64->require;
+		MIME::Base64::decode_base64($data->{value});
+	  }: do {
+		$self->conv($param, \$data->{value}) || return "";
+	  };
+	my $path= $self->conv($param, \$data->{filename})
+	  || die q/I want data->{filename}/;
+	my $basedir= File::Basename::dirname($path);
+	$self->create_dir($basedir) unless -d $basedir;
+	my @path= split /[\\\/]+/, $self->conv($param, \$path);
 	my $fh= FileHandle->new(">". File::Spec->catfile(@path) )
 	  || die "File Open Error: $path - $!";
 	binmode($fh);
 	print $fh $value;
 	$fh->close;
-	print "+ create: $path\n";
-	1;
+	print "+ create file: $path\n";
+	if ($data->{permission}) {
+		chmod $data->{permission}, $path;  ## no critic
+		print "+ chmod : $data->{permission} - $path\n";
+	}
+	return 1;
+}
+sub conv {
+	my $self = shift;
+	my $param= shift || return "";
+	my $text = shift || return "";
+	$$text=~s{<\#\s+(.+?)\s+\#>} [
+	  $param->{$1} ? do {
+	    ref($param->{$1}) ? $param->{$1}->($self, $param): $param->{$1};
+	    }: "";
+	 ]sge;
+	$$text;
 }
 sub document_default {
-	MIME::Base64->require;
-	my($self)= @_;
-	my $value= <<END_OF_TEXT;
-IyBCZWxvdyBpcyBzdHViIGRvY3VtZW50YXRpb24gZm9yIHlvdXIgbW9kdWxlLiBZb3UnZCBiZXR0
-ZXIgZWRpdCBpdCENCg0KPWhlYWQxIE5BTUUNCg0KPCUgcHJvamVjdCAlPiAtIFBlcmwgZXh0ZW5z
-aW9uIGZvciBibGFoIGJsYWggYmxhaA0KDQo9aGVhZDEgU1lOT1BTSVMNCg0KICB1c2UgPCUgcHJv
-amVjdCAlPjsNCiAgYmFuIGJvIGJvIGJvbi4NCg0KPWhlYWQxIERFU0NSSVBUSU9ODQoNClN0dWIg
-ZG9jdW1lbnRhdGlvbiBmb3IgPCUgcHJvamVjdCAlPiwgY3JlYXRlZCBieSA8JSBlZ2dfdmVyc2lv
-biAlPi4NCg0KQmxhaCBibGFoIGJsYWguDQoNCj1oZWFkMSBTRUUgQUxTTw0KDQpMPEVnZzo6UmVs
-ZWFzZT4sDQoNCj1oZWFkMSBBVVRIT1INCg0KPCUgdW5hbWUgJT4sIEU8bHQ+PCUgdW5hbWUgJT5F
-PDY0PmxvY2FsZG9tYWluRTxndD4NCg0KPWhlYWQxIENPUFlSSUdIVA0KDQpDb3B5cmlnaHQgKEMp
-IDwlIGNyZWF0ZV95ZWFyICU+IGJ5IDwlIHVuYW1lICU+DQoNClRoaXMgbGlicmFyeSBpcyBmcmVl
-IHNvZnR3YXJlOyB5b3UgY2FuIHJlZGlzdHJpYnV0ZSBpdCBhbmQvb3IgbW9kaWZ5DQppdCB1bmRl
-ciB0aGUgc2FtZSB0ZXJtcyBhcyBQZXJsIGl0c2VsZiwgZWl0aGVyIFBlcmwgdmVyc2lvbiA1Ljgu
-NiBvciwNCmF0IHlvdXIgb3B0aW9uLCBhbnkgbGF0ZXIgdmVyc2lvbiBvZiBQZXJsIDUgeW91IG1h
-eSBoYXZlIGF2YWlsYWJsZS4NCg0KPWN1dA0K
-END_OF_TEXT
-	$value= MIME::Base64::decode_base64($value);
-	$value=~s/<\%\s+(.+?)\s+\%>/$self->{$1}/sg;
+	my $self = shift;
+	my $param= shift || return "";
+	my $value= $self->{document_template} ||= do {
+		YAML->require;
+		my $hash= YAML::Load( join '', <DATA> );
+		$hash->{document};
+	  };
+	$value=~s{<\#\s+(.+?)\s+\#>} [$param->{$1} || ""]sge;
 	return $value;
 }
 sub help {
@@ -199,8 +240,6 @@ HELP
 
 1;
 
-__END__
-
 =head1 NAME
 
 Egg::Helper::Script - It is a base module of the helper script.
@@ -218,3 +257,42 @@ it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+__DATA__
+document: |
+  __END__
+  # Below is stub documentation for your module. You'd better edit it!
+  
+  =head1 NAME
+  
+  <# dist #> - Perl extension for ...
+  
+  =head1 SYNOPSIS
+  
+    use <# dist #>;
+    
+    ... tansu, ni, gon, gon.
+  
+  =head1 DESCRIPTION
+  
+  Stub documentation for <# dist #>, created by <# egg_label #>
+  
+  Blah blah blah.
+  
+  =head1 SEE ALSO
+  
+  L<Egg::Release>,
+  
+  =head1 AUTHOR
+  
+  <# author #>
+  
+  =head1 COPYRIGHT
+  
+  Copyright (C) <# year #> by <# copyright #>, All Rights Reserved.
+  
+  This library is free software; you can redistribute it and/or modify
+  it under the same terms as Perl itself, either Perl version 5.8.6 or,
+  at your option, any later version of Perl 5 you may have available.
+  
+  =cut

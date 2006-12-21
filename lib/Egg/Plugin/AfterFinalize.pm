@@ -3,7 +3,7 @@ package Egg::Plugin::AfterFinalize;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: AfterFinalize.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: AfterFinalize.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ our $VERSION= '0.01';
 
 sub setup {
 	my($e)= @_;
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	*{"Egg::Engine::after_finalize"}= sub { $_[0] };
 	$e->NEXT::setup;

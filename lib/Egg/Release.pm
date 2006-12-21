@@ -3,12 +3,12 @@ package Egg::Release;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Release.pm 62 2006-12-19 11:51:17Z lushe $
+# $Id: Release.pm 70 2006-12-21 16:40:31Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.18';
+our $VERSION= '0.20';
 
 =head1 NAME
 
@@ -35,9 +35,9 @@ Please specify a suitable place such as /usr/bin for [install path].
 
 !! When -o is omitted, current dir is an output destination.
 
-If B<triger.cgi> operates by Console, it might be unquestionable. 
+If B<trigger.cgi> operates by Console, it might be unquestionable. 
 
-  # /output/path/MY_PROJECT/bin/triger.cgi
+  # /output/path/MY_PROJECT/bin/trigger.cgi
 
 B<Warning:> The output code of Default is EUC-JP.
 

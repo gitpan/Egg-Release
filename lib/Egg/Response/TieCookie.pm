@@ -3,7 +3,7 @@ package Egg::Response::TieCookie;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: TieCookie.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: TieCookie.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -28,7 +28,7 @@ sub STORE {
 		return $self->{cookie}{$key};
 	} else {
 		delete($self->{cookie}{$key}) if $self->{cookie}{$key};
-		return undef;
+		return (undef);
 	}
 }
 sub DELETE {

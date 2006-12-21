@@ -30,7 +30,7 @@ INSTALLATION
 
 2. Create your project files.
 
-   eg/install-helper.pl -o /path/to/bin
+   perl eg/install-helper.pl -o /path/to/bin
 
    /path/to/bin/egg_helper.pl project -p [PROJECT_NAME] -o [/var/www]
 
@@ -39,19 +39,26 @@ INSTALLATION
 
    # export PERL_PATH=/usr/bin/perl
 
-   * Please make the script as follows if install-helper.pl is not found. 
+   * It is an action method when 'install-helper.pl' is not found.
 
-   ----- install-helper.pl -----
+   perl -MEgg::Helper::Script \
+    -e 'Egg::Helper::Script->out' > install-helper.pl
+
+   * Please make script when it is useless by all means.
+   ----- install-helper.pl -------------
    use Egg::Helper::Script;
    Egg::Helper::Script->run('install');
-   -----------------------------
+   -------------------------------------
+
+AUTHOR
+
+Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 COPYRIGHT AND LICENCE
 
-Put the correct copyright and licence information here.
-
-Copyright (C) 2006 by Masatoshi Mizuno.
+Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
+Put the correct copyright and licence information here.

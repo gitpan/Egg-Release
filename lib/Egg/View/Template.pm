@@ -3,7 +3,7 @@ package Egg::View::Template;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Template.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Template.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -14,7 +14,8 @@ use Egg::View::Template::Params;
 our $VERSION= '0.01';
 
  {
-	local $^W= 0; no strict 'refs';
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
 	for my $name ( qw/associate filter/ ) {
 		*{__PACKAGE__."::push_$name"}= sub {
 			return unless @_> 1;
@@ -40,7 +41,7 @@ sub output {
 }
 sub render {
 	my $view= shift;
-	my $tmpl= shift || return undef;
+	my $tmpl= shift || return (undef);
 	my $args= shift || {};
 	my $e= $view->{e};
 

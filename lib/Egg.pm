@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 54 2006-12-18 06:16:37Z lushe $
+# $Id: Egg.pm 70 2006-12-21 16:40:31Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.15';
+our $VERSION= '0.16';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -40,7 +40,7 @@ our $CRLF= "\015\012";
 
 sub import {
 	my($e, @args) = @_;
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	my $Name= caller(0);
 	${"$Name\::IMPORT_OK"} ||= 0;
 	return if ++${"$Name\::IMPORT_OK"}> 1;
@@ -61,16 +61,18 @@ sub import {
 }
 
 {
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	sub namespace { $_[0]->{namespace} }
 	sub encode { ${"$_[0]->{namespace}::__EGG_ENCODE"} }
-	sub config { ${"$_[0]->{namespace}::__EGG_CONFIG"} }
 	sub flags  { ${"$_[0]->{namespace}::__EGG_FLAGS"}  }
 	sub flag   { ${"$_[0]->{namespace}::__EGG_FLAGS"}->{$_[1]} }
 	sub plugins {
 		[ map{(/^Egg\:\:Plugin\:\:(.+)/)[0]}
 		 (grep /^Egg\:\:Plugin\:/, @{"$_[0]->{namespace}::ISA"}) ];
+	}
+	sub config {
+		$_[0]->{namespace} ? ${"$_[0]->{namespace}::__EGG_CONFIG"}: 0;
 	}
 	sub __egg_setup {
 		my $Name  = caller(0);

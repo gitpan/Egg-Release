@@ -29,6 +29,7 @@ my $builder = Module::Build->new(
     'IO::Scalar' => 0,
     'Jcode' => 0,
     'NEXT' => 0,
+    'Module::Install' => 0,
     'Test::More' => 0,
     'Test::Pod' => 0,
     'Time::HiRes' => 0,

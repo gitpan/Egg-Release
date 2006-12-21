@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Cwd;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub generate {
 	my $self= shift;
@@ -16,14 +16,17 @@ use Egg::Helper::Script;
 Egg::Helper::Script->run(0, { perl_path=> '$self->{perl_path}' });
 
 PLAIN
-	$self->output_file($file, $value);
-	chmod 0755, $file;
+	$self->output_file( {}, {
+	  filename  => $file,
+	  value     => $value,
+	  permission=> 0755,  ## no critic
+	  } );
 	print <<END_OF_BODY;
 ... Done.
 
 * Please do as follows and make Project.
 
-# egg_helper.pl project [option]
+# egg_helper.pl project -p [project_name] [option]
   -o = create path, Default is current directory.
 
 END_OF_BODY

@@ -31,10 +31,11 @@ requires:
   HTTP::Headers: 0
   IO::Scalar: 0
   Jcode: 0
+  Module::Install: 0
   NEXT: 0
   Test::More: 0
   Time::HiRes: 0
   UNIVERSAL::require: 0
   URI: 0
   YAML: 0
-version: 0.18
+version: 0.20

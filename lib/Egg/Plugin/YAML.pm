@@ -3,18 +3,47 @@ package Egg::Plugin::YAML;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: YAML.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: YAML.pm 70 2006-12-21 16:40:31Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub yaml_load {
 	my $e= shift;
 	my $yaml= shift || return 0;
-	$yaml=~/[\r\n]/ ? &YAML::Load($yaml): &YAML::LoadFile($yaml);
+	$yaml=~/[\r\n]/ ? YAML::Load($yaml): YAML::LoadFile($yaml);
+}
+sub loadrc {
+	my $e= shift;
+	my $rc= Egg::Plugin::YAML::Tool->loadrc || return;
+	while (my($key, $value)= each %$rc) {
+		if (! ref($value)
+		 && $key=~/^[A-Z][A-Za-z0-9_]+?_(?:REQUEST|DISPATCHER|MODEL|VIEW)$/) {
+			$ENV{$key}= $value;
+		}
+	}
+	return $e;
+}
+
+package Egg::Plugin::YAML::Tool;
+use strict;
+use warnings;
+use UNIVERSAL::require;
+sub loadrc {
+	my $class= shift;
+	Cwd->require;
+	my $current= Cwd::getcwd();
+	my $rc_name= $ENV{EGG_RCNAME} || 'egg_releaserc';
+	my $yaml=
+	   -f "$current/.$rc_name" ? "$current/.$rc_name"
+	 : -f "~/.$rc_name"        ? "~/.$rc_name"
+	 : -f "/etc/$rc_name"      ? "/etc/$rc_name"
+	 : return (0);
+
+	YAML::LoadFile($yaml);
 }
 
 1;

@@ -3,7 +3,7 @@ package Egg::D::Stand;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Stand.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Stand.pm 65 2006-12-19 18:38:00Z lushe $
 #
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ sub _setup {
 	my($class, $name)= @_;
 	my $dispat= "$name\::D";
 	my $diroot= "$name\::D::Root";
-	no strict 'refs';
+	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	$dispat->require or throw Error::Simple $@;
 	$diroot->require or throw Error::Simple $@;
@@ -39,7 +39,7 @@ sub _new {
 		$pkg=~/^\d/ and $pkg= undef;
 		$pkg ||= 'Root';
 		my($root_ok, $load);
-		no strict 'refs';
+		no strict 'refs';  ## no critic
 		for ( split /\:\:+/, $pkg ) {
 			$load.= "::$_";
 			my $pkgname= $dispatch. $load;

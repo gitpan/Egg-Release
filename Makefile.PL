@@ -27,6 +27,7 @@ requires 'HTTP::Headers';
 requires 'IO::Scalar';
 requires 'Jcode';
 requires 'NEXT';
+requires 'Module::Install';
 requires 'Test::More';
 requires 'Time::HiRes';
 requires 'UNIVERSAL::require';

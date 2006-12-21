@@ -21,7 +21,7 @@ ok( -d $base );
 ok( -d "$base/bin" );
 
 #5
-ok( -f "$base/bin/triger.cgi" );
+ok( -f "$base/bin/trigger.cgi" );
 ok( -d "$base/lib" );
 ok( -f "$base/lib/$test.pm" );
 ok( -d "$base/lib/$test" );
