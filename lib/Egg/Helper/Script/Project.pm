@@ -3,7 +3,7 @@ package Egg::Helper::Script::Project;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Project.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: Project.pm 88 2006-12-29 15:29:10Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Cwd;
 use File::Spec;
 use Egg::Plugin::YAML;
 
-our $VERSION= '1.00';
+our $VERSION= '1.01';
 
 sub rcparam {
 	my($self)= @_;
@@ -109,7 +109,8 @@ sub output_files {
 }
 sub setup_dist_name {
 	my($self, $attr, $data)= @_;
-	return $attr if (! $data->{filetype} || $data->{filetype}!~/^module/);
+	return $attr
+	  if (! $data->{filetype} || $data->{filetype}!~/^(?:module|dist)/);
 	my $base= $attr->{base}     || return $attr;
 	my $name= $data->{filename} || return $attr;
 	$name= $self->conv($attr, \$name)  || return $attr;
@@ -151,6 +152,42 @@ MANIFEST_FILE
 }
 
 1;
+
+=head1 NAME
+
+Egg::Helper::Script::Project - It is a module to generate the template of the project.
+
+=head1 SYNOPSIS
+
+  perl -MEgg::Helper::Script -e 'Egg::Helper::Script->out' > /path/to/egg_helper.pl
+  
+  /path/to/egg_helper.pl project -p [PROJECT_NAME] -o [/var/www]
+  
+  cd [/var/www]/[PROJECT_NAME]
+  
+  ./bin/trigger.cgi
+  ....
+  ....
+
+=head1 DESCRIPTION
+
+If trigger.cgi doesn't output the error after making the project, it operates normally.
+Please edit the project file and construct your application now.
+I am expecting the thing that a wonderful application can be done.
+
+=head1 AUTHOR
+
+Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.6 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut
 
 __DATA__
 ---
@@ -272,7 +309,7 @@ value: |
   # Copyright (C) <# headcopy #>, All Rights Reserved.
   # <# author #>
   #
-  # $Id: Project.pm 70 2006-12-21 16:40:31Z lushe $
+  # $Id: Project.pm 88 2006-12-29 15:29:10Z lushe $
   #
   use strict;
   use warnings;
@@ -300,7 +337,7 @@ filetype: module
 value: |
   package <# project #>::config;
   #
-  # $Id: Project.pm 70 2006-12-21 16:40:31Z lushe $
+  # $Id: Project.pm 88 2006-12-29 15:29:10Z lushe $
   #
   use strict;
   
@@ -337,7 +374,7 @@ value: |
     default_template_extension=> '.tt',
   
   # Accessor to stash (HASH reference.)
-    accessors=> [],
+    accessor_names=> [],
   
   # Redirect page configuration.
     redirect_page=> {
@@ -389,7 +426,7 @@ value: |
   # Copyright (C) <# headcopy #>, All Rights Reserved.
   # <# author #>
   #
-  # $Id: Project.pm 70 2006-12-21 16:40:31Z lushe $
+  # $Id: Project.pm 88 2006-12-29 15:29:10Z lushe $
   #
   use strict;
   use warnings;
@@ -447,7 +484,7 @@ value: |
   # Copyright (C) <# headcopy #>, All Rights Reserved.
   # <# author #>
   #
-  # $Id: Project.pm 70 2006-12-21 16:40:31Z lushe $
+  # $Id: Project.pm 88 2006-12-29 15:29:10Z lushe $
   #
   use strict;
   use warnings;

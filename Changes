@@ -1,5 +1,14 @@
 Revision history for Perl extension Egg::Release.
 
+0.22  2006/12/25
+	- Correspondence to thing that Egg::Request->cookie might putout
+	  'Use of uninitialized value ...'.
+	    Egg::Request ( 0.03 => 0.04 )
+
+0.21  2006/12/22
+	- Pod of Egg::Helper::Script::Project had disappeared.
+	    Egg::Helper::Script::Project ( 1.00 => 1.01 )
+
 0.20  2006/12/21
 	- The rc file was evaluated by using Egg::Plugin::YAML.
 	    Egg::Plugin::YAML ( 0.01 => 0.02 )

@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 57 2006-12-18 15:59:09Z lushe $
+# $Id: Engine.pm 88 2006-12-29 15:29:10Z lushe $
 #
 use strict;
 use warnings;
@@ -166,10 +166,9 @@ sub model {
 	$_[0]->{model}{$_[1]} || 0;
 }
 sub log {
-	$_[0]->{__egg_log} || do {
+	$_[0]->{__egg_log} ||= do {
 		Egg::Debug::Log->require or die $@;
-		$_[0]->{__egg_log}= Egg::Debug::Log->new($_[0]);
-		$_[0]->{__egg_log};
+		Egg::Debug::Log->new($_[0]);
 	 };
 }
 sub disp_error {

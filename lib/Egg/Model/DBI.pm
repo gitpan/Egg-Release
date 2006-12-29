@@ -3,7 +3,7 @@ package Egg::Model::DBI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: DBI.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: DBI.pm 88 2006-12-29 15:29:10Z lushe $
 #
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ sub new {
 	bless $option, $class;
 }
 sub dbh {
-	$_[0]->{dbh} || do { $_[0]->{dbh}= $_[0]->connect; $_[0]->{dbh} };
+	$_[0]->{dbh} ||= $_[0]->connect;
 }
 sub connected {
 	return ($_[0]->{dbh} && $_[0]->{dbh}->{Active} && $_[0]->{dbh}->ping);

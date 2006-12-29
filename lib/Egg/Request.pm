@@ -3,7 +3,7 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 57 2006-12-18 15:59:09Z lushe $
+# $Id: Request.pm 88 2006-12-29 15:29:10Z lushe $
 #
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use CGI::Cookie;
 
 __PACKAGE__->mk_accessors( qw/r debug secure scheme path/ );
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 
 *address= \&remote_addr;
 *port   = \&server_port;
@@ -34,14 +34,11 @@ sub cookie {
 	my $req= shift;
 	my $cookie= $req->cookies;
 	return keys %$cookie if @_== 0;
-	exists($cookie->{$_[0]}) ? $cookie->{$_[0]}: undef;
+	($_[0] && exists($cookie->{$_[0]})) ? $cookie->{$_[0]}: undef;
 }
 sub cookies {
 	my($req)= @_;
-	$req->{cookies} || do {
-		$req->{cookies}= fetch CGI::Cookie || {};
-		$req->{cookies};
-	  };
+	$req->{cookies} ||= do { fetch CGI::Cookie || {} };
 }
 sub prepare_params {
 	my($req)= @_;
@@ -86,7 +83,7 @@ sub header {
 }
 sub uri {
 	my($req)= @_;
-	$req->{uri} || do {
+	$req->{uri} ||= do {
 		require URI;
 		my $uri = URI->new;
 		my $path= $req->path; $path=~s{^/} [];
@@ -95,8 +92,7 @@ sub uri {
 		$uri->port($req->port);
 		$uri->path($path);
 		$ENV{QUERY_STRING} and $uri->query($ENV{QUERY_STRING});
-		$req->{uri}= $uri->canonical;
-		$req->{uri};
+		$uri->canonical;
 	 };
 }
 sub remote_addr { $ENV{REMOTE_ADDR} || '127.0.0.1' }
@@ -116,19 +112,18 @@ sub accept_encoding { $ENV{HTTP_ACCEPT_ENCODING} || "" }
 sub host { $ENV{HTTP_HOST} || $ENV{SERVER_NAME} || '127.0.0.1' }
 sub host_name {
 	my($req)= @_;
-	$req->{host_name} || do {
-		$req->{host_name}= $req->host;
-		$req->{host_name}=~s{\:\d+$} [];
-		$req->{host_name};
+	$req->{host_name} ||= do {
+		my $host= $req->host;
+		$host=~s{\:\d+$} [];
+		$host;
 	  };
 }
 sub remote_host {
 	my($req)= @_;
-	$req->{remote_host} || do {
-		$req->{remote_host}= $ENV{REMOTE_HOST}
-		 || gethostbyaddr(pack("C*", split(/\./, $_[0]->remote_addr)), 2)
-		 || $_[0]->remote_addr;
-		$req->{remote_host};
+	$req->{remote_host} ||= do {
+		$ENV{REMOTE_HOST}
+		 || gethostbyaddr(pack("C*", split(/\./, $req->remote_addr)), 2)
+		 || $req->remote_addr;
 	 };
 }
 sub result_status { $_[1] || 403 }

@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 65 2006-12-19 18:38:00Z lushe $
+# $Id: Response.pm 88 2006-12-29 15:29:10Z lushe $
 #
 use strict;
 use warnings;
@@ -124,13 +124,12 @@ sub cookie {
 }
 sub cookies {
 	my($res)= @_;
-	$res->{cookies} || do {
+	$res->{cookies} ||= do {
+		$res->{cookies_ok}= 1;
 		my %cookies;
 		my $conv= $res->{e}->config->{character_in}. '_conv';
 		tie %cookies, 'Egg::Response::TieCookie', sub { $res->{e}->$conv(@_) };
-		$res->{cookies}= \%cookies;
-		$res->{cookies_ok}= 1;
-		$res->{cookies};
+		\%cookies;
 	  };
 }
 sub clear_cookies {

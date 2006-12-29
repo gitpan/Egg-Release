@@ -22,7 +22,7 @@ PLAIN
 	  permission=> 0755,  ## no critic
 	  } );
 	print <<END_OF_BODY;
-... Done.
+... $file was generated.
 
 * Please do as follows and make Project.
 

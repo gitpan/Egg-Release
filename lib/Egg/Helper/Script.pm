@@ -3,7 +3,7 @@ package Egg::Helper::Script;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Script.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: Script.pm 72 2006-12-22 11:48:58Z lushe $
 #
 use strict;
 use warnings;
@@ -26,7 +26,6 @@ sub run {
 	getopt('hpvobd?', \%opts);
 	@opts{keys %$option}= values %$option;
 	$opts{mode}= $cmd;
-
 	  $cmd=~/^project/i
 	  ? $class->comp(\%opts, 'Egg::Helper::Script::Project')->generate
 
@@ -133,7 +132,7 @@ sub output_file {
 	print "+ create file: $path\n";
 	if ($data->{permission}) {
 		chmod $data->{permission}, $path;  ## no critic
-		print "+ chmod : $data->{permission} - $path\n";
+		print "+ chmod : $path\n";
 	}
 	return 1;
 }
@@ -141,6 +140,7 @@ sub conv {
 	my $self = shift;
 	my $param= shift || return "";
 	my $text = shift || return "";
+	return "" unless $$text;
 	$$text=~s{<\#\s+(.+?)\s+\#>} [
 	  $param->{$1} ? do {
 	    ref($param->{$1}) ? $param->{$1}->($self, $param): $param->{$1};
