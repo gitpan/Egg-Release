@@ -28,6 +28,7 @@ requires 'IO::Scalar';
 requires 'Jcode';
 requires 'NEXT';
 requires 'Module::Install';
+requires 'ModPerl::VersionUtil';
 requires 'Test::More';
 requires 'Time::HiRes';
 requires 'UNIVERSAL::require';

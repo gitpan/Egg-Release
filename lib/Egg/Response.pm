@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 88 2006-12-29 15:29:10Z lushe $
+# $Id: Response.pm 91 2007-01-04 02:02:50Z lushe $
 #
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ use base qw/Class::Accessor::Fast/;
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.02';
+our $VERSION= '0.04';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -101,6 +101,9 @@ sub create_ok_cache {
 }
 sub create_cookies {
 	my($res)= @_;
+	my $secure= $res->{e}->request->secure
+	  ? sub { defined($_[0]) ? ($_[0] ? 1: 0): 1 }
+	  : sub { $_[0] || 0 };
 	my $cookies;
 	while (my($name, $hash)= each %{$res->cookies}) {
 		my $value= CGI::Cookie->new(
@@ -109,7 +112,7 @@ sub create_cookies {
 		 -expires=> $hash->{expires},
 		 -domain => $hash->{domain},
 		 -path   => $hash->{path},
-		 -secure => ($hash->{secure} || 0),
+		 -secure => $secure->($hash->{secure}),
 		 ) || next;
 		$cookies.= "Set-Cookie: $value$Egg::CRLF";
 	}
@@ -118,7 +121,7 @@ sub create_cookies {
 sub cookie {
 	my $res= shift;
 	return keys %{$res->cookies} if @_< 1;
-	my $key= shift;
+	my $key= shift || return 0;
 	$res->cookies->{$key}= shift if @_> 0;
 	$res->cookies->{$key};
 }
@@ -160,7 +163,9 @@ sub redirect_page {
 	my $clang= $res->headers->{'content-language'} || 'en';
 	my $ctype= $res->content_type($conf->{content_type} || 'text/html');
 	$res->status(200);
-	<<END_OF_HTML;
+
+## Thank you kurt.
+	$res->body(<<END_OF_HTML);
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="$clang">

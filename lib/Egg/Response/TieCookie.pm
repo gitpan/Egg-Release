@@ -3,7 +3,7 @@ package Egg::Response::TieCookie;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: TieCookie.pm 65 2006-12-19 18:38:00Z lushe $
+# $Id: TieCookie.pm 90 2007-01-04 01:52:10Z lushe $
 #
 use strict;
 use warnings;
@@ -18,7 +18,9 @@ sub FETCH {
 	$_[0]->{cookie}{$_[1]} || undef;
 }
 sub STORE {
-	my($self, $key, $hash)= @_;
+	my $self= shift;
+	my $key = shift || return 0;
+	my $hash= shift;
 	if (ref($hash) eq 'HASH') {
 		my %store= %$hash;
 		$store{__encode} = $self->{encode};

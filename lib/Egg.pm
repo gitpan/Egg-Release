@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: Egg.pm 89 2006-12-29 15:49:34Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.16';
+our $VERSION= '0.17';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -88,15 +88,14 @@ sub import {
 		my $r_class;
 		if ($ENV{"$firstName\_REQUEST"}) {
 			$r_class= $ENV{"$firstName\_REQUEST"};
-		} elsif ($ENV{MOD_PERL} && mod_perl->require) {
-			my $version= mod_perl->VERSION;
-			$version=~s/_//g;  $version=~ s/(\.\d+)\./$1/g;
+		} elsif ($ENV{MOD_PERL} && ModPerl::VersionUtil->require) {
 			$r_class=
-			   $version >= 1.99922 ? 'Egg::Request::Apache::MP20'
-			 : $version >= 1.9901  ? 'Egg::Request::Apache::MP19'
-			 : $version >= 1.24    ? 'Egg::Request::Apache::MP13'
+			   ModPerl::VersionUtil->is_mp2  ? 'Egg::Request::Apache::MP20'
+			 : ModPerl::VersionUtil->is_mp19 ? 'Egg::Request::Apache::MP19'
+			 : ModPerl::VersionUtil->is_mp1  ? 'Egg::Request::Apache::MP13'
 			 : throw Error::Simple qq/Unsupported mod_perl ver: $ENV{MOD_PERL}/;
-			($r_class=~/Apache/ && $version >= 1.9901)
+			my $version= ModPerl::VersionUtil->mp_version;
+			$version >= 1.9901
 			  ? do { *handler= sub : method { shift; $Name->new(@_)->run } }
 			  : do { *handler= sub ($$) { shift; $Name->new(@_)->run } };
 			$flags->{MOD_PERL_VERSION}= $version;

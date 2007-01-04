@@ -30,6 +30,7 @@ my $builder = Module::Build->new(
     'Jcode' => 0,
     'NEXT' => 0,
     'Module::Install' => 0,
+    'ModPerl::VersionUtil' => 0,
     'Test::More' => 0,
     'Test::Pod' => 0,
     'Time::HiRes' => 0,
