@@ -3,7 +3,7 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 88 2006-12-29 15:29:10Z lushe $
+# $Id: Request.pm 93 2007-01-08 19:18:28Z lushe $
 #
 use strict;
 use warnings;
@@ -19,6 +19,16 @@ our $VERSION= '0.05';
 *address= \&remote_addr;
 *port   = \&server_port;
 *agent  = \&user_agent;
+
+{
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
+	for my $method (qw/post get/) {
+		*{__PACKAGE__."::is_$method"}= sub {
+			$_[0]->{"is_$method"} ||= $_[0]->method=~/^$method/i ? 1: 0;
+		  };
+	}
+  };
 
 sub new {
 	my $class= shift;
@@ -247,6 +257,14 @@ $ENV{REMOTE_USER} is returned.
 =head2 $request->method;
 
 $ENV{REQUEST_METHOD} is returned.
+
+=head2 $request->is_post
+
+When $request->method is POST, it becomes ture.
+
+=head2 $request->is_get
+
+When $request->method is GET, it becomes ture.
 
 =head2 $request->server_port  or $request->port;
 

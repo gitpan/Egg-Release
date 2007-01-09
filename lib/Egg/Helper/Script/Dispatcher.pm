@@ -3,7 +3,7 @@ package Egg::Helper::Script::Dispatcher;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Dispatcher.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: Dispatcher.pm 93 2007-01-08 19:18:28Z lushe $
 #
 use strict;
 use warnings;
@@ -149,14 +149,14 @@ value: |
   # Copyright (C) <# headcopy #>, All Rights Reserved.
   # <# author #>
   #
-  # $Id: Dispatcher.pm 70 2006-12-21 16:40:31Z lushe $
+  # $Id: Dispatcher.pm 93 2007-01-08 19:18:28Z lushe $
   #
   use strict;
   use warnings;
   use Egg::Const;
   
   sub dispath_name {
-  	my(\$class, \$e, \$d)= \@_;
+  	my($class, $e, $d)= @_;
   
   	# ... Let's write the code here.
   

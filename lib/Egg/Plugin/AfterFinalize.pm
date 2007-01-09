@@ -3,13 +3,13 @@ package Egg::Plugin::AfterFinalize;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: AfterFinalize.pm 65 2006-12-19 18:38:00Z lushe $
+# $Id: AfterFinalize.pm 93 2007-01-08 19:18:28Z lushe $
 #
 use strict;
 use warnings;
 use NEXT;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub setup {
 	my($e)= @_;
@@ -19,7 +19,7 @@ sub setup {
 	$e->NEXT::setup;
 }
 sub step3 {
-	$e= shift->NEXT::step3;
+	my $e= shift->NEXT::step3;
 	$e->after_finalize;
 	$e;
 }

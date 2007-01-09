@@ -8,7 +8,7 @@ package Egg::Release;
 use strict;
 use warnings;
 
-our $VERSION= '0.24';
+our $VERSION= '0.26';
 
 =head1 NAME
 

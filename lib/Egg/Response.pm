@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 91 2007-01-04 02:02:50Z lushe $
+# $Id: Response.pm 93 2007-01-08 19:18:28Z lushe $
 #
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ use base qw/Class::Accessor::Fast/;
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -79,7 +79,7 @@ sub create_header {
 		} elsif ($res->set_cache && HTTP::Date->require) {
 			$header.= $res->create_ok_cache($CL);
 		}
-		$header.= "Conetnt-Length: ". length($$body). $CL;
+		$header.= "Content-Length: ". length($$body). $CL;
 	}
 	$header.= $res->create_cookies if $res->cookies_ok;
 	$header.= "Content-Type: $ctype$CL";
