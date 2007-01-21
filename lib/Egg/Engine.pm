@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 105 2007-01-16 10:56:59Z lushe $
+# $Id: Engine.pm 134 2007-01-21 11:53:03Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Error;
 use NEXT;
 use HTML::Entities;
 
-our $VERSION= '0.05';
+our $VERSION= '0.06';
 
 sub prepare  { @_ }
 sub action   { @_ }
@@ -46,12 +46,14 @@ sub create_encode  { Egg::DummyEncode->new }
 			Egg::Debug::SimpleBench->require or throw Error::Simple $@;
 			my $bench= Egg::Debug::SimpleBench->new;
 			my $Name = $e->namespace. ' v'. $e->VERSION;
-			my $model_class= join ', ', map{
-				my $pkg= $e->flag('MODEL_CLASS')->{$_};
-				"$_ v". $pkg->VERSION;
-			 } @{$e->flag('MODEL')};
-			my $view_pkg  = $e->flag('VIEW_CLASS');
-			my $view_class= $e->flag('VIEW'). ' v'. $view_pkg->VERSION;
+			my %list;
+			for my $cname (qw/model view/) {
+				my $pname= uc($cname);
+				$list{$cname}= join ', ', map{
+					my $pkg= $e->flags->{"$pname\_CLASS"}{$_};
+					"$_ v". $pkg->VERSION;
+				  } @{$e->flags->{$pname}};
+			}
 			$bench->settime;
 			$e->request->prepare($e);
 			$e->debug_out(
@@ -60,8 +62,8 @@ sub create_encode  { Egg::DummyEncode->new }
 			  . "# + load plugins : ". (join ', ', @{$e->plugins}). "\n"
 			  . "# + request-class: ". $e->flag('R_CLASS'). "\n"
 			  . "# + dispatch-clas: ". $e->flag('D_CLASS'). "\n"
-			  . "# + model-class  : $model_class\n"
-			  . "# + view-class   : $view_class"
+			  . "# + model-class  : $list{model}\n"
+			  . "# + view-class   : $list{view}"
 			  );
 			$e->request->param and do {
 				my $params= $e->request->params;
@@ -157,24 +159,14 @@ sub plugin {
 	$plugin->require or throw Error::Simple $@;
 	$plugin->prepare;
 }
-sub is_view {
+sub default_model { 0 }
+sub default_view {
 	my $e= shift;
-	my $name= shift || return 0;
-	$name=~s/^Egg\:\:View\:\://;
-	$e->flag('VIEW') eq $name ? $e->flag('VIEW_CLASS'): 0;
-}
-sub is_model {
-	my $e= shift;
-	my $name= shift || return 0;
-	$name=~s/^Egg\:\:Model\:\://;
-	$e->flags->{MODEL_CLASS}{$name} || 0;
-}
-sub model {
-	my $e= shift;
-	my $name= shift || return 0;
-	return $e->{model}{$name} if $e->{model}{$name};
-	my $pkg= $e->flags->{MODEL_CLASS}{$name} || return 0;
-	$e->{model}{$name}= $pkg->new($name);
+	if (my $name= shift) {
+		$e->flags->{VIEW_CLASS}{$name} || return 0;
+		$e->{default_view}= $name;
+	}
+	$e->{default_view} ||= $e->flags->{VIEW}->[0] || return 0;
 }
 sub log {
 	$_[0]->{__egg_log} ||= do {
@@ -290,13 +282,11 @@ The plugin is require.
 However, it is not added to @ISA, and 'setup' method is not called.
 This merely does require.
 
-=head2 $e->is_model([MODEL_NAME]);
+=head2 $e->default_view([VIEW_NAME]);
 
-Whether Model of [MODEL_NAME] is called in is checked.
+It exchanges it for VIEW that does VIEW of default.
 
-=head2 $e->is_view([VIEW_NAME]);
-
-Whether VIEW of [VIEW_NAME] is called in is checked.
+If [VIEW_NAME] is unspecification, the name of present default VIEW is returned.
 
 =head2 $e->log
 

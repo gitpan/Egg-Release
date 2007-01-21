@@ -1,5 +1,11 @@
 Revision history for Perl extension Egg::Release.
 
+0.33  2007/01/21
+	- The processing of MODEL and VIEW was corrected.
+	  As a result, it came to be able to use a lot of VIEW at the same time.
+	    Egg ( 0.18 => 0.19 )
+	    Egg::Engine ( 0.05 => 0.06 )
+
 0.32  2007/01/21
 	- It was a correction at 0.03 and the mistake was found.
 	    Egg::D::Stand ( 0.03 => 0.04 )

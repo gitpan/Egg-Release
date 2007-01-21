@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 99 2007-01-15 06:33:14Z lushe $
+# $Id: Egg.pm 134 2007-01-21 11:53:03Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.18';
+our $VERSION= '0.19';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -143,45 +143,49 @@ sub import {
 			  };
 		}
 
-	# Include does the model module.
-		{
-			my(@models, %model_class);
-			for (@{$config->{MODEL}}) {
-				my($name, $model)= $_->[0]=~/^\+(.+)/
-				  ? ($_->[0], $_->[0]): ($_->[0], "Egg::Model::$_->[0]");
-				$name= $_->[1]->{conf_name} if $_->[1]->{conf_name};
-				$model->require or throw Error::Simple $@;
-				$model->setup($self, $_->[1], "model_$name");
-				push @models, $name;
-				$model_class{$name}= $model;
+	# The first processing of MODEL and VIEW.
+		for my $accessor (qw/view model/) {
+			my $pname  = ucfirst($accessor);
+			my $pkey   = uc($accessor);
+			my $default= "default_$accessor";
+			*{__PACKAGE__."::is_$accessor"}= sub {
+				my $e   = shift;
+				my $name= shift || return 0;
+				return $name if $e->flags->{"$pkey\_CLASS"}{$name};
+				$name=~s/^Egg\::$pname\:://;
+				$e->flags->{"$pkey\_CLASS"}{$name} || 0;
+			  };
+			*{__PACKAGE__."::$accessor"}= sub {
+				my $e= shift;
+				my $name= shift || $e->$default || return 0;
+				return $e->{$accessor}{$name} if $e->{$accessor}{$name};
+				my $pkg= $e->flags->{"$pkey\_CLASS"}{$name} || return 0;
+				$e->{$accessor}{$name}= $pkg->new($e);
+			  };
+			my(@list, %stock);
+			for my $i (@{$config->{$pkey}}) {
+				my($name, $pkg)= $i->[0]=~/^\+(.+)/
+				  ? ($1, $1): ($i->[0], "Egg::$pname\::$i->[0]");
+				$pkg->require or throw Error::Simple $@;
+				$pkg->setup(
+				  $self, $i->[1],
+				  ($i->[1]->{conf_name} || "$accessor\_$name"),
+				  );
+				push @list, $name;
+				$stock{$name}= $pkg;
 			}
-			if (my $model= $ENV{"$firstName\_MODEL"}) {
-				for (split /\s*[\,\;]\s*/, $model) {
-					$_->require or throw Error::Simple $@;
-					$_->setup($self);
-					push @models, $_;
-					$model_class{$_}= $_;
+			if (my $names= $ENV{"$firstName\_$pkey"}) {
+				for my $pkg (split /\s*[\,\;]\s*/, $names) {
+					$pkg->require or throw Error::Simple $@;
+					$pkg->setup($self);
+					# It is indifferent in the configuration.
+					push @list, $pkg;
+					$stock{$pkg}= $pkg;
 				}
 			}
-			$flags->{MODEL}= \@models;
-			$flags->{MODEL_CLASS}= \%model_class;
-
-	# Include does the view module.
-			if (my $view= $ENV{"$firstName\_VIEW"}) {
-				$view->require or throw Error::Simple $@;
-				$view->setup($self);
-				$flags->{VIEW_CLASS}= $flags->{VIEW}= $view;
-			} else {
-				my $v= $config->{VIEW}->[0] || [ 'Dummy'=> {} ];
-				my($name, $view)= $v->[0]=~/^\+(.+)/
-				  ? ($v->[0], $v->[0]): ($v->[0], "Egg::View::$v->[0]");
-				$name= $_->[1]->{conf_name} if $_->[1]->{conf_name};
-				$view->require or throw Error::Simple $@;
-				$view->setup($self, $v->[1], "view_$name");
-				$flags->{VIEW}= $v->[0];
-				$flags->{VIEW_CLASS}= $view;
-			}
-		  };
+			$flags->{"$pkey"}= \@list;
+			$flags->{"$pkey\_CLASS"}= \%stock;
+		}
 
 	# They are the plugin other setups.
 		$self->setup;
@@ -193,19 +197,14 @@ sub new {
 	my $r    = shift || undef;
 	my $e= bless {
 	  finished=> 0, namespace=> $class,
-	  snip => [], stash=> {}, model=> {},
+	  snip => [], stash=> {},
+	  model=> {}, view => {},
 	  }, $class;
 	my $r_class= $e->flag('R_CLASS') || throw Error::Simple
 	   "Error - 'request_class' is not set."
 	 . " $class\->setup seems to have failed.";
 	$e->request ( $r_class->new($e, $r) );
 	$e->response( Egg::Response->new($e) );
-	for (@{$e->flag('MODEL')}) {
-		my $pkg= $e->flags->{MODEL_CLASS}{$_} || next;
-		$e->{model}{$_}= $pkg->new($e);
-	}
-	my $view_class= $e->flag('VIEW_CLASS');
-	$e->view ( $view_class->new($e) );
 	$e;
 }
 sub stash {
@@ -342,9 +341,19 @@ The Egg::Response object is returned.
 
 The object of specified MODEL is returned.
 
-=head2 $e->view
+=head2 $e->view([VIEW_NAME])
 
-The VIEW object to output contents is returned.
+The object of specified VIEW is returned.
+VIEW object of default is returned at the unspecification.
+The most much beginning configurations becomes VIEW of default.
+
+=head2 $e->is_model([MODEL_NAME]);
+
+Whether Model of [MODEL_NAME] is called in is checked.
+
+=head2 $e->is_view([VIEW_NAME]);
+
+Whether VIEW of [VIEW_NAME] is called in is checked.
 
 =head2 $e->debug;
 
