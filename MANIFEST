@@ -2,8 +2,7 @@ Build.PL
 Changes
 eg/install-helper.pl
 lib/Egg.pm
-lib/Egg/Appli.pm
-lib/Egg/Appli/note.pm
+lib/Egg/AnyBase.pm
 lib/Egg/Config.pm
 lib/Egg/Const.pm
 lib/Egg/D/Stand.pm
@@ -24,7 +23,6 @@ lib/Egg/Helper/Welcom/Japanese.pm
 lib/Egg/Model.pm
 lib/Egg/Model/DBI.pm
 lib/Egg/Plugin/AfterFinalize.pm
-lib/Egg/Plugin/Appli.pm
 lib/Egg/Plugin/Filter.pm
 lib/Egg/Plugin/Filter/EUC_JP.pm
 lib/Egg/Plugin/YAML.pm

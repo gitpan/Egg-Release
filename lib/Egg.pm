@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 89 2006-12-29 15:49:34Z lushe $
+# $Id: Egg.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.17';
+our $VERSION= '0.18';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -110,16 +110,17 @@ sub import {
 		my $d_class;
 		if ($d_class= $ENV{"$firstName\_DISPATCHER"}) {
 			$d_class= $flags->{D_CLASS}= "Egg::D::$d_class";
+			$d_class->require or throw Error::Simple $@;
 		} elsif ($d_class= $ENV{"$firstName\_CUSTOM_DISPATCHER"}) {
-			$flags->{D_CLASS} = $d_class;
+			$flags->{D_CLASS}= $d_class;
+			$d_class->require or throw Error::Simple $@;
 		} elsif ($d_class= $ENV{"$firstName\_UNLOAD_DISPATCHER"}) {
-			@{$flags}{qw/D_CLASS D_UNLOAD/}= ($d_class, 1);
+			$flags->{D_CLASS}= $d_class;
 		} else {
 			$d_class= $flags->{D_CLASS}= 'Egg::D::Stand';
+			$d_class->require or throw Error::Simple $@;
 		}
-		unless ($flags->{D_UNLOAD})
-		  { $d_class->require or throw Error::Simple $@ }
-		$d_class->_setup( $Name );
+		$d_class->_setup( $self );
 
 	# method for character-code conversion.
 		eval { ${"$Name\::__EGG_ENCODE"}= $Name->create_encode };
@@ -200,7 +201,7 @@ sub new {
 	$e->request ( $r_class->new($e, $r) );
 	$e->response( Egg::Response->new($e) );
 	for (@{$e->flag('MODEL')}) {
-		my $pkg= $e->flag('MODEL_CLASS')->{$_} || next;
+		my $pkg= $e->flags->{MODEL_CLASS}{$_} || next;
 		$e->{model}{$_}= $pkg->new($e);
 	}
 	my $view_class= $e->flag('VIEW_CLASS');

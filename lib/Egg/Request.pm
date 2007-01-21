@@ -3,18 +3,18 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 93 2007-01-08 19:18:28Z lushe $
+# $Id: Request.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
 use Error;
 use UNIVERSAL::require;
-use base qw/Egg::Appli/;
+use base qw/Egg::AnyBase/;
 use CGI::Cookie;
 
 __PACKAGE__->mk_accessors( qw/r debug secure scheme path/ );
 
-our $VERSION= '0.05';
+our $VERSION= '0.06';
 
 *address= \&remote_addr;
 *port   = \&server_port;

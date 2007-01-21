@@ -3,24 +3,26 @@ package Egg::D::Stand;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Stand.pm 65 2006-12-19 18:38:00Z lushe $
+# $Id: Stand.pm 129 2007-01-21 05:44:23Z lushe $
 #
 use strict;
 use warnings;
 use Error;
 use UNIVERSAL::require;
 
-our $VERSION= '0.01';
+our $VERSION= '0.04';
 
 sub _setup {
-	my($class, $name)= @_;
-	my $dispat= "$name\::D";
-	my $diroot= "$name\::D::Root";
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
+	my($class, $e)= @_;
+	my $dispat= $e->namespace.'::D';
+	my $diroot= "$dispat\::Root";
 	$dispat->require or throw Error::Simple $@;
 	$diroot->require or throw Error::Simple $@;
+	no strict 'refs';  ## no critic
 	@{"$dispat\::ISA"}= __PACKAGE__;
+	$e->flags->{EGG_D_TARGET}= $e->debug
+	  ? sub { throw Error::Simple $_[1] }
+	  : sub { $_[0]->_super_call('_default') };
 	$class;
 }
 sub _new {
@@ -66,8 +68,10 @@ sub _new {
 				$pkg= $dis->{isa}->[0];
 				$dis->_target( sub {
 					eval { $pkg->$method($e) };
-					$dis->_super_call('_default') if $@;
-				 } );
+					if (my $err= $@) {
+						$e->flags->{EGG_D_TARGET}->($dis, "[$pkg] $err");
+					}
+				  } );
 			}
 		}
 	 };

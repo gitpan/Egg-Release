@@ -3,7 +3,7 @@ package Egg::Helper::Test;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Test.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Test.pm 129 2007-01-21 05:44:23Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Cwd;
 use File::Temp qw/tempdir/;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 __PACKAGE__->mk_accessors( qw/current testname/ );
 
@@ -25,10 +25,14 @@ sub temp {
 	$_[0]->{temp} ||= tempdir( CLEANUP=> 1 );
 	$_[0]->{temp};
 }
-sub read_file {
+sub file_open {
 	my $self= shift;
 	my $file= shift || return 0;
-	my $fh= FileHandle->new($file) || die "Error: $file - $!";
+	FileHandle->new($file) || die "Error: $file - $!";
+}
+sub read_file {
+	my $self= shift;
+	my $fh= $self->file_open(@_);
 	my $result= join '', $fh->getlines;
 	$fh->close;
 	$result || 0;

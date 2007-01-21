@@ -3,13 +3,13 @@ package Egg::View;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: View.pm 63 2006-12-19 12:39:14Z lushe $
+# $Id: View.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
-use base qw/Egg::Config/;
+use base qw/Egg::AnyBase/;
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 
 our %PARAMS= (
   );

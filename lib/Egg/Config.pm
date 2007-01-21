@@ -3,25 +3,17 @@ package Egg::Config;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Config.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: Config.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
-use NEXT;
-use base qw/Egg::Appli/;
+use base qw/Egg::AnyBase/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.04';
 
-sub setup {
-	my($class, $e, $config, $name)= @_;
-	if ($config && $name) {
-		$name=~s/\:\:/_/g;
-		$e->config->{lc($name)}= $config;
-	}
-	$class->NEXT::setup;
-}
-sub config {
-}
+#
+# This module will be abolished in a few days.
+#
 
 1;
 

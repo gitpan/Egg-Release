@@ -23,7 +23,6 @@ my $builder = Module::Build->new(
     'HTML::Entities' => 0,
     'HTML::Prototype' => 0,
     'HTML::Template' => 0,
-    'HTML::Template::Ex' => 0,
     'HTTP::Date' => 0,
     'HTTP::Headers' => 0,
     'IO::Scalar' => 0,

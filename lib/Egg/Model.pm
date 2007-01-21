@@ -3,13 +3,13 @@ package Egg::Model;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Model.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Model.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
-use base qw/Egg::Config/;
+use base qw/Egg::AnyBase/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 1;
 

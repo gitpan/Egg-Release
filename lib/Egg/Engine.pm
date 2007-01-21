@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 88 2006-12-29 15:29:10Z lushe $
+# $Id: Engine.pm 105 2007-01-16 10:56:59Z lushe $
 #
 use strict;
 use warnings;
@@ -12,14 +12,14 @@ use Error;
 use NEXT;
 use HTML::Entities;
 
-our $VERSION= '0.02';
+our $VERSION= '0.05';
 
-sub setup    { $_[0] }
-sub prepare  { $_[0] }
-sub action   { $_[0] }
-sub finalize { $_[0] }
-sub compress { }
-sub create_encode { Egg::DummyEncode->new }
+sub prepare  { @_ }
+sub action   { @_ }
+sub finalize { @_ }
+sub compress { @_ }
+sub finalize_error { @_ }
+sub create_encode  { Egg::DummyEncode->new }
 
 {
 	no warnings 'redefine';
@@ -38,52 +38,59 @@ sub create_encode { Egg::DummyEncode->new }
 		shift;
 		&HTML::Entities::encode_entities_numeric(@_);
 	}
+	sub setup {
+		my($egg)= @_;
+		no strict 'refs';  ## no critic
+		*{__PACKAGE__.'::_run'}= $egg->debug ? sub {
+			my($e)= @_;
+			Egg::Debug::SimpleBench->require or throw Error::Simple $@;
+			my $bench= Egg::Debug::SimpleBench->new;
+			my $Name = $e->namespace. ' v'. $e->VERSION;
+			my $model_class= join ', ', map{
+				my $pkg= $e->flag('MODEL_CLASS')->{$_};
+				"$_ v". $pkg->VERSION;
+			 } @{$e->flag('MODEL')};
+			my $view_pkg  = $e->flag('VIEW_CLASS');
+			my $view_class= $e->flag('VIEW'). ' v'. $view_pkg->VERSION;
+			$bench->settime;
+			$e->request->prepare($e);
+			$e->debug_out(
+			  "\n# << $Name start. --------------\n"
+			  . "# + request-path : ". $e->request->path. "\n"
+			  . "# + load plugins : ". (join ', ', @{$e->plugins}). "\n"
+			  . "# + request-class: ". $e->flag('R_CLASS'). "\n"
+			  . "# + dispatch-clas: ". $e->flag('D_CLASS'). "\n"
+			  . "# + model-class  : $model_class\n"
+			  . "# + view-class   : $view_class"
+			  );
+			$e->request->param and do {
+				my $params= $e->request->params;
+				$e->debug_out(
+				    "# + in request querys:\n"
+				  . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
+				  . "\n# + --------------------\n"
+				  );
+			 };
+			$e->step1; $bench->stock('step1:');
+			$e->step2; $bench->stock('step2:');
+			$e->step3; $bench->stock('step3:');
+			$bench->out;
+		  }: sub {
+			my($e)= @_;
+			$e->request->prepare($e);
+			$e->step1;
+			$e->step2;
+			$e->step3;
+		  };
+		@_;
+	}
   };
 
 sub run {
 	my($e)= @_;
-	eval {
-	$e->debug ? do {
-		Egg::Debug::SimpleBench->require or throw Error::Simple $@;
-		my $bench= Egg::Debug::SimpleBench->new;
-		my $Name = $e->namespace. ' v'. $e->VERSION;
-		my $model_class= join ', ', map{
-			my $pkg= $e->flag('MODEL_CLASS')->{$_};
-			"$_ v". $pkg->VERSION;
-		 } @{$e->flag('MODEL')};
-		my $view_pkg  = $e->flag('VIEW_CLASS');
-		my $view_class= $e->flag('VIEW'). ' v'. $view_pkg->VERSION;
-		$bench->settime;
-		$e->request->prepare($e);
-		$e->debug_out(
-		  "\n# << $Name start. --------------\n"
-		  . "# + request-path : ". $e->request->path. "\n"
-		  . "# + load plugins : ". (join ', ', @{$e->plugins}). "\n"
-		  . "# + request-class: ". $e->flag('R_CLASS'). "\n"
-		  . "# + dispatch-clas: ". $e->flag('D_CLASS'). "\n"
-		  . "# + model-class  : $model_class\n"
-		  . "# + view-class   : $view_class"
-		  );
-		$e->request->param and do {
-			my $params= $e->request->params;
-			$e->debug_out(
-			    "# + in request querys:\n"
-			  . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
-			  . "\n# + --------------------\n"
-			  );
-		 };
-		$e->step1; $bench->stock('step1:');
-		$e->step2; $bench->stock('step2:');
-		$e->step3; $bench->stock('step3:');
-		$bench->out;
-	 }: do {
-		$e->request->prepare($e);
-		$e->step1;
-		$e->step2;
-		$e->step3;
-	 };
-	};
+	eval { $e->_run };
 	if (my $err= $@) {
+		$e->finalize_error;
 		my $comp= $e->template || '*';
 		$e->log->notes("$comp: $err");
 		$e->disp_error("$comp: $err");
@@ -160,10 +167,14 @@ sub is_model {
 	my $e= shift;
 	my $name= shift || return 0;
 	$name=~s/^Egg\:\:Model\:\://;
-	$e->flag('MODEL_CLASS')->{$name} || 0;
+	$e->flags->{MODEL_CLASS}{$name} || 0;
 }
 sub model {
-	$_[0]->{model}{$_[1]} || 0;
+	my $e= shift;
+	my $name= shift || return 0;
+	return $e->{model}{$name} if $e->{model}{$name};
+	my $pkg= $e->flags->{MODEL_CLASS}{$name} || return 0;
+	$e->{model}{$name}= $pkg->new($name);
 }
 sub log {
 	$_[0]->{__egg_log} ||= do {

@@ -1,5 +1,40 @@
 Revision history for Perl extension Egg::Release.
 
+0.32  2007/01/21
+	- It was a correction at 0.03 and the mistake was found.
+	    Egg::D::Stand ( 0.03 => 0.04 )
+
+0.31  2007/01/16
+	- When the error occurred, finalize_error was called.
+	    Egg::Engine ( 0.04 => 0.05 )
+
+0.30  2007/01/15
+	- The behavior when failing in the method call is corrected.
+	    Egg::D::Stand ( 0.02 => 0.03 )
+	- Egg::Appli is abolished.
+	    Egg::AnyBase ( 0.01 ) < New
+	    Egg::Config ( 0.03 => 0.04 )
+	    Egg::Model ( 0.02 => 0.03 )
+	    Egg::View ( 0.04 => 0.05 )
+	    Egg::Request ( 0.05 => 0.06 )
+
+0.29  2007/01/15
+	- Egg object was passed to D->_setup.
+	    Egg ( 0.17 => 0.18 )
+	    Egg::D::Stand ( 0.01 => 0.02 )
+
+0.28  2007/01/12
+	- Egg::Debug::SimpleBench is fixed.
+	    Egg::Debug::SimpleBench ( 0.01 => 0.02 )
+
+0.27  2007/01/11
+	- Egg::Model::DBI is fixed.
+	    Egg::Model::DBI ( 0.02 => 0.03 )
+	    Egg::Config ( 0.02 => 0.03 )
+	    Egg::Appli ( 0.03 => 0.04 )
+	- Egg::Engine->model is fixed.
+	    Egg::Engine ( 0.02 => 0.03 )
+
 0.26  2007/01/09
 	- The typing error etc. were corrected. # This turned out in the report from kurt.
 	    Egg::Response ( 0.04 => 0.05 )

@@ -3,52 +3,68 @@ package Egg::Model::DBI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: DBI.pm 88 2006-12-29 15:29:10Z lushe $
+# $Id: DBI.pm 94 2007-01-11 05:22:07Z lushe $
 #
 use strict;
 use warnings;
+use Error;
 use base qw/Egg::Model/;
 use DBI;
 
-our $VERSION= '0.01';
+our $VERSION= '0.03';
 
-sub new {
-	my($class, $e)= @_;
-	my $option= $e->config->{model_dbi} || {};
-	$option->{debug_out}= sub { $e->debug_out(@_) };
-	$option->{dbh}= undef;
-	bless $option, $class;
+__PACKAGE__->mk_accessors( qw/pid tid db_handler/ );
+
+sub setup {
+	my($class, $e)= shift->SUPER::setup(@_);
+	my $conf= $e->config->{model_dbi} ||= {};
+	$conf->{dsn}  || throw Error::Simple q/Please setup DBI-> 'dsn'./;
+	$conf->{user} || throw Error::Simple q/Please setup DBI-> 'user'./;
+	($class, @_);
 }
 sub dbh {
-	$_[0]->{dbh} ||= $_[0]->connect;
-}
-sub connected {
-	return ($_[0]->{dbh} && $_[0]->{dbh}->{Active} && $_[0]->{dbh}->ping);
+	my($dbi)= @_;
+	if ($dbi->connected) {
+		$dbi->connect
+		  if (($dbi->tid && $dbi->tid ne threads->tid)
+		   || ($dbi->pid && $dbi->pid ne $$));
+	} else {
+		$dbi->db_handler($dbi->connect);
+	}
+	$dbi->db_handler;
 }
 sub connect {
-	my($self)= @_;
+	my($dbi)= @_;
+	my $conf= $dbi->e->config->{model_dbi};
 	my $dbh;
 	eval{
 		$dbh= DBI->connect(
-		 $self->{dsn},
-		 $self->{user},
-		 $self->{password},
-		 $self->{options},
-		 );
-	 };
+		  $conf->{dsn},
+		  $conf->{user},
+		  $conf->{password},
+		  $conf->{options},
+		  );
+	  };
 	if (my $err= $@) {
-		print STDERR "# + Database Connect NG!! dsn: $self->{dsn} at $err\n";
+		throw Error::Simple "Database Connect NG!! dsn: $conf->{dsn} at $err";
 	} else {
-		$self->{debug_out}->("# + Database Connect OK!! dsn: $self->{dsn}");
+		$dbi->e->debug_out("# + Database Connect OK!! dsn: $conf->{dsn}");
 	}
+	$dbi->pid($$);
+	$dbi->tid(threads->tid) if $INC{'threads.pm'};
 	$dbh;
 }
+sub connected {
+	return ($_[0]->db_handler
+	  && $_[0]->db_handler->{Active} && $_[0]->db_handler->ping);
+}
 sub disconnect {
-	$_[0]->connected and do {
-		$_[0]->{dbh}->{AutoCommit} || $_[0]->{dbh}->rollback;
-		$_[0]->{dbh}->disconnect;
-		$_[0]->{dbh}= undef;
-	 };
+	my($dbi)= @_;
+	$dbi->connected and do {
+		$dbi->db_handler->{AutoCommit} || $dbi->db_handler->rollback;
+		$dbi->db_handler->disconnect;
+		$dbi->db_handler( undef );
+	  };
 }
 sub DESTROY { 
 	shift->disconnect;

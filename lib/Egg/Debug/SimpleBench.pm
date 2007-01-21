@@ -3,13 +3,13 @@ package Egg::Debug::SimpleBench;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: SimpleBench.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: SimpleBench.pm 99 2007-01-15 06:33:14Z lushe $
 #
 use strict;
 use warnings;
 use Time::HiRes qw/gettimeofday tv_interval/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	bless { elapseds=> {} }, shift;
@@ -19,6 +19,7 @@ sub settime {
 }
 sub stock {
 	my($self, $key)= @_;
+	print STDERR "# = $key completed.\n";
 	$self->{elapseds}{$key}= sprintf '%f', tv_interval($self->{settime});
 	$self->{stock}.= " $key $self->{elapseds}{$key} sec.\n";
 	$self->settime;
@@ -29,7 +30,8 @@ sub out {
 	$total+= $_ for (values %{$self->{elapseds}});
 	$total ||= '---';
 	$self->{stock} ||= "";
-	print STDERR "# ----------------------------\n"
+	print STDERR
+	   "# >> simple bench = -----------\n"
 	 . $self->{stock}. " Total: $total sec.\n"
 	 . "# ----------------------------\n";
 }
