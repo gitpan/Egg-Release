@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 93 2007-01-08 19:18:28Z lushe $
+# $Id: Response.pm 155 2007-01-30 18:05:05Z lushe $
 #
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ use base qw/Class::Accessor::Fast/;
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.05';
+our $VERSION= '0.06';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -156,7 +156,8 @@ sub redirect_page {
 	my $msg  = shift || $rcf->{default_msg};
 	my $attr = shift || {};
 	my $wait = defined($attr->{wait}) ? $attr->{wait}: $rcf->{default_wait};
-	my $popup= $attr->{alert} ? qq/ window.onload= alert('$msg'); /: "";
+	my $popup= $attr->{alert} ? " window.onload= alert('$msg');": "";
+	my $onload= $attr->{onload_func} ? qq{ onload="$attr->{onload_func}"}: "";
 	my $body_style= $attr->{body_style} || $rcf->{body_style};
 	my $div_style = $attr->{div_style}  || $rcf->{div_style};
 	my $h1_style  = $attr->{h1_style}   || $rcf->{h1_style};
@@ -183,7 +184,7 @@ div  { $div_style }
 h1   { $h1_style }
 </style>
 </head>
-<body>
+<body$onload>
 <div>
 <h1>$msg</h1>
 <a href="$url">- Please click here when forwarding fails...</a>
@@ -305,11 +306,12 @@ URL and message and option in argument.
 Please pass the option by HASH reference.
 Following values can be specified for option. 
 
- - wait      = Time until changing the screen every second. default is 0
- - alert     = Message is output with alert of JAVA script.
- - body_style= style of <body> is defined.
- - div_style = style of container is defined.
- - h1_style  = background of message and style of frame line are defined.
+ - wait        = Time until changing the screen every second. default is 0
+ - alert       = Message is output with alert of JAVA script.
+ - onload_func = <body onload="..."> JAVA script that includes.
+ - body_style  = style of <body> is defined.
+ - div_style   = style of container is defined.
+ - h1_style    = background of message and style of frame line are defined.
 
 Configuration can do default.
 

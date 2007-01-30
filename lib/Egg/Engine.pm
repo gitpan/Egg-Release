@@ -3,16 +3,17 @@ package Egg::Engine;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 134 2007-01-21 11:53:03Z lushe $
+# $Id: Engine.pm 155 2007-01-30 18:05:05Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use Error;
 use NEXT;
+use URI::Escape;
 use HTML::Entities;
 
-our $VERSION= '0.06';
+our $VERSION= '0.07';
 
 sub prepare  { @_ }
 sub action   { @_ }
@@ -22,22 +23,30 @@ sub finalize_error { @_ }
 sub create_encode  { Egg::DummyEncode->new }
 
 {
-	no warnings 'redefine';
 	*escape_html  = \&encode_entities;
+	*eHTML        = \&encode_entities;
 	*unescape_html= \&decode_entities;
+	*ueHTML       = \&decode_entities;
+	*escape_uri   = \&uri_escape;
+	*eURI         = \&uri_escape;
+	*unescape_uri = \&uri_unescape;
+	*ueURI        = \&uri_unescape;
+
+	no warnings 'redefine';
 	sub encode_entities {
-		shift;
-		my $args= $_[1] || q/\\\<>&\"\'/;
+		shift; my $args= $_[1] || q/\\\<>&\"\'/;
 		&HTML::Entities::encode_entities($_[0], $args);
 	}
-	sub decode_entities {
-		shift;
-		&HTML::Entities::decode_entities(@_);
-	}
-	sub encode_entities_numeric {
-		shift;
-		&HTML::Entities::encode_entities_numeric(@_);
-	}
+	sub decode_entities
+	  { shift; &HTML::Entities::decode_entities(@_) }
+	sub encode_entities_numeric
+	  { shift; &HTML::Entities::encode_entities_numeric(@_) }
+	sub uri_escape
+	  { shift; &URI::Escape::uri_escape(@_) }
+	sub uri_escape_utf8
+	  { shift; &URI::Escape::uri_escape_utf8(@_) }
+	sub uri_unescape
+	  { shift; &URI::Escape::uri_unescape(@_) }
 	sub setup {
 		my($egg)= @_;
 		no strict 'refs';  ## no critic
@@ -270,6 +279,50 @@ $e->compress( $e->response->body ) is called before contents are output.
 
 And, contents are output to the client.
 
+=head2 $e->encode_entities([STR], [UNSAFE]);
+
+Alias of this method. : escape_html , eHTML
+
+HTML is encoded and the result is returned.
+
+The argument follows L<HTML::Entities>.
+
+=head2 $e->decode_entities([STR], [UNSAFE]);
+
+Alias of this method. : unescape_html , ueHTML
+
+HTML is decoded and the result is returned.
+
+The argument follows L<HTML::Entities>.
+
+=head2 $e->encode_entities_numeric([STR], [UNSAFE]);
+
+HTML encodes the numerical value.
+
+The argument follows L<HTML::Entities>.
+
+=head2 $e->uri_escape([STR], [UNSAFE]);
+
+Alias of this method. : escape_uri , eURI
+
+The result of encoding URI is returned.
+
+The argument follows L<URI::Escape>.
+
+=head2 $e->uri_escape_utf8([STR], [UNSAFE]);
+
+When URL is encoded, the UTF-8 character is treated.
+
+The argument follows L<URI::Escape>.
+
+=head2 $e->uri_unescape([STR], [UNSAFE]);
+
+Alias of this method. : unescape_uri , ueURI
+
+The result of the URI decipherment is returned.
+
+The argument follows L<URI::Escape>.
+
 =head2 $e->create_dispatch
 
 The dispatch object is generated.
@@ -311,6 +364,8 @@ L<Egg::Request>,
 L<Egg::Response>,
 L<Egg::D::Stand>,
 L<Egg::Debug::Base>,
+L<HTML::Entities>,
+L<URI::Escape>,
 
 =head1 AUTHOR
 

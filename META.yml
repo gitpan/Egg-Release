@@ -39,4 +39,4 @@ requires:
   UNIVERSAL::require: 0
   URI: 0
   YAML: 0
-version: 0.33
+version: 0.37

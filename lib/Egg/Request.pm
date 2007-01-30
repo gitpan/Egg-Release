@@ -3,7 +3,7 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 99 2007-01-15 06:33:14Z lushe $
+# $Id: Request.pm 155 2007-01-30 18:05:05Z lushe $
 #
 use strict;
 use warnings;
@@ -12,9 +12,9 @@ use UNIVERSAL::require;
 use base qw/Egg::AnyBase/;
 use CGI::Cookie;
 
-__PACKAGE__->mk_accessors( qw/r debug secure scheme path/ );
+__PACKAGE__->mk_accessors( qw/r debug path/ );
 
-our $VERSION= '0.06';
+our $VERSION= '0.07';
 
 *address= \&remote_addr;
 *port   = \&server_port;
@@ -58,11 +58,6 @@ sub prepare {
 	my($req)= @_;
 	my $config= $req->e->config;
 
-	my $secure= (($ENV{HTTPS} && lc($ENV{HTTPS}) eq 'on')
-	 || ($ENV{SERVER_PORT} && $ENV{SERVER_PORT}== 443)) ? 1: 0;
-	$req->secure($secure);
-	$req->scheme($secure ? 'https': 'http');
-
 	my $path;
 	if ($ENV{REDIRECT_URL}) {
 		$path= $ENV{REDIRECT_URL};
@@ -82,14 +77,24 @@ sub prepare {
 sub create_snip {
 	my $req = shift;
 	my $path= shift || "";
-	$path=~s/^\s+//; $path=~s/\s+$//; $path=~s/^\/+//;
-	$req->e->snip( [split /\//, $path] );
+	$path=~s#\s+##g; $path=~s#^/+##; $path=~s#/+$##; $path=~s#//+#/#g;
+	$req->e->snip([split /\//, $path]);
 }
 sub header {
 	my $req = shift;
 	my $name= lc(shift) || return "";
 	$name=~s/\-/_/g;
 	eval { return $req->$name };
+}
+sub secure {
+	my($req)= @_;
+	$req->{secure}
+	 ||= (($ENV{HTTPS} && lc($ENV{HTTPS}) eq 'on')
+	   || ($ENV{SERVER_PORT} && $ENV{SERVER_PORT}== 443)) ? 1: 0;
+}
+sub scheme {
+	my($req)= @_;
+	$req->{scheme} ||= $req->secure ? 'https': 'http';
 }
 sub uri {
 	my($req)= @_;

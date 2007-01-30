@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 134 2007-01-21 11:53:03Z lushe $
+# $Id: Egg.pm 155 2007-01-30 18:05:05Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use NEXT;
 use Egg::Response;
 use base qw/Egg::Engine Class::Accessor::Fast/;
 
-our $VERSION= '0.19';
+our $VERSION= '0.20';
 
 __PACKAGE__->mk_accessors( qw/view snip request response/ );
 
@@ -163,6 +163,8 @@ sub import {
 				$e->{$accessor}{$name}= $pkg->new($e);
 			  };
 			my(@list, %stock);
+			$flags->{"$pkey"}= \@list;
+			$flags->{"$pkey\_CLASS"}= \%stock;
 			for my $i (@{$config->{$pkey}}) {
 				my($name, $pkg)= $i->[0]=~/^\+(.+)/
 				  ? ($1, $1): ($i->[0], "Egg::$pname\::$i->[0]");
@@ -183,8 +185,6 @@ sub import {
 					$stock{$pkg}= $pkg;
 				}
 			}
-			$flags->{"$pkey"}= \@list;
-			$flags->{"$pkey\_CLASS"}= \%stock;
 		}
 
 	# They are the plugin other setups.
