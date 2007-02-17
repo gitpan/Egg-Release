@@ -14,6 +14,10 @@ decide whether fixes for the module are worth downloading.
 
 INSTALLATION
 
+* Module::Install is used.
+
+  perl -MCPAN -e 'install Module::Install'
+
 1. To install this module type the following:
 
    perl Makefile.PL
@@ -30,25 +34,25 @@ INSTALLATION
 
 2. Create your project files.
 
-   perl eg/install-helper.pl -o /path/to/bin
 
-   /path/to/bin/egg_helper.pl project -p [PROJECT_NAME] -o [/var/www]
-
+   ## Helper script is generated.
+   
+   perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/egg_helper.pl
+   
+   chmod 755 /path/to/egg_helper.pl
+   
    * We will recommend environment variable PERL_PATH to be set before
      the above is executed.
 
    # export PERL_PATH=/usr/bin/perl
 
-   * It is an action method when 'install-helper.pl' is not found.
 
-   perl -MEgg::Helper::Script \
-    -e 'Egg::Helper::Script->out' > install-helper.pl
+   ## Project is generated.
+   
+   /path/to/egg_helper.pl Project:[PROJECT_NAME] -o [/path/to/output]
+   
+   * -o When the option is omitted, it outputs it to current dir.
 
-   * Please make script when it is useless by all means.
-   ----- install-helper.pl -------------
-   use Egg::Helper::Script;
-   Egg::Helper::Script->run('install');
-   -------------------------------------
 
 AUTHOR
 

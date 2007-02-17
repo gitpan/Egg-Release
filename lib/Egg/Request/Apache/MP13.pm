@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP13;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP13.pm 55 2006-12-18 12:06:38Z lushe $
+# $Id: MP13.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -13,8 +13,14 @@ use Apache::File    ();
 use Apache::Constants qw/:common/;
 use base qw/Egg::Request::Apache/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
+sub setup {
+	my($class, $e)= @_;
+	my $base= $e->namespace;
+	no strict 'refs';  ## no critic
+	*{"Egg::handler"}= sub ($$) { shift; $base->run(@_) };
+}
 sub new {
 	my $req= shift->SUPER::new(@_);
 	my $conf= $req->e->config->{request} || {};
@@ -37,7 +43,6 @@ sub result_status {
 1;
 
 __END__
-
 
 =head1 NAME
 

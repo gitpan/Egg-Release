@@ -3,665 +3,1039 @@ package Egg::Release;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Release.pm 156 2007-01-30 18:05:35Z lushe $
+# $Id: Release.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.37';
+our $VERSION= '1.00';
+
+1;
+
+__END__
 
 =head1 NAME
 
-Egg::Release - WEB application framework release.
-
-=head1 NOTES
-
-As for Egg, debugging is not completed in still a lot of parts.
-It is evaluation version release at the present stage.
-
-=head1 SYNOPSIS
-
-First of all, please install Helper script.
-
-The installer is in eg of the source decompression folder. or ../Egg/Helper (Perl Lib) internally.
-
-  # perl ./egg/install-helper.pl [install path]
-    or
-  # perl /usr/lib/perl5/.../Egg/Helper/install-helper.pl [install path]
-
-Please specify a suitable place such as /usr/bin for [install path].
-
-  # create_project.pl MY_PROJECT [-o /output/path]
-
-!! When -o is omitted, current dir is an output destination.
-
-If B<trigger.cgi> operates by Console, it might be unquestionable. 
-
-  # /output/path/MY_PROJECT/bin/trigger.cgi
-
-B<Warning:> The output code of Default is EUC-JP.
-
-Please make controller, dispatch, and template, etc. now.
-
-=head2 Controller:
-
-F</output/path/MY_PROJECT/lib/MY_PROJECT.pm>
-
-=head2 Configuration:
-
-F</output/path/MY_PROJECT/lib/MY_PROJECT/config.pm>
-
-=head2 Dispatch:
-
-F</output/path/MY_PROJECT/lib/MY_PROJECT/D.pm>
-
-=head2 Sub-dispatch:
-
-F</output/path/MY_PROJECT/lib/MY_PROJECT/D/Root.pm>
+Egg::Release - WEB application framework release version.
 
 =head1 DESCRIPTION
 
-Egg is MVC framework that builds an arbitrary module into Model, View,
- and Controller and makes the WEB application that can be done.
+Egg imitated and developed Catalyst.
 
-When approaching when the WEB application is constructed, the production
- work efficiency of the trouble eagle code can be improved if Egg is used.
+It is WEB application framework of a simple composition. 
 
-=head2 Default of Model is DBI.
+It is possible to use it by replacing Model, View, Plugin, Engine, and
+ Dispatch with the module of original development. 
+It is a feature that the customizing degree of freedom is high. 
 
-It is possible to use it by loading two or more Model at the same time. 
+The treatment of Plugin looks like Catalyst well.
 
-=head2 Default of View is HTML::Template.
+Version View to use HTML::Mason from Egg::Release-1.00 was enclosed.
+I think that it can use a flexible, strong template environment.
 
-View module can be easily switched by the setting. 
+It came to be able to set the label of each action by dispatch.
+The label is convenient to make page title and Topic Path.
 
-=head2 The code concerning some basic operation is written in Controller.
+=head1 TUTORIAL
 
-Plugin, encode another, special code is constructed in the controller.
+It introduces the method of making an easy bulletin board here and it explains
+ the use of Egg.
 
-=head2 Dispatch corresponding to Request URI can be constructed.
+=head2 Obtaining of helper script.
 
-Please separate processing based on The fragment of URL is picked up from snip.
+First of all, the script to generate the project is obtained.
 
-Or, according to the value acquired from param.
-
-=head2 About WEB Applicaton that you constructed.
-
-When I can get the report if it is generally accepted, it is glad.
-
-I do so it is necessary to verify and to include it as a standard.
-
-=head2 About the character-code union of the request query.
-
-The treatment of the character-code in multi byte language range is important,
- and sometimes becomes a serious problem.
-
-The default of Egg is processed with EUC though it should be assumed UTF8 for
- this matter usually recent.
-
-Moreover, the union of character-codes has already been completed.
-
-  my $param= $e->request->params;
+  perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/egg_helper.pl
   
-  print $param->{any_param};  # This content is already EUC.
+  chmod 755 /path/to/egg_helper.pl
 
-If it wants to do this processing with UTF8, 'character_in' of the configuration
- is merely assumed to be 'utf8'.
+The helper script was made by this.
 
-Controller's 'create_encode' method is only detached if the processing of the
- character-code union is unnecessary.
+* Putting on the directory that PATH passes is convenient for this helper script. 
 
-Please correct the controller as follows if you want to change this processing 
-further.
+=head2 Generation of project.
 
-  package [MYPROJECT];
+The file complete set that composes the project of Egg like the control and
+ dispatch, etc. is generated.
+
+  cd /home
+  
+  egg_helper.pl Project:TinyBBS
+
+It is completion if displayed as completed.
+
+TinyBBS can be done by this under the control of /home, and the configuration
+ file complete set is made in that.
+
+* The part of TinyBBS is a project name.
+ The project name that wants to be made is specified in this part.
+ The form of the project name is a thing according to the naming convention
+  of the Perl module. However, ':' cannot be included.
+
+* After it moves to the output destination in the example, it executes it.
+ The output destination can be specified for '-o' option.
+
+=head2 Confirmation of initial operation.
+
+Whether a first of all existing project operates normally before editing the 
+configuration file is confirmed.
+
+  cd /home/TinyBBS/bin
+  
+  ./trigger.cgi
+
+If it is this and the error is not output, it operates normally.
+
+* If 'x-egg-project-error: true' is contained in the header, it is an error.
+  Please straighten out that problem previously.
+
+=head2 Setting of WEB server (Apache)
+
+To demonstrate the highest performance when started from 'mod_perl', Egg is made.
+If possible, please set 'mod_perl'.
+
+* The setting example is for 'mod_perl2'.
+
+  # If it is DSO support.
+  LoadModule perl_module modules/mod_perl.so
+  
+  <VirtualHost domain.name:80>
+    ServerName   domain.name
+    DocumentRoot /home/TinyBBS/htdocs
+  
+    PerlOptions  +Parent
+    PerlSwitches -I/home/TinyBBS/lib
+    PerlModule   mod_perl2
+    PerlModule   TinyBBS
+    <LocationMatch "^/([A-Za-z0-9_\-\+\:\%/]+)?(\.html)?$">
+    SetHandler          perl-script
+    PerlResponseHandler TinyBBS
+    </LocationMatch>
+  
+  </VirtualHost>
+
+This setting has treated the one that matches to LocationMatch as dynamic
+ contents. All things not matched are treated as static contents.
+
+  Dynamic contents URL pattern:
+    http://domain.name/
+    http://domain.name/read
+    http://domain.name/read.html
+    etc.
+
+  Static contents URL pattern:
+    http://domain.name/index.htm
+    http://domain.name/style.css
+    http://domain.name/images/hoge.gif
+    It is all URL in LocationMatch not matched ...
+
+Please make it fit and change the use type to the pattern of LocationMatch at
+the right time.
+
+* Please move bin/trigger.cgi to the directory for CGI for usual CGI.
+
+Please see the document of L<Egg::Dispatch::Runmode> in detail.
+
+=head2 Preparation for data base.
+
+The made table is such feeling.
+
+ create table tinybbs (
+   id          serial       primary key,
+   post_date   timestamp    default now(),
+   nickname    verchar(30)  not null,
+   article     text         not null
+   );
+ grant all on tinybbs to dbuser;
+ create index tinybbs_post_date on tinybbs(post_date);
+ create index tinybbs_nickname  on tinybbs(nickname);
+
+* It is for PostgreSQL in this tutorial.
+
+* We will recommend L<Apache::DBI> to be used if possible. 
+
+=head2 Edit of control.
+
+lib/TinyBBS.pm is edited and the composition of Egg is decided. 
+
+It is as follows in default. 
+
+  package TinyBBS;
   use strict;
+  use warnings;
   use Egg qw/-Debug/;
-  use ANY_ENCODE;
+  use TinyBBS::config;
   
-  __PACKAGE__->__egg_setup;
+  our $VERSION= '0.01';
   
-  # Using $e->encode by this becomes possible.
-  sub create_encode { ANY_ENCODE->new }
+  __PACKAGE__->__egg_setup( TinyBBS::config->out );
   
-  # And, please prepare a suitable method of synchronization with 'character_in'.
-  sub unicode_conv {
-    my($e, $str)= @_;
-    #
-    # Here changes depending on the module for the character-code processing.
-    #
-    $e->encode->convert(\$str)->unicode;
-  }
-  sub euc_jp_conv {
-    my($e, $str)= @_;
-    $e->encode->convert(\$str)->euc_jp;
-  }
-  sub shift_jis_conv {
-    my($e, $str)= @_;
-    $e->encode->convert(\$str)->shift_jis;
-  }
+  1;
+
+'-Debug' of the module option is used to operate Egg by debug mode. 
+Please delete this when this operating or invalidate it as '--Debug'.
+
+'__egg_setup' is a trigger to execute the setup when Egg is started.
+
+Then, a necessary plugin for the bulletin board is added.
+
+  Filter
+    ... The extra one is removed from the value of the request query.
   
+  FormValidator::Simple
+    ... The value of the request query is a normal value or it checks it.
+      * Please download 'Egg::Plugin::FormValidator::Simple'
+        from http://egg.bomcity.com/.
+  
+  FillInForm
+    ... The value is buried under CGI form.
+
+  DBI::Accessors::Extra
+    ... The handling of DBI is made convenient a little.
+  
+  Redirect::Page
+    ... The page with the message is displayed before it redirects it. 
+
+And, the controller becomes the following.
+
+  package TinyBBS;
+  use strict;
+  use warnings;
+  use Egg qw/ -Debug
+    Filter
+    FormValidator::Simple
+    FillInForm
+    DBI::Accessors::Extra
+    Redirect::Page
+    /;
+  use TinyBBS::config;
+  
+  our $VERSION= '0.01';
+  
+  __PACKAGE__->__egg_setup( TinyBBS::config->out );
+  
+  1;
+
+=head2 Setting of configuration.
+
+lib/TinyBBS/config.pm is edited.
+
+The setting of the plugin etc. is included.
+
+Setting of title first of all.
+
+  title => 'Super-easy BBS',
+
+MODEL is set.
+
+  MODEL=> [
+    [ 'DBI'=> {
+          dsn=> 'dbi:Pg:dbname=dbname;host=localhost',
+          user    => 'dbuser',
+          password=> 'dbpassword',
+          options => { AutoCommit=> 1, RaiseError=> 1 },
+        },
+      ],
+    ],
+
+HTML::Mason is used for the template.
+The setting of HTML::Template is invalidated or it gives priority to
+ HTML::Mason.
+
+  VIEW=> [
+    [ Mason=> {
+        ...
+        },
+      ],
+
+  #  [ Template=> {
+  #      ...
+  #      },
+  #    ],
+
+    ],
+
+It is a setting of Egg::Plug-in::FormValidator::Simple.
+
+  plugin_validator=> {
+    messages=> {
+      tinybbs=> {
+        nickname=> {
+          DEFAULT=> 'Please input the contributor name.',
+          LENGTH => 'The contributor name is too long.',
+          },
+        article=> {
+          DEFAULT=> 'Please input the content of the contribution.',
+          LENGTH => 'The content of the contribution is too long.',
+          },
+        },
+      },
+    },
+
+* The installation of FormValidator::Simple seems not to go well in Windows.
+  This is caused by the installation's of 'DateTime::Format::Strptime' failing. 
+  Perhaps, you may install it as it is because it is unquestionable in many cases.
+
+* You may use FormValidator if anxious.
+  In this case, Catalyst::Plugin::FormValidator can be used.
+  Please edit the control as follows after it installs it.
+
+  package MYPROJECT;
+  use strict;
+  use Egg qw{ +Catalyst::Plugin::FormValidator };
+
+The plug-in of Catalyst can be misappropriated because of such feeling.
+
+* Please note the place where + is described at the head. 
+
+=head2 Edit of dispatch.
+
+lib/TinyBBS/D.pm is edited and behavior to each request is decided. 
+
+The setting concerning behavior gives and defines HASH in run_modes.
+
+It is as follows in default.
+
+  package MYPROJECT::D;
+  use strict;
+  use warnings;
+  use Egg::Const;
+  
+  __PACKAGE__->run_modes(
+  
+    _default=> sub {
+      my($dispatch, $e)= @_;
+      require Egg::Helper::Project::BlankPage;
+      $e->response->body( Egg::Helper::Project::BlankPage->out($e) );
+      },
+  
+    );
+  1;
+
+When not agreeing to any key to run_modes, the '_default' key is matched.
+
+BlankPage is set to '_default' key in initial.
+
+The value of '_default' is CODE reference and should exist.
+Moreover, the value of the key that the action finally reaches at last is CODE
+ reference.
+
+And, the object and the Egg object of Dispatch are passed for this CODE
+ reference.
+
+It makes it here to doing the content of '_default' as follows.
+
+  _default=> sub {},
+
+The code reference that did not do anything was defined.
+The template is specified from the content of $e->action by processing View
+ when doing so.
+
+Therefore, this is the same as the setting of index.tt to the template.
+
+If you want to return NOT_FOUND excluding top page.
+
+  _default=> sub {
+    my($dispat, $e)= @_;
+    my $page= $e->action->[0] || return;
+    return if $page eq $e->config->{template_default_name};
+    $e->finished( NOT_FOUND );
+    },
+
+Or, '_begin' key is added.
+
+  _begin=> sub {
+    my($dispat, $e)= @_;
+    my $page= $e->action->[0] || return;
+    return if $page eq $e->config->{template_default_name};
+    $e->finished( NOT_FOUND );
+    },
+  _default=> sub {},
+
+* It is possible to process it to prior processing ( _begin ) after the
+  fact ( _end ).
+
+* The script that has a look at the content of the contribution will be
+  buried under index.tt.
+
+Next, it is a part where the contribution form and the content of the 
+contribution are accepted.
+
+  { POST=> 'posting', label=> 'Contribution form' }=> sub {},
+
+The key is HASH.
+
+When REQUEST_METHOD is only POST, this is matched.
+
+And, the label key is a name related to the key.
+This makes Topic PATH and is convenient.
+
+Please see the document of L<Egg::Dispatch::Runmode> in detail.
+
+It was possible to dispatch it by this in general. 
+However, all the contribution articles will be displayed the way things are 
+going by the request to '_default'.
+
+Then, following Dipatti is added.
+
+  page=> {
+    { ANY=> '_default', label=> 'Super-easy BBS' }=> sub {
+      $_[1]->template('index.tt');
+      },
+    { ANY=> qr/(\d+)/, label=> 'Super-easy BBS (NEXT)'}=> sub {
+      my($dispat, $e, $parts)= @_;
+      $e->stash->{page_no}= $parts->[0];
+      $e->template('index.tt');
+      },
+    },
+
+* To tell the truth, the hierarchy need not be especially deepened.
+  It digs up the hierarchy here to exemplify it.
+
+And, the key is set to ANY.
+In this, GET and POST are to mean it is made to match.
+To define label in the key, such writing is done without fail.
+
+Moreover, the regular expression is used for the key.
+It is given to the third argument to the CODE reference by the ARRAY reference
+ if a rear reference is here.
+
+This regular expression matches to the figure. 
+And, the figure is put in $e->stash.
+Index.tt obtains the page number referring to this $e->stash.
+
+Dispatch that settles the above is as follows.
+However, it doesn't go the way things are going well usually because the
+ reference is used for the key to HASH.
+
+Then, it is necessary to use Tie::RefHash.
+It is possible to describe it easily by using this it is be able to use the
+ refhash function.
+
+  package MYPROJECT::D;
+  use strict;
+  use warnings;
+  use Egg::Const;
+  
+  __PACKAGE__->run_modes( refhash(
+  
+    _default=> sub {},
+    { POST=> 'posting', label=> 'Contribution form'  }=> sub {},
+    page=> refhash(
+      { ANY=> '_default', label=> 'Super-easy BBS' }=> sub {
+        $_[1]->template('index.tt');
+        },
+      { ANY=> qr/(\d+)/, label=> 'Super-easy BBS (NEXT)'}=> sub {
+        my($dispat, $e, $parts)= @_;
+        $e->stash->{page_no}= $parts->[0];
+        $e->template('index.tt');
+        },
+      ),
+  
+  ) );
   #
-  # Some plugins might have the direct call of encode in the character-code processing.
-  # I think that they demand the methods such as set, a, and b perhaps.
-  # Therefore, when this method is actually adopted, wrappar might be needed. 
+  # It is necessary only to use 'trigger.cgi'.
+  # __PACKAGE__->mode_param('mode');
   #
+  1;
 
-=head1 ENVIRONMENT
+* It is necessary to recurrently use Tie::RefHash when there is a hierarchy
+  of HASH.
 
-Egg evaluates several environment variables.
+=head2 Making of template.
 
-Please replace the part of B<[MYPROJECT]> with own project name and read.
+The following templates are made.
 
-=head2 [MYPROJECT]_DISPATCHER
+  ## comp/html-header
+  <%init>
+  my $page_title= $e->escape_html($e->dispatch->page_title);
+  </%init>
+  <html>
+  <head>
+  <title><% $page_title %></title>
+  </head>
+  <body>
+  <h1><% $page_title %></h1>
 
-The module of the name of 'B<Egg::D::$ENV{[MYPROJECT]_DISPATCHER}>' is used as Dispath.
+  ## comp/html-footer
+  </body>
+  </html>
 
-=head2 [MYPROJECT]_CUSTOM_DISPATCHER
+  ## root/index.tt
+  <%init>
+  my $date_field= 'post_date',
+  my $name_field= 'nickname';
+  my $post_field= 'article';
+  my $page_no= $e->stash->{page_no} || 1;
+  my $limit  = 20;
+  my $offset = $limit* ($page_no- 1);
+  my $msg_conv= sub {
+    my $msg= shift || return "";
+    $msg= $e->escape_html($msg);
+    $msg=~s{\r?\n} [<br />]sg;
+    $msg;
+    };
+  </%init>
+  %
+  <& /html-header &>
+  <form method="POST" action="/posting">
+  <input type="submit" value="The article is contributed." />
+  </form>
+  <hr size="1">
+  %
+  % if (my $array= $e->db->tinybbs->arrayref(
+  %    [$date_field, $name_field, $post_field], 0,
+  %    " order by post_date desc offset $offset limit $limit ")) {
+  %
+  %   for (@$array) {
+    Contribution date : <% $_->{$date_field} %><br />
+    Contributor : <% $e->escape_html($_->{$name_field}) %><br />
+    Content of contribution:<br /><% $msg_conv->($_->{$post_field}) %>
+    <hr size="1">
+  %   }
+  % } else {
+    <h2>There is no contribution.</h2>
+    <hr size="1">
+  % }
+  <& /html-footer &>
 
-The module of B<[MYPROJECT]_CUSTOM_DISPATCHER> is used as Dispath.
+* If trigger.cgi is used, a value form action is always passing to trigger.cgi.
+Moreover, the specification of the mode is needed.
+The following hidden fields are added to the form to the contribution screen.
 
-=head2 [MYPROJECT]_UNLOAD_DISPATCHER
+  <input type="hidden" name="mode" value="posting" />
 
-The module of B<[MYPROJECT]_CUSTOM_DISPATCHER> is used as Dispath.
+  ## root/posting.tt
+  % if ($a->{complete}) {
+  %
+  <% $e->redirect_page_html('/', 'The contribution was accepted.', alert=> 1 ) %>
+  
+  % } else {
+  <& /html-header &>
+  <h1>Contribution form</h1>
+  <a href="/">It returns to the home.</a>
+  % if ($e->form->has_error) {
+    <div style="color:#F00; font-weight:bold; border-bottom:#000 solid 1px;">
+    <% join '', map{"<li>$_</li>"}@{$e->form->messages('tinybbs')} %>
+    </div>
+  % }
+  <hr size="1">
+  <form method="POST" action="<% $e->response->path %>">
+  Contributor name :
+  <input type="text" name="<% $name_field %>" maxlength="30" size="30" />
+  <ht size="1">
+  Content of contribution: <textarea name="<% $post_field %>"></text>
+  <ht size="1">
+  <input type="submit">
+  </form>
+  <& /html-footer &>
+  % }
+  
+  <%init>
+  my $a= {};
+  my $name_field= 'nickname';
+  my $post_field= 'article';
+  my $param= $e->request->params;
+  my $display= sub {
+  	$e->fillin_ok(1);
+  	$param->{$name_field} ||= $e->request->cookie_value($post_field) || "";
+    };
+  my $posting= sub {
+  	return 0 unless ($param->{$name_field} && $param->{$post_field});
+  	$e->filter(
+  	  $name_field=> [qw{j_trim strip_html j_strip}],
+  	  $post_field=> [qw{j_trim escape_html crlf2}],
+  	  );
+  	my $form= $e->form(
+  	  $name_field=> [qw{NOT_BLANK}, [qw{LENGTH 2 30}]],
+  	  $post_field=> [qw{NOT_BLANK}, [qw{LENGTH 10 1000}]],
+  	  );
+  	$form->has_error and return 0;
+  	$e->db->tinybbs->insert
+  	  ([$name_field, $post_field], @{$param}{($name_field, $post_field)});
+  	$e->response->cookie( $name_field=> { value=> $param->{$name_field} } );
+  	$a->{complete}= 1;
+    };
+  $posting->() || $display->();
+  </%init>
 
-However, require is not done.
+* If trigger.cgi is used, the following hidden field is necessary. 
 
-However, C<dispatch-E<gt>_setup> is called.
+  <input type="hidden" name="mode" value="<% $e->dispatch->mode_now %>" />
 
-=head2 [MYPROJECT]_MODEL
+And, ignore_fields is set so that FillInForm should not touch this field. 
 
-The module used as MODEL can be specified.
-Please delimit it by B<','> or B<';'> when you specify the plural.
+  plugin_fillinform=> {
+    ignore_fields=> [qw{ mode }],
+    },
 
-The MODEL setting of configuration is also effective.
+=head2 Confirmation of the final operation.
 
-=head2 [MYPROJECT]_VIEW
+It was possible to file it above in general. 
+It actually requests from a browser and operation is confirmed. 
 
-The module used as VIEW can be specified.
+ http://domain.name/
+ 
+If it bites and usual trigger.cgi is used
+ 
+ Is it http://domain.name/trigger.cgi or http://domain.name/cgi-bin/trigger.cgi
 
-The VIEW setting of configuration becomes invalid.
+* The reboot of the WEB server is needed for mod_perl.
+  Perhaps, even if Apache::Reload is effective, it is necessary.
 
-=head2 [MYPROJECT]_REQUEST
+* The helper of Egg has not had the test server yet though this is very
+  inconvenient. (^_^;
 
-An arbitrary module can be used for the Request processing.
+=head2 Summary.
 
-However, because the handler is not generated, it is necessary to prepare it by oneself.
+I think that it was able to make an easy bulletin board by this. 
+However, this is not a final product.
+Please complete it by your hand adding the improvement a little more.
 
-=head1 PLUGINS
+The use of Egg is such feeling.
+The WEB application is constructed repeating the following work. 
 
-Egg supports the plugin that can be used like Catalyst.
+  1.. The controller's edit.
+  2.. Review of configuration.
+  3.. Edit of dispatch.
+  4.. Making or edit of template. 
 
-The specified plugin name is usually supplemented with B<'Egg::Plugin'> and evaluated.
-For instance, it is developed with the name of B<'Filter'> when assuming B<'Egg::Plugin::Filter'>.
+And, if it wants to add the method newly, it is recommended to make the plugin.
+Or, you may add the function to the controller, and it might be also good to
+ make the succession module.
+Anyway, please construct the application in remaining the freedom nature now it. 
 
-When the name that starts by + is specified, an untouched name is used.
-For instance, B<'+MyProject::Filter'> is evaluated as it is as B<'MyProject::Filter'>.
+Building in my making it is also good if it feels dissatisfied in the function
+ of the engine and dispatch. Please try a powerful person by all means. 
+Egg is offering the function and the helper to answer such needs. 
 
-  use Egg qw/-Debug Filter::EUC_JP +Catalyst::Plugin::FillinForm/;
+* The constructor of Egg only returns the object of the project.
+  Therefore, it can be operated with triggers other than WEB such as cron.
+  Therefore, because the configuration and the function can be shared, it
+  is convenient.
 
-=head2 Moreover, the following calls are supported to the plugin.
+=head2 Helper
 
-Please refer when you make the plugin by oneself.
+Let's use the helper script and use Egg a little conveniently.
 
 =over 4
 
-=item 1 $e-E<gt>setup
+=item * The model of the plugin module is generated.
 
-When starting, it is called.
+The script that generates the skeleton of the plug-in module assumes the thing
+ operated regardless to be a project. Please generate the script as follows.
 
-=item 2 $e-E<gt>prepare
+  perl -MEgg::Helper::O::MakeMaker -e "Egg::Helper::O::MakeMaker->out" > /path/to/egg_makemaker.pl
+  
+  chmod 755 /path/to/egg_makemaker.pl
 
-It is called because of the object generation preparation immediately before dispatch operates.
+Putting on the place where PATH passed egg_makemaker.pl is convenient.
 
-=item 3 $e-E<gt>action
+  egg_makemaker.pl Egg::Plugin::NewPlugin
 
-It is called before VIEW outputs it after dispatch is evaluated.
-However, if finished is true, it has already been canceled.
+When this is executed, the skeleton of the plug-in module is generated to the 
+current directory.
 
-=item 4 $e-E<gt>finalize
+* It is not already the one to generate only the plugin for Egg though it
+  might be awareness. It can accomplish the substitute of h2xs -AX.
 
-It is called before contents are output after VIEW does output. 
-In a word, it becomes the end of the plugin call.
+The made module is installed in a usual Perl similar module as follows. 
+
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+=item * The skeleton of the subdispatch is generated.
+
+  bin/myproject_helper.pl D:Make [NEW_DISPATCH_NAME]
+
+When this is executed, the skeleton of the subdispatch is generated to the 
+subordinate of lib/MYPROJECT/D.
+
+An easy test script generates it to it and t.
+
+The generated dispatch is not read by the automatic operation.
+It is necessary to edit the main dispatch.
+
+  package MYPROJECT::D;
+  use strict;
+  use MYPROJECT::D::NewDispatch;
+  
+  __PACKAGE__->run_modes(
+    ...
+    new_action=> \&MYPROJECT::D::NewDispatch::default,
+    );
+
+=item * The configuration is made YAML.
+
+  bin/myproject_helper.pl P:YAML
+
+When this is executed, the configuration obtained with MYPROJECT::config->out
+ is output to etc/MYPROJECT.yaml by the YAML form.
+
+Output YAML changes as follows and uses the controller.
+
+  package MYPROJECT;
+  use strict;
+  use warnings;
+  use Egg qw/-Debug YAML/;
+  
+  our $VERSION= '0.01';
+  
+  my $config= __PACKAGE__->yaml_load('/path/to/MYPROJECT/etc/MYPROJECT.yaml');
+  __PACKAGE__->__egg_setup( $config );
+
+* MYPROJECT::config is not read.
+
+* Embarrassing it because YAML is edited directly and it encounters the format 
+  error are convenient.
+
+=item * To use Ajax of the fashion on the street.
+
+  bin/myproject_helper.pl P:Prototype
+
+When this is executed, prototype.js is output to the subordinate of htdocs.
+
+Please use output prototype.js reading from the HTML header.
+
+Details are Prototype Javascript Library L<http://www.prototypejs.org/>.
+
+=item * An original Egg engine is developed.
+
+  bin/myproject_helper.pl E:Create [NEW_ENGIN_NAME]
+
+When this is executed, [NEW_ENGIN_NAME].pm is generated by the subordinate
+ of lib/MYPROJECT/E.
+
+An original engine can be used by setting it to MYPROJECT_ENGINE_CLASS 
+of engine_class of the configuration or the environment variable.
+
+Necessary minimum method is described though the movement of the engine of 
+the skeleton cannot be secured. The content of these methods is changed,
+ and please newly add the method and develop a new engine.
+
+Please try by all means though the hurdle might be a little high.
 
 =back
 
-Please make the chance to pass processing to the following plug-in by beginning
- ending about the processing of the method of the above-mentioned B<NEXT.pm.>
+=head1 REFERENCE
 
-  package Egg::Plugin::MyPlug;
-  use strict;
-  use base qw/Class::Data::Inheritable/;
-  use NEXT;
-  use ANY_MODULE;
-  
-  __PACKAGE__->mk_classdata( qw/myplug/ );
-  
-  sub prepare {
-    my($e)= @_;
-    $e->{myplug}= new ANY_MODULE;
-    $e->NEXT::prepare;
-  }
-  
-  #
-  # The error occurs if Class::Accessor is used to make the accessor.
-  #
-  
+This reference is a list of the main method that seems often to be used.
 
-=head2 Method of plugin
+Please refer to the document of each module for more detailed information.
 
-It is possible to call it if it is assumed B<$e-E<gt>method> because the method of the plugin 
-is a succession relation to B<Egg>.
+=head2 my $e= PROJECT_NAME->new
 
-=head1 FLAGS
+The object for the project is received. 
 
-An arbitrary flag is set when Egg is read, and it can be referred to later.
+package： L<Egg>.
 
-* Control file of this.
+=head2 $e->prepare_component
 
-  package [MYPROJECT];
-  use strict;
-  
-  use Egg qw/-Debug -foo/;
+It is not necessary to call it from the WEB application.
 
-* This is a code such as dispatch.
+Please call it when you use it from cron etc.
 
-  if ($e->flag('foo')) {
-    return TRUE;
-  } else {
-    return FALSE;
-  }
+Prepare of the plugin and each component is settled and this is done.
 
-=head2 Debug
+package: L<Egg::Engine>.
 
-Egg supports only place 'Debug' flag today.
+=head2 Egg::Error->throw ([MESSAGE])
 
-The Debug flag can be referred to by C<$e-E<gt>debug>.
+The error message with the debugging trace is output.
 
-=head1 CONFIGURATION
+package： L<Egg::Exception>.
 
-=head2 root
+=head2 $e->debug
 
-B<Default:> [MYPROJECT]/root
+True is restored when operating by debug mode.
 
-It is the one used when Egg chiefly confirms the whereabouts of the template.
-Please specify the root directory for the template that becomes a main.
-It doesn't relate to the setting of VIEW.
+package： L<Egg>.
 
-=head2 static_root
+=head2 $e->flag
 
-B<Default:> [MYPROJECT]/htdocs
+The state of the flag set by the module option of Egg is returned.
 
-Please set the document route for static contents such as the image images and Style Sheets.
-Place Egg today doesn't use this setting.
-
-=head2 title
-
-B<Default:> none.
-
-Title of site.
-Place Egg today doesn't use this setting.
-
-=head2 accessor_names
-
-B<Default:> none.
-
-Please set the name of the accessor that wants to be made by the ARRAY reference.
-It comes to be able to use the made accessor to put C<$e-E<gt>stash> in and out.
-
-=head2 character_in
-
-B<Default:> euc
-
-Character-code used by internal processing.
-'utf8', 'euc', and 'sjis' can usually be specified.
-When create_encode method is customized, the code that can be specified is changed.
-
-=head2 content_language
-
-B<Default:> none.
-
-When you want to include Content-Language in responce header.
-
-=head2 content_type
-
-B<Default:> text/html
-
-Please set Content-Type output with the response header.
-For instance, to include the character set, it is specified 'text/html; charset=euc-jp' etc.
-
-=head2 default_template_extension
-
-B<Default:> .tmpl
-
-Please set the extension when the template name is generated from Dispatch with 
-the automatic operation.
-
-=head2 max_snip_deep
-
-B<Default:> 5
-
-It is an upper bound of the depth of the folder in the Path part of Request URL.
-
-=head2 redirect_page
-
-B<Default:> HASH reference.
-
-It is a setting concerning the page displayed with redirect_page method of Egg::Response.
-
-I<Each item of redirect_page>:
-
- body_style:    Style of body.
- div_style:     Style of the enclosure frame.
- h1_style:      Style of message display part.
- default_url:   Default at url unspecification.
- default_wait:  Default at wait unspecification.
- default_msg:   Default at message unspecification.
-
-=head2 MODEL
-
-It is a setting of the MODEL.
-
-=head2 VIEW
-
-It is a setting of the VIEW.
-
-=head1 METHODS
-
-It introduces only the method that seems to be used well here picking it up.
-
-Please see the document of each module for details.
-
-=head2 $e
-
-is [MY_PROJECT] object.
-B<Egg>, B<Engine::Engine>, and the B<plugin> have been succeeded to.
-
-=head2 $e->namespace
-
-The class name of e is returned.
-In a word, it is the same as ref($e).
-
-=head2 $e->config
-
-The configuration is returned by the HASH reference. 
+package： L<Egg>.
 
 =head2 $e->stash
 
-It is a preservation place to share data.
-Familiar in Catalyst.
+It is a preservation place of the data that wants to share by each component. 
 
-=head2 $e->flag([FLAG_NAME]);
+package： L<Egg>.
 
-Refer to the flag set to Egg.
+=head2 $g->global
 
-=head2 $e->snip
+A global HASH reference is returned.
 
-The ARRAY reference into which the request passing is divided by/is returned.
+It is not initialized until the server is reactivated when the value is put.
+The thing not anticipated that the content is changed in a word carelessly 
+might happen.
 
-http://dmainname/hoge/foo/ request for instance is developed as follows.
+* All keys to the defined value are handled as a capital letter.
 
- $e->snip->[0] ... hoge
- $e->snip->[1] ... foo
+* The defined value cannot already been redefined in a usual substitution type.
 
-In addition, http://dmainname/hoge/foo/banban.html is a long ages.
+package： L<Egg::GlobalHash>.
 
- $e->snip->[0] ... hoge
- $e->snip->[1] ... foo
- $e->snip->[2] ... banban.html
+=head2 $e->config
 
-The last value becomes a file name at the request to a clear file.
+The HASH reference of the configuration is returned. 
 
-Moreover, please process each value while doubting undef without fail.
-The error occurs in strict environment if it doesn't do so.
+package： L<Egg>.
 
- # This makes an error mostly.
- if ($e->snip->[1]=~/^hoge/) { .... }
- 
- # it is safe.
- my $dir= $e->snip->[1] || return $e->finished( NOT_FOUND );
- if ($dir=~/^hoge/) { .... }
- 
-   or
- 
- if ($e->snip->[1] && $e->snip->[1]=~/^hoge/) { ... }
+=head2 $e->debug_out ([MESSAGE])
 
-=head2 $e->dispatch  or $e->d
+[MESSAGE] is output to STDERR when debug mode is effective.
+If debug mode is invalid, nothing is done.
 
-Accessor to dispatch object.
-However, because sub-dispatch calls class directly, it is not possible to call it 
-from this accessor.
+package： L<Egg>.
 
-=head2 $e->request  or $e->req
+=head2 $e->log
 
-Accessor to B<Egg::Request> object.
+The object for the log output is returned.
 
-=over 4
+package： L<Egg::Debug::Log>.
 
-=item * $e->request->param([KEY], [VALUE])
+=head2 $e->path ([CONFIG_NAME], [PATH])
 
-Refer to the value of the request query.
-The value can be substituted by giving [VALUE].
+PATH that ties to $e->config->{[CONFIG_NAME]} [PATH] is returned.
 
-=item * $e->request->params  or $e->request->parameters;
+Please specify root, static, static_uri, etc, temp, cache, and lib, etc.
+ for [CONFIG_NAME].
 
-The mass of the request query is returned by the HASH reference.
+package： L<Egg>.
 
-=item * $e->request->cookie([KEY]);
+=head2 $e->action
 
-Refer to Cookie of the specified key.
-Please use value method when you take out the value that has processed the character-code.
-Please use plain_value when you take out the value in which nothing is processed as it is.
+The action that dispatch set is returned by the ARRAY reference.
 
- # The value that has processed the character-code is taken out.
- my $foo= $e->request->cookie('Foo');
- my $foo_value= $foo->value;
+package： L<Egg>.
 
- # An untouched value is taken out.
- my $foo_value= $foo->plain_value;
-   or
- my $foo_value= $foo->{value};
+=head2 my $req= $e->request  or $e->req
 
-This can refer to cookie.
-Please use B<$e-E<gt>response-E<gt>cookie> to set cookie.
+The object to process the request is restored.
 
-=item * $e->request->cookies
+package： L<Egg::Request>, L<Egg::Request::Apache>, L<Egg::Request::CGI>,
 
-The mass of the cookie is returned by the HASH reference.
+=head2 $req->params  or  $req->parameters
 
-=item * $e->request->remote_addr or $e->request->address
+The request query is returned by the HASH reference. 
 
-REMOTE_ADDR of the client is returned.
+package： L<Egg::Request>,
 
-Egg cannot judge the proxy of the frontend.
-This will return information wrong according to the environment.
-Please use 'mod_rpaf' etc. when you use the proxy for the frontend.
+=head2 $req->param ([FIELD_NAME])
 
-=item * $e->request->host_name
+The value of specified [FIELD_NAME] is returned.
+It is the same as $req->params->{[FIELD_NAME]}.
 
-The host name that the WEB application operates is returned.
-Deleted what returns to the port number etc.
+package： L<Egg::Request>,
 
-=item * $e->request->path
+=head2 $req->cookies
 
-The request path is returned.
-Without fail '/' enters for the head.
-Please note a little difference from 'Catalyst'.
+Cookie received from the client is returned by the HASH reference.
 
-This is convenient to bury the action value under E<lt>formE<gt> of the template.
+package： L<Egg::Request>,
 
-=back
+=head2 $req->cookie ([FIELD_NAME])
 
-=head2 $e->response or $e->res
+The character string of cookie of specified [FIELD_NAME] is returned.
+It is the same as $req->cookies->{[FIELD_NAME]}.
 
-Accessor to B<Egg::Response> object.
+package： L<Egg::Request>,
 
-=over 4
+=head2 $req->cookie_value ([FIELD_NAME])
 
-=item * $e->response->content_type([CONTENT_TYPE]);
+The value of cookie of specified [FIELD_NAME] is returned.
+It is the same as $req->cookies->{[FIELD_NAME]}->value.
 
-The output contents type is defined.
-$e->config->{content_type} is used in default.
+package： L<Egg::Request>,
 
-=item * $e->response->no_cache([1 or 0])
+=head2 $req->path
 
-Charm to prevent a browser of client from caching it.
+Passing the request place is returned.
 
-=item * $e->response->ok_cache([1 or 0])  or $e->set_cache([1 or 0])
+package： L<Egg::Request>,
 
-Charm to make a browser of client cache it.
+=head2 my $res= $e->response  or $e->res
 
-=item * $e->response->cookie([KEY], [HASH reference]);
+The object to process the response is restored.
 
-Cookie is set in the client.
-Please give the option to pass it to 'CGI::Cookie' by the HASH.
-First- must omit the item of 'CGI::Cookie' option.
+package： L<Egg::Response>,
 
- $e->response->cookie(
-   'foo'=> {
-     value  => 'banban',
-     expires=> '+1M',
-     domain => 'domain-name',
-     path   => '/hoge',
-     secure => 0,
-     }
-   );
+=head2 $res->body ([RESPONSE_BODY])
 
-=item * $e->response->cookies
+The content output to the client is set.
 
-The mass of data for set-cookie is returned by the HASH reference.
+The value is returned by the SCALAR reference.
 
- my $cookie= $e->response->cookies;
- $cookie->{foo}= {
-   value=> 'banban',
-   ...
-   ...
-   };
+package： L<Egg::Response>,
 
-=item * $e->response->redirect([URL], [STATUS]);
+=head2 $res->cookie ( [FIELD_NAME] => [HASH] )
 
-Forward is done to specified URL.
-The response status can be specified. Default is 302.
+Cookie to set it in the client is set.
 
-=item * $e->response->redirect_page([URL], [MESSAGE], [OPTION]);
+  $res->cookie( field_name=> {
+    value=> 'field_value',
+    ...
+    ...
+    } );
 
-When the screen is done in Forward, page contents are displayed once.
-The value that is made to the option and done is the same as 'redirect_page' of configuration.
+package： L<Egg::Response>, L<Egg::Response::TieCookie>
 
-=item * $e->response->body([CONTENT]);  or $e->response->output([CONTENT]);
+=head2 $res->redirect ( [LOCATION], [STATUS] )
 
-Contents that want to output are defined directly.
-When this is set, the processing of the VIEW side is canceled.
-This method maintains the value without fail by the SCALAR reference.
+The screen is forwarded to the place of [LOCATION].
 
- $e->response->body( "Hello, world!" );
- 
- my $body= $e->response->body;
- print $$body;
+[STATUS] is omissible.
 
-=back
+package： L<Egg::Response>,
 
-=head2 $e->encode
+=head2 my $d= $e->dispatch  or $e->d
 
-The object made from create_encode method is returned.
+The dispatch object is restored.
 
-If $e->encode is effective, the method for some character-code processing can be used.
+When the Egg object is received from the constructor directly, it is not 
+possible to use it until $e->prepare_component is called. 
 
-$e->utf8_conv,  $e->euc_conv,  $e->sjis_conv
+package： L<Egg::Dispatch>, L<Egg::Dispatch::Runmode>,
 
-=head2 $e->model([MODEL NAME]);
+=head2 $d->page_title
 
-The object of specified MODEL is returned.
+The value of label obtained by the matched action returns. 
+There is a value of $e->snip of the object as it is when label is not obtained.
 
-=head2 $e->view;
+package： L<Egg::Dispatch::Runmode>,
 
-The VIEW object is returned.
+=head2 $d->label ([NUMBER])
 
-=over 4
+The list of label obtained by the matched action returns.
 
-=item * $e->view->param([KEY], [VALUE]);
+When [NUM] is specified, label of the place is restored. 
 
-When the value is passed to the template engine such as HTML::Template that 
-evaluate param, it uses it.
+package： L<Egg::Dispatch::Runmode>,
 
-=item * $e->view->params;
+=head2 $d->mode_now ([NUMBER])
 
-The HASH reference that $e->view->param has treated is returned.
+The value for the parameter of a present action is returned.
 
-=back
+The subtracted value returns when [NUMBER] is given.
 
-=head2 $e->debug;
+* When mode_param is chiefly called, this value is needed.
 
-* Whether it operates by debug mode is checked.
+package： L<Egg::Dispatch::Runmode>,
 
-=head2 $e->template  and  $e->error;
+=head2 $e->filter ([FILTER_CONFIG])
 
-It is an accessor to $e->stash.
+ type: Plugin
+ name: Filter  or  Filter::EUC_JP
 
- $e->template('template.tt');
- 
- $e->error('error occurs.');
+The extra one is removed from the request query. 
 
-However, please use $e->dispatch->_template when you set the template from 'despatch_map'.
+package： L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
 
-It is $e->template and there is usually no problem from Sub-dispatch.
+=head2 my $form= $e->form ([VALIDATE_CONFIG])
 
- package [MYPROJECT]::D;
- 
- sub dispatch_map {
-   my($dispat, $e)= @_;
-   if (.... ) {
- 
-     # The error occurs in this.
-     return $e->template('index.tt');
- 
-     # If it is this, it is safe.
-     return $dispat->_template('index.tt');
- 
-     # This is also safe.
-     $e->template('index.tt');
-     return 0;
- 
-   # In a word, after setting the template, $dispat->_template returns 0.
-   }
- }
+ type: Plugin
+ name: FormValidator::Simple
 
-=head2 $e->finished([RESPONSE STATUS]);
+The validity of the request query is checked.
 
-It reports on the completion of processing.
-Some processing is canceled if set in the first half of processing.
-Please use the response status code when you set this.
-Please set 200 when you complete processing by the success.
-If it wants to cause the error, it is 500. And, 'Not Found' is 404. 
-If 500 is given, the second argument is evaluated further as an error message,
- and it is written in the log. The default of the message is 'Internal Error'.
+package： L<Egg::Plugin::FormValidator::Simple>,
 
-=head2 $e->escape_html([HTML_TEXT]);  or $e->encode_entities([HTML_TEXT]);
+=head2 my $upload= $e->request->upload ([UPLOAD_FIELD_NAME]);
 
-The HTML tag is invalidated.
+ type: Plugin
+ name: Upload
 
-=head2 $e->unescape_html([PLAIN_TEXT]);  or $e->decode_entities([PLAIN_TEXT]);
+A form object corresponding to the file upload is acquired. 
 
-The HTML tag where it is escaped is made effective.
+package： L<Egg::Plugin::Upload>,
 
-=head1 BUGS
+=head2 $e->fillin_ok ([BOOLEAN])
 
-When you find a bug, please email me (E<lt>mizunoE<64>bomcity.comE<gt>) with a light heart.
+ type: Plugin
+ name: FillInForm
+
+A form burial by FillInForm is permitted before contents are output.
+
+* Please note the competition with the plug-in considering it in reading 
+order when using it together with the plug-in that converts the character-code
+ of contents before it outputs it.
+
+package： L<Egg::Plugin::FillInForm>,
+
+=head2 $e->call_to ([DISPATCH_SHORT_NAME], [DEFAULT_METHOD])
+
+ type: Plugin
+ name: Dispatch::AnyCall
+
+The method of the action that the dispatch of specification corresponds is 
+presumed and called.
+
+The method to specify by [DEFAULT_METHOD] or $e->config->{template_default_name}
+ is called when failing in the call. 
+
+package： L<Egg::Plugin::Dispatch::AnyCall>,
+
+=head2 $e->yaml_load ([YAML_DATA])
+
+ type: Plugin
+ name: YAML
+
+The result of doing passed [YAML_DATA] in Perth is returned.
+
+package： L<Egg::Plugin::YAML>,
+
+=head2 $e->memcached
+
+ type: Plugin
+ name: Cache::Memcached
+
+The cash object to use 'memcached' is returned.
+
+package： L<Egg::Plugin::Cache::Memcached>,
+
+=head2 $e->dbh
+
+ type: Plugin
+ name: DBI::CommitOK
+
+The data base steering wheel is returned.
+
+package： L<Egg::Plugin::DBI::CommitOK>,
+
+=head2 $e->redirect_page ([LOCATION], [MESSAGE], [OPTION])
+
+ type: Plugin
+ name: Redirect::Page
+
+When the page is switched, an easy page is displayed. 
+
+package： L<Egg::Plugin::Redirect::Page>,
+
+=head2 $e->pod2html ([MODULE_NAME])
+
+ type: Plugin
+ name: Pod::HTML
+
+The HTML source of the POD document of the Perl module demanded by [MODULE_NAME]
+is returned.
+
+package： L<Egg::Plugin::Pod::HTML>,
 
 =head1 SEE ALSO
 
 Egg,
 L<Egg::Engine>,
-L<Egg::Model>,
-L<Egg::View>,
 L<Egg::Request>,
 L<Egg::Response>,
-L<Egg::D::Stand>,
-L<Egg::Debug::Base>,
-
-=head1 THANKS
-
-The code of Egg will partially refer to Catalyst.
+L<Egg::Engine>,
+L<Egg::Dispatch>,
+L<Egg::Helper>,
+L<Egg::Model>,
+L<Egg::View>,
 
 =head1 AUTHOR
 
@@ -676,5 +1050,3 @@ it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
-
-1;

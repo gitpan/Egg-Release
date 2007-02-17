@@ -3,13 +3,13 @@ package Egg::Plugin::YAML;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: YAML.pm 70 2006-12-21 16:40:31Z lushe $
+# $Id: YAML.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '0.02';
+our $VERSION= '0.05';
 
 sub yaml_load {
 	my $e= shift;
@@ -18,14 +18,7 @@ sub yaml_load {
 }
 sub loadrc {
 	my $e= shift;
-	my $rc= Egg::Plugin::YAML::Tool->loadrc || return;
-	while (my($key, $value)= each %$rc) {
-		if (! ref($value)
-		 && $key=~/^[A-Z][A-Za-z0-9_]+?_(?:REQUEST|DISPATCHER|MODEL|VIEW)$/) {
-			$ENV{$key}= $value;
-		}
-	}
-	return $e;
+	Egg::Plugin::YAML::Tool->loadrc || {};
 }
 
 package Egg::Plugin::YAML::Tool;
@@ -50,7 +43,6 @@ sub loadrc {
 
 __END__
 
-
 =head1 NAME
 
 Egg::Plugin::YAML - YAML can be treated.
@@ -69,9 +61,9 @@ my $config= __PACKAGE__->load('/path/to/config.yaml');
 
  Moreover, it is possible to misappropriate it also to other processing. 
 
-=head2 METHODS
+=head1 METHODS
 
-$e->load([YAML FILE PATH] or [YAML DATA]);
+=head2 load ([YAML FILE PATH] or [YAML DATA]);
 
 * YAML data when changing line is included in argument,
   It treats as a file name if not included.
@@ -79,7 +71,7 @@ $e->load([YAML FILE PATH] or [YAML DATA]);
 
 =head1 SEE ALSO
 
-L<YAML>, L<YAML::Syck>
+L<YAML>,
 
 =head1 AUTHOR
 

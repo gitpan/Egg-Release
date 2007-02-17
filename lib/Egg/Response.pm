@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 155 2007-01-30 18:05:05Z lushe $
+# $Id: Response.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -11,40 +11,28 @@ use UNIVERSAL::require;
 use HTTP::Headers;
 use Egg::Response::TieCookie;
 use CGI::Cookie;
-use base qw/Class::Accessor::Fast/;
+use base qw/Egg::Component/;
+no warnings 'redefine';
 
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.06';
+our $VERSION= '0.08';
 our $AUTOLOAD;
 
 *output   = \&body;
 *set_cache= \&ok_cache;
 
-sub setup {
-	my($class, $e)= @_;
-	my $red= $e->config->{redirect_page} ||= {};
-	$red->{body_style}   ||= q/background:#FFEDBB; text-align:center;/;
-	$red->{div_style}    ||= q/background:#FFF7ED; padding:10px; margin:50px; font:normal 12px sans-serif; border:#D15C24 solid 3px; text-align:left;/;
-	$red->{h1_style}     ||= q/font:bold 20px sans-serif; margin:0px; margin-left:0px;/;
-	$red->{default_url}  ||= '/';
-	$red->{default_wait} ||= 0;
-	$red->{top_location} ||= 0;
-	$red->{default_msg}  ||= 'Processing was completed.';
-}
 sub new {
-	my($class, $e)= @_;
-	my $headers= HTTP::Headers->new;
-	$e->config->{content_language}
-	  and $headers->content_language($e->config->{content_language});
-	bless {
-	  e => $e,
-	  body=> "",
- 	  status=> 200,
-	  headers => $headers,
-	  content_type=> ($e->config->{content_type} || 'text/html'),
-	  }, $class;
+	my $res = shift->SUPER::new(@_);
+	my $conf= $res->e;
+	$res->{headers}= HTTP::Headers->new;
+	$res->{headers}->content_language
+	  ($conf->{content_language}) if $conf->{content_language};
+	$res->{body}  = "";
+	$res->{status}= 0;
+	$res->content_type( $conf->{content_type} || 'text/html' );
+	$res;
 }
 sub body {
 	my $res= shift;
@@ -130,8 +118,7 @@ sub cookies {
 	$res->{cookies} ||= do {
 		$res->{cookies_ok}= 1;
 		my %cookies;
-		my $conv= $res->{e}->config->{character_in}. '_conv';
-		tie %cookies, 'Egg::Response::TieCookie', sub { $res->{e}->$conv(@_) };
+		tie %cookies, 'Egg::Response::TieCookie', sub { ${$_[0]} };
 		\%cookies;
 	  };
 }
@@ -147,51 +134,6 @@ sub redirect {
 	$res->{e}->template(0);
 	$res->location($location);
 	$res->status($status);
-}
-sub redirect_page {
-	my $res  = shift;
-	my $conf = $res->{e}->config;
-	my $rcf  = $conf->{redirect_page};
-	my $url  = shift || $rcf->{default_url};
-	my $msg  = shift || $rcf->{default_msg};
-	my $attr = shift || {};
-	my $wait = defined($attr->{wait}) ? $attr->{wait}: $rcf->{default_wait};
-	my $popup= $attr->{alert} ? " window.onload= alert('$msg');": "";
-	my $onload= $attr->{onload_func} ? qq{ onload="$attr->{onload_func}"}: "";
-	my $body_style= $attr->{body_style} || $rcf->{body_style};
-	my $div_style = $attr->{div_style}  || $rcf->{div_style};
-	my $h1_style  = $attr->{h1_style}   || $rcf->{h1_style};
-	my $clang= $res->headers->{'content-language'} || 'en';
-	my $ctype= $res->content_type($conf->{content_type} || 'text/html');
-	$res->status(200);
-
-## Thank you kurt.
-	$res->body(<<END_OF_HTML);
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="$clang">
-<head>
-<meta http-equiv="content-language" content="$clang" />
-<meta http-equiv="Content-Type" content="$ctype" />
-<meta http-equiv="Content-Style-Type" content="text/css" />
-<meta http-equiv="refresh" content="$wait;url=$url" />
-<script type="text/javascript"><!-- //
-$popup
-// --></script>
-<style type="text/css">
-body { $body_style }
-div  { $div_style }
-h1   { $h1_style }
-</style>
-</head>
-<body$onload>
-<div>
-<h1>$msg</h1>
-<a href="$url">- Please click here when forwarding fails...</a>
-</div>
-</body>
-</html>
-END_OF_HTML
 }
 sub result {
 	my($res)= @_;
@@ -213,7 +155,6 @@ sub DESTROY {
 1;
 
 __END__
-
 
 =head1 NAME
 
@@ -297,40 +238,6 @@ All set cookie is canceled.
 Screen is forward to passed URL.
 
 Status code can be set by the second argument. default is 302.
-
-=head2 $response->redirect_page([URL], [MESSAGE], [OPTION]);
-
-Screen is output and when changing, the fixed form contents are output once.
-
-URL and message and option in argument.
-Please pass the option by HASH reference.
-Following values can be specified for option. 
-
- - wait        = Time until changing the screen every second. default is 0
- - alert       = Message is output with alert of JAVA script.
- - onload_func = <body onload="..."> JAVA script that includes.
- - body_style  = style of <body> is defined.
- - div_style   = style of container is defined.
- - h1_style    = background of message and style of frame line are defined.
-
-Configuration can do default.
-
- In the name of key, it is redirect_page and the content is HAHS reference.
- - default_url = Default when URL is not passed.
- - default_msg = Default when message is not passed.
- - default_wait= Time until changing the screen every second. default is 0
- - body_style, div_style, h1_style, etc.
-
-Setting example.
-
- redirect_page=> {
-   default_url => '/',
-   default_msg => 'Please wait.',
-   default_wait=> 1,
-   body_style  => 'background:#FFEDBB; text-align:center;',
-   div_style   => 'font-size:12px; border:#D15C24 solid 3px;',
-   h1_style    => 'font:bold 20px sans-serif;',
-   },
 
 =head2 $response->status([status code]);
 

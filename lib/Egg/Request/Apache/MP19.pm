@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP19;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP19.pm 56 2006-12-18 12:25:28Z lushe $
+# $Id: MP19.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -42,7 +42,6 @@ sub result_status {
 1;
 
 __END__
-
 
 =head1 NAME
 

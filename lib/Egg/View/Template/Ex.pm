@@ -3,7 +3,7 @@ package Egg::View::Template::Ex;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Ex.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Ex.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -12,10 +12,6 @@ use HTML::Template::Ex;
 
 our $VERSION= '0.01';
 
-sub setup {
-	my($class, $e, $config)= @_;
-	$class->SUPER::setup($class, $e, $config, 'view_template');
-}
 sub createTemplate {
 	my($view, $conf, $e)= @_;
 	HTML::Template::Ex->new($e, $conf);

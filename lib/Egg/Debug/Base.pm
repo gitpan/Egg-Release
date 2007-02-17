@@ -3,16 +3,19 @@ package Egg::Debug::Base;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Base.pm 52 2006-12-16 04:58:42Z lushe $
+# $Id: Base.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
+use Carp qw/confess/;
 use Egg::Release;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub debug_out {
-	my($class, $e, $msg)= @_;
+	my $class= shift;
+	my $e    = shift || confess q/I want Egg object./;
+	my $msg  = shift || confess q/The message is not specified./;
 	$msg=~s/[\r\n]+$//;
 	print STDERR "$msg\n";
 }
@@ -20,7 +23,7 @@ sub disp_error {
 	my $class= shift;
 	my $e    = shift;
 	my $err  = shift || return 0;
-	$err=~s{(?:\r?\n|\r)} [<br />]sg;
+	$err=~s{(?:\r?\n|\r)} [<br />\n]sg;
 	my $res= $e->response;
 	my $eggver= "Egg::Release v". Egg::Release->VERSION;
 	my $myname= $e->namespace. ' v'. $e->VERSION;

@@ -3,24 +3,22 @@ package Egg::Model::DBI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: DBI.pm 94 2007-01-11 05:22:07Z lushe $
+# $Id: DBI.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
-use Error;
 use base qw/Egg::Model/;
 use DBI;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 __PACKAGE__->mk_accessors( qw/pid tid db_handler/ );
 
 sub setup {
-	my($class, $e)= shift->SUPER::setup(@_);
-	my $conf= $e->config->{model_dbi} ||= {};
-	$conf->{dsn}  || throw Error::Simple q/Please setup DBI-> 'dsn'./;
-	$conf->{user} || throw Error::Simple q/Please setup DBI-> 'user'./;
-	($class, @_);
+	my($class, $e, $conf)= @_;
+	$conf->{dsn}  || Egg::Error->throw("Please setup DBI-> 'dsn'.");
+	$conf->{user} || Egg::Error->throw("Please setup DBI-> 'user'.");
+	@_;
 }
 sub dbh {
 	my($dbi)= @_;
@@ -35,7 +33,7 @@ sub dbh {
 }
 sub connect {
 	my($dbi)= @_;
-	my $conf= $dbi->e->config->{model_dbi};
+	my $conf= $dbi->config;
 	my $dbh;
 	eval{
 		$dbh= DBI->connect(
@@ -46,7 +44,7 @@ sub connect {
 		  );
 	  };
 	if (my $err= $@) {
-		throw Error::Simple "Database Connect NG!! dsn: $conf->{dsn} at $err";
+		Egg::Error->throw("Database Connect NG!! dsn: $conf->{dsn} at $err");
 	} else {
 		$dbi->e->debug_out("# + Database Connect OK!! dsn: $conf->{dsn}");
 	}

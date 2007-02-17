@@ -3,22 +3,24 @@ package Egg::Request::Apache;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Apache.pm 56 2006-12-18 12:25:28Z lushe $
+# $Id: Apache.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
+no warnings 'redefine';
 
-our $VERSION= '0.01';
+our $VERSION= '0.03';
 
+sub setup {
+	my($class, $e)= @_;
+	my $base= $e->namespace;
+	no strict 'refs';  ## no critic
+	*{"Egg::handler"}= sub : method { shift; $base->run(@_) };
+}
 sub prepare_params {
-	my($req, $icode)= @_;
-	my($e, $r)= ($req->e, $req->r);
-	for my $key ($r->param) {
-		my $value= $r->param->{$key} || next;
-		$req->{parameters}{$key}= ref($value) eq 'ARRAY'
-		 ? [ map{$e->$icode(\$_)}@$value ]: $e->$icode(\$value);
-	}
+	my($req)= @_; my $r= $req->r;
+	$req->{parameters}{$_}= $r->param->{$_} || "" for $r->param;
 }
 sub output {
 	my $req   = shift;
@@ -32,7 +34,6 @@ sub output {
 1;
 
 __END__
-
 
 =head1 NAME
 

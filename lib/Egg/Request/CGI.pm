@@ -3,29 +3,26 @@ package Egg::Request::CGI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: CGI.pm 56 2006-12-18 12:25:28Z lushe $
+# $Id: CGI.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
+no warnings 'redefine';
 
-our $VERSION= '0.03';
+our $VERSION= '0.06';
 
 sub new {
-	my $req = shift->SUPER::new(@_);
-	my $conf= $req->e->config->{request} || {};
-	$req->r( Egg::Request::CGI::base->new($req->r, $conf) );
+	my $req= shift->SUPER::new(@_);
+	$req->r(
+	  Egg::Request::CGI::base->new
+	    ($req->r, ($req->e->config->{request} || {}) )
+	  );
 	$req;
 }
 sub prepare_params {
-	my($req, $icode)= @_;
-	my $e= $req->e;
-	my $params= $req->r->Vars;
-	while (my($key, $value)= each %$params) {
-		next unless $value;
-		$req->{parameters}{$key}= ref($value) eq 'ARRAY'
-		 ? [map{$e->$icode(\$_)}@$value]: $e->$icode(\$value);
-	}
+	my($req)= @_;
+	$req->{parameters}= $req->r->Vars;
 }
 sub output {
 	my $req   = shift;
@@ -50,7 +47,7 @@ sub new {
 	$CGI::DISABLE_UPLOADS= $conf->{DISABLE_UPLOADS}
 	  if $conf->{DISABLE_UPLOADS};
 
-	$ENV{TMPDIR}= $conf->{TEMP_DIR}
+	$CGITempFile::TMPDIRECTORY= $conf->{TEMP_DIR}
 	  if $conf->{TEMP_DIR};
 
 	$Egg::CRLF= $CGI::CRLF;
@@ -58,6 +55,8 @@ sub new {
 }
 
 1;
+
+__END__
 
 =head1 NAME
 

@@ -3,7 +3,7 @@ package Egg::Debug::SimpleBench;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: SimpleBench.pm 99 2007-01-15 06:33:14Z lushe $
+# $Id: SimpleBench.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -39,7 +39,6 @@ sub out {
 1;
 
 __END__
-
 
 =head1 NAME
 

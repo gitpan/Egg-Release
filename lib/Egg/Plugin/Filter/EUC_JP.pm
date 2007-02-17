@@ -3,11 +3,10 @@ package Egg::Plugin::Filter::EUC_JP;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: EUC_JP.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: EUC_JP.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
-use NEXT;
 use constant EGG=> 0;
 use constant VAL=> 1;
 use constant ARG=> 2;
@@ -42,11 +41,10 @@ sub setup {
 	   },
 	 );
 	@Egg::Plugin::Filter::filters{keys %filters}= values %filters;
-	$e->NEXT::setup;
+	$e->next::method;
 }
 
 1;
-
 
 __END__
 
@@ -99,7 +97,8 @@ It processes like j_strip and it replaces it with the em-size space.
 
 =head1 SEE ALSO
 
-L<Egg::Plugin::Filter>
+L<Egg::Plugin::Filter>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 

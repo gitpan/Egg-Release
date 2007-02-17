@@ -1,15 +1,15 @@
 package Egg::View;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
+# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: View.pm 99 2007-01-15 06:33:14Z lushe $
+# $Id: View.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
-use base qw/Egg::AnyBase/;
+use base qw/Egg::Component/;
 
-our $VERSION= '0.05';
+our $VERSION= '0.07';
 
 our %PARAMS= (
   );
@@ -22,14 +22,16 @@ sub new {
 }
 sub template_file {
 	my($view, $e)= @_;
-	if (my $template= $e->template) {
-		$e->debug_out("# + template file: $template");
-		return $template;
-	} else {
-		$e->debug and $e->log->debug( q/I want you to define $e->template./ );
-		$e->finished(404);
-		undef;
-	}
+	my $template= $e->template || do {
+		my $path= join('/', @{$e->action}) || do {
+			$e->log->debug( q/I want you to define $e->template./ );
+			$e->finished(404);
+			return(undef);
+		  };
+		$path. $e->config->{template_extention};
+	  };
+	$e->debug_out("# + template file: $template");
+	$template;
 }
 
 1;
@@ -84,17 +86,7 @@ The parameter can be set up beforehand.
 
 =head1 METHODS
 
-=head2 $view->name;
-
-Class name when calling it is returned.
-
-=head2 $view->params;
-
-The HASH reference of the parameter is returned.
-
-=head2 $view->param([KEY NAME], [VALUE]);
-
-This does operation similar to the param method of the appearance often.
+This module has succeeded to L<Egg::Component>.
 
 =head2 $view->template_file([Egg Object]);
 
@@ -104,7 +96,8 @@ When the template is not set, $e->finished(404) is returned.
 
 =head1 SEE ALSO
 
-L<Egg::Release>, L<Egg::Config>
+L<Egg::Component>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
@@ -112,7 +105,7 @@ Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

@@ -3,18 +3,18 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 155 2007-01-30 18:05:05Z lushe $
+# $Id: Request.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
-use Error;
 use UNIVERSAL::require;
-use base qw/Egg::AnyBase/;
+use base qw/Egg::Component/;
 use CGI::Cookie;
+no warnings 'redefine';
 
 __PACKAGE__->mk_accessors( qw/r debug path/ );
 
-our $VERSION= '0.07';
+our $VERSION= '0.10';
 
 *address= \&remote_addr;
 *port   = \&server_port;
@@ -22,7 +22,6 @@ our $VERSION= '0.07';
 
 {
 	no strict 'refs';  ## no critic
-	no warnings 'redefine';
 	for my $method (qw/post get/) {
 		*{__PACKAGE__."::is_$method"}= sub {
 			$_[0]->{"is_$method"} ||= $_[0]->method=~/^$method/i ? 1: 0;
@@ -30,9 +29,15 @@ our $VERSION= '0.07';
 	}
   };
 
+sub setup {
+	my($class, $e)= @_;
+	my $base= $e->namespace;
+	no strict 'refs';  ## no critic
+	*{"Egg::handler"}= sub { shift; $base->run(@_) };
+}
 sub new {
 	my $class= shift;
-	my $e= shift || throw Error::Simple q/I want Egg object./;
+	my $e= shift || Egg::Error->throw('I want Egg object.');
 	my $r= shift || undef;
 	my $req= $class->SUPER::new($e);
 	$req->{r} = $r;
@@ -49,6 +54,12 @@ sub cookie {
 sub cookies {
 	my($req)= @_;
 	$req->{cookies} ||= do { fetch CGI::Cookie || {} };
+}
+sub cookie_value {
+	my $req= shift;
+	my $key= shift || return(undef);
+	my $cookie= $req->cookies->{$key} || return(undef);
+	$cookie->value || "";
 }
 sub prepare_params {
 	my($req)= @_;
@@ -70,15 +81,17 @@ sub prepare {
 	$path=~m{^/} ? do { $req->path($path); $path=~s{^/} [] }
 	             : do { $req->path("/$path") };
 
-	$req->create_snip($path);
-	$req->prepare_params("$config->{character_in}_conv");
+	$req->create_snip($path, $config->{max_snip_deep}) || return 0;
+	$req->prepare_params;
 	1;
 }
 sub create_snip {
 	my $req = shift;
 	my $path= shift || "";
+	my $max = shift || return 0;
 	$path=~s#\s+##g; $path=~s#^/+##; $path=~s#/+$##; $path=~s#//+#/#g;
-	$req->e->snip([split /\//, $path]);
+	my @snip= split /\//, $path;
+	scalar(@snip)> $max ? 0: $req->e->snip(\@snip);
 }
 sub header {
 	my $req = shift;
@@ -228,6 +241,14 @@ In addition, when the value is taken out, value is used.
 =head2 $request->cookies;
 
 HASH reference of Cookie is returned.
+
+=head2 $request->cookie_value ([COOKIE NAME])
+
+The cookie is received, and the content of the specified key is returned.
+
+  if (my $value= $request->cookie_value('foo')) {
+    ... It succeeded in the receipt.
+  }
 
 =head2 $request->header([NAME]);
 

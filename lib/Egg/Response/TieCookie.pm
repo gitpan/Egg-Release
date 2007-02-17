@@ -3,16 +3,16 @@ package Egg::Response::TieCookie;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: TieCookie.pm 90 2007-01-04 01:52:10Z lushe $
+# $Id: TieCookie.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub TIEHASH {
 	my($class, $encode_func)= @_;
 	my %cookie;
-	bless { cookie=> \%cookie, encode=> $encode_func }, shift;
+	bless { cookie=> \%cookie, encode=> $encode_func }, $class;
 }
 sub FETCH {
 	$_[0]->{cookie}{$_[1]} || undef;
@@ -23,7 +23,7 @@ sub STORE {
 	my $hash= shift;
 	if (ref($hash) eq 'HASH') {
 		my %store= %$hash;
-		$store{__encode} = $self->{encode};
+		$store{__encode}= $self->{encode};
 		$store{name} ||= $key;
 		$self->{cookie}{$key}=
 		  Egg::Response::TieCookie::Params->new(\%store);
@@ -73,7 +73,6 @@ sub plain_value { $_[0]->{value} }
 1;
 
 __END__
-
 
 =head1 NAME
 

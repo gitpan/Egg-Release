@@ -3,7 +3,7 @@ package Egg::Debug::Log;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Log.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Log.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;

@@ -1,37 +1,29 @@
 package Egg::Engine;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
+# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 155 2007-01-30 18:05:05Z lushe $
+# $Id: Engine.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
-use Error;
-use NEXT;
-use URI::Escape;
+use Egg::Exception;
 use HTML::Entities;
+use URI::Escape;
 
-our $VERSION= '0.07';
+our $VERSION= '0.10';
 
-sub prepare  { @_ }
-sub action   { @_ }
-sub finalize { @_ }
-sub compress { @_ }
-sub finalize_error { @_ }
-sub create_encode  { Egg::DummyEncode->new }
+*escape_html  = \&encode_entities;
+*eHTML        = \&encode_entities;
+*unescape_html= \&decode_entities;
+*ueHTML       = \&decode_entities;
+*escape_uri   = \&uri_escape;
+*eURI         = \&uri_escape;
+*unescape_uri = \&uri_unescape;
+*ueURI        = \&uri_unescape;
 
 {
-	*escape_html  = \&encode_entities;
-	*eHTML        = \&encode_entities;
-	*unescape_html= \&decode_entities;
-	*ueHTML       = \&decode_entities;
-	*escape_uri   = \&uri_escape;
-	*eURI         = \&uri_escape;
-	*unescape_uri = \&uri_unescape;
-	*ueURI        = \&uri_unescape;
-
 	no warnings 'redefine';
 	sub encode_entities {
 		shift; my $args= $_[1] || q/\\\<>&\"\'/;
@@ -47,107 +39,114 @@ sub create_encode  { Egg::DummyEncode->new }
 	  { shift; &URI::Escape::uri_escape_utf8(@_) }
 	sub uri_unescape
 	  { shift; &URI::Escape::uri_unescape(@_) }
-	sub setup {
-		my($egg)= @_;
-		no strict 'refs';  ## no critic
-		*{__PACKAGE__.'::_run'}= $egg->debug ? sub {
-			my($e)= @_;
-			Egg::Debug::SimpleBench->require or throw Error::Simple $@;
-			my $bench= Egg::Debug::SimpleBench->new;
-			my $Name = $e->namespace. ' v'. $e->VERSION;
-			my %list;
-			for my $cname (qw/model view/) {
-				my $pname= uc($cname);
-				$list{$cname}= join ', ', map{
-					my $pkg= $e->flags->{"$pname\_CLASS"}{$_};
-					"$_ v". $pkg->VERSION;
-				  } @{$e->flags->{$pname}};
-			}
-			$bench->settime;
-			$e->request->prepare($e);
-			$e->debug_out(
-			  "\n# << $Name start. --------------\n"
-			  . "# + request-path : ". $e->request->path. "\n"
-			  . "# + load plugins : ". (join ', ', @{$e->plugins}). "\n"
-			  . "# + request-class: ". $e->flag('R_CLASS'). "\n"
-			  . "# + dispatch-clas: ". $e->flag('D_CLASS'). "\n"
-			  . "# + model-class  : $list{model}\n"
-			  . "# + view-class   : $list{view}"
-			  );
-			$e->request->param and do {
-				my $params= $e->request->params;
-				$e->debug_out(
-				    "# + in request querys:\n"
-				  . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
-				  . "\n# + --------------------\n"
-				  );
-			 };
-			$e->step1; $bench->stock('step1:');
-			$e->step2; $bench->stock('step2:');
-			$e->step3; $bench->stock('step3:');
-			$bench->out;
-		  }: sub {
-			my($e)= @_;
-			$e->request->prepare($e);
-			$e->step1;
-			$e->step2;
-			$e->step3;
-		  };
-		@_;
-	}
   };
 
-sub run {
+sub page_title {
 	my($e)= @_;
-	eval { $e->_run };
-	if (my $err= $@) {
+	$e->dispatch->page_title || $e->config->{title} || "";
+}
+sub create_dispatch {
+	my($e)= @_;
+	my $dispatch= $e->dispatch_calss;
+	$dispatch->_new($e);
+}
+sub prepare_component {
+	my($e)= @_;
+	$e->request->prepare || return $e->finished(403);  ## FORBIDDEN.
+	$e->prepare_model;
+	$e->prepare_view;
+	$e->prepare;
+	$e->dispatch( $e->create_dispatch );
+}
+sub prepare_model {
+	my($e)= @_;
+	for (@{$e->models}) {
+		my $pkg= $e->model_class->{$_} || next;
+		$e->{model}{$_}= $pkg->prepare($e) || next;
+	}
+}
+sub prepare_view {
+	my($e)= @_;
+	for (@{$e->views}) {
+		my $pkg= $e->view_class->{$_} || next;
+		$e->{view}{$_}= $pkg->prepare($e) || next;
+	}
+}
+sub run {
+	local $SIG{__DIE__}= sub { Egg::Error->throw(@_) };
+	my $class= shift;
+	my $e= $class->new(@_);
+	eval { $e->start_engine };
+	if ($@) {
+		my $error;
+		if (my $class= ref($@)) {
+			$error= $class eq 'Egg::Error' ? $@->stacktrace: $@;
+		} else {
+			$error= $@;
+		}
 		$e->finalize_error;
 		my $comp= $e->template || '*';
-		$e->log->notes("$comp: $err");
-		$e->disp_error("$comp: $err");
+		$e->log->notes("$comp: $error");
+		$e->disp_error("$comp: $error");
 	}
 	$e->response->result;
 }
-sub step1 {
+sub startup   { @_ }
+sub setup     { @_ }
+sub prepare   { @_ }
+sub execute   { @_ }
+sub finalize  { @_ }
+sub finalize_error { @_ }
+
+sub view  { Egg::Error->throw('The method is not prepared.') }
+sub model { Egg::Error->throw('The method is not prepared.') }
+sub start_engine { Egg::Error->throw('The method is not prepared.') }
+
+sub debug_report {
 	my($e)= @_;
-	$e->prepare;
-	$e->create_dispatch;
-	$e->finished || do {
-		$e->dispatch->_start;
-		$e->dispatch->_run;
+	my $Name= $e->namespace. '-'. $e->VERSION;
+	my %list;
+	for my $type (qw/model view/) {
+		my $ucName= uc($type);
+		$list{$type}= join ', ', map{
+			my $pkg= $e->global->{"$ucName\_CLASS"}{$_};
+			my $version= $pkg->VERSION || "";
+			$_. ($version ? "-$version": "");
+		  } @{$e->global->{"$ucName\_LIST"}};
+	}
+	my $report= 
+	 "\n# << $Name start. --------------\n"
+	 . "# + request-path : ". $e->request->path. "\n"
+	 . "# + othre-class  : Req( " . $e->request_class . " ),"
+	 .                   " Res( " . $e->response_class. " ),"
+	 .                   " D( "   . $e->dispatch_calss. " )\n"
+	 . "# + view-class   : $list{view}\n"
+	 . "# + model-class  : $list{model}\n"
+	 . "# + load-plugins : ". (join ', ', @{$e->plugins}). "\n";
+	$e->request->param and do {
+		my $params= $e->request->params;
+		$report.= 
+		   "# + in request querys:\n"
+		 . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
+		 . "\n# + --------------------\n";
 	  };
-	$e;
+	$report;
 }
-sub step2 {
-	my($e)= @_;
-	$e->finished || do {
-		$e->action;
-		$e->response->body || $e->view->output($e);
-		$e->dispatch->_finish;
-	  };
-	$e;
-}
-sub step3 {
-	my($e)= @_;
-	$e->response->content_type || $e->response
-	  -> content_type($e->config->{content_type} || 'text/html');
-	$e->finalize;
-	$e->output_content;
-	$e;
+sub debug_report_output {
+	$_[0]->debug_out( $_[0]->debug_report );
 }
 sub output_content {
-	my $e= shift;
-	my $res= $e->response;
+	my($e)= @_;
 	return if $e->finished;
-	if ($res->status=~/^(30[1237])/) {
+	my $res= $e->response;
+	if (my($status)= $res->status=~/^(30[1237])/) {
 		my $location= $res->location
 		  || return $e->finished(500, q/Location is not specified./);
 		my $header= $res->cookies_ok ? $res->create_cookies: "";
-		$header.= "Status: $1 Found$Egg::CRLF"
+		$header.= "Status: $status Found$Egg::CRLF"
 		       .  "Location: $location$Egg::CRLF$Egg::CRLF";
 		$e->request->output(\$header);
 	} else {
-		$e->compress($res->body);
 		my $body= $res->body;
 		$e->request->output($res->create_header($body), $body);
 	}
@@ -155,58 +154,46 @@ sub output_content {
 	return $e->finished(200) unless my $err= $@;
 	return $e->finished(500, $err);
 }
-sub create_dispatch {
-	my($e)= @_;
-	my $dispatch= $e->flag('D_CLASS')
-	  || throw Error::Simple q/Class of dispatch is not understood./;
-	$e->{dispatch}= $dispatch->_new($e);
-}
-sub plugin {
+sub finished {
 	my $e= shift;
-	my $accessor= shift || 0;
-	my $plugin= "Egg::Plugin::$_[0]";
-	$plugin->require or throw Error::Simple $@;
-	$plugin->prepare;
-}
-sub default_model { 0 }
-sub default_view {
-	my $e= shift;
-	if (my $name= shift) {
-		$e->flags->{VIEW_CLASS}{$name} || return 0;
-		$e->{default_view}= $name;
+	if (@_) {
+		if (my $status= shift) {
+			$status>= 500 and $e->log->notes(@_);
+			$e->response->status($status);
+			$e->{finished}= 1;
+		} else {
+			$e->response->status(0);
+			$e->{finished}= 0;
+		}
 	}
-	$e->{default_view} ||= $e->flags->{VIEW}->[0] || return 0;
+	$e->{finished};
 }
 sub log {
 	$_[0]->{__egg_log} ||= do {
-		Egg::Debug::Log->require or die $@;
+		Egg::Debug::Log->require or Egg::Error->throw($@);
 		Egg::Debug::Log->new($_[0]);
 	 };
 }
+sub error {
+	my $e= shift;
+	if ($_[0]) {
+		my $error= ref($_[0]) eq 'ARRAY' ? $_[0]: [$_[0]];
+		Egg::Error->throw(@$error) unless ref($e);
+		$e->{error} ? do { push @{$e->{error}}, $error }
+		            : do { $e->{error}= $error };
+	} elsif (defined($_[0])) {
+		$e->{error}= undef;
+	}
+	$e->{error} || 0;
+}
 sub disp_error {
-	Egg::Debug::Base->require or throw Error::Simple $@;
+	Egg::Debug::Base->require or Egg::Error->throw($@);
 	Egg::Debug::Base->disp_error(@_);
 }
 sub debug_out {
-	Egg::Debug::Base->require or throw Error::Simple $@;
+	Egg::Debug::Base->require or Egg::Error->throw($@);
 	Egg::Debug::Base->debug_out(@_);
 }
-
-package Egg::DummyEncode;
-use strict;
-sub new {
-	my $class= shift;
-	my $self = bless {}, $class;
-	@_> 0 ? $self->set(@_): $self;
-}
-sub set {
-	my $self= shift;
-	$self->{str}= @_> 0 ? (ref($_[0]) ? $_[0]: \$_[0]): \"";
-	$self;
-}
-sub euc  { $_[0]->{str} ? ${$_[0]->{str}}: "" }
-sub sjis { $_[0]->{str} ? ${$_[0]->{str}}: "" }
-sub utf8 { $_[0]->{str} ? ${$_[0]->{str}}: "" }
 
 1;
 
@@ -214,158 +201,151 @@ __END__
 
 =head1 NAME
 
-Egg::Engine - It assists in basic operation of Egg.
+Egg::Engine - Base class for Egg::Engin::*.
+
+=head1 DESCRIPTION
+
+This module is a base class for the engine.
+
+Anything cannot be done in the unit.
 
 =head1 METHODS
 
-=head2 $e->run
+=head2 prepare_component
 
-A series of processing is done until the WEB request is received and
- contents are output.
+Prior of each component is prepared.
 
-=head2 $e->step1
+The following thing is concretely done.
 
-It is processing of the first stage that is called from $e->run.
+  1 ... Call of $e->request->prepare
+  2 ... prepare of effective each MODEL is called. 
+  3 ... prepare of effective each VIEW is called. 
+  4 ... prepare of each plugin is called.
+  5 ... Generation of dispatch object.
 
-=head3 $e->prepare
+This method will be called from Egg::Engine::*.
 
-'prepare' method of each B<plugin> is sequentially called.
+=head2 run
 
-=head3 $e->create_dispatch
+It processes it to the WEB request.
 
-It is initial processing of dispatch.
+The following things are concretely done.
 
-=head3 $e->dispatch->_start  and $e->dispatch->_run
+  1 ... The project object is generated. 
+  2 ... start_engine of Egg::Engine::* is called.
+  3 ... response->result is returned and processing is completed.
 
-'_start' method and '_run' method of dispatch are continuously called.
-However, if $e->finished is ture, these processing is canceled.
+Processing moves as follows when the error occurs.
 
-=head2 $e->step2
+  1 ... Acquisition of error message
+  2 ... finalize_error is called. 
+  3 ... The log is output.
+  4 ... Making of error screen.
+  5 ... response->result is returned and processing is completed.
 
-It is processing of the second stage that is called from $e->run.
-However, if $e->finished is true, all processing here is canceled.
+=head2 finished ([RESPONSE_CODE])
 
-=head3 $e->action
+The end of processing is told.
 
-'action' method of the plugin is called.
+As a result, some processing is canceled. 
 
-=head3 $e->view->output
+Please give the argument the HTTP response code.
 
-The template is evaluated and contents for the output are generated.
-However, if $e->response->body has defined it, processing here has already
- been canceled. 
+* The response code is set in response->status. 
 
-=head3 $e->dispatch->_finish
+* 0 Resets response->status when giving it.
 
-If $e->response->body is undefined, '_finish' method of dispatch is called.
-The processing of dispatch are the completion of all by this.
+  $e->finished(404);  ## NOT_FOUND
 
-=head2 $e->step3
+* It is good to use L<Egg::Const> if the response code is not understood easily.
 
-They are the last processing most that is called from $e->run.
+  use Egg::Const;
+  
+  $e->finished( NOT_FOUND );
 
-If $e->response->content_type is first of all undefined in the processing
- to here, $e->config->{content_type} is set.
+=head2 disp_error ([ERROR_MESSAGE])
 
-=head3 $e->finalize
+The error screen is made. 
 
-'_finalize' method of each plugin is sequentially called.
+=head2 debug_out ([MESSAGE])
 
-=head3 $e->output_content
+The message is output to STDERR. 
 
-If $e->finished is true, all processing here is canceled.
+When debug mode is turning off, nothing is done.
 
-$e->compress( $e->response->body ) is called before contents are output.
+=head2 output_content
 
-And, contents are output to the client.
+response->The data output to body is output to the client.
 
-=head2 $e->encode_entities([STR], [UNSAFE]);
+* If finished is true, it has already canceled.
 
-Alias of this method. : escape_html , eHTML
+* If redirect is true, processing is divided.
+  The content here might change in the future.
+  However, I will have interchangeability.
 
-HTML is encoded and the result is returned.
+=head2 log
 
-The argument follows L<HTML::Entities>.
+The log object is returned.
 
-=head2 $e->decode_entities([STR], [UNSAFE]);
+=head2 error ([ERROR_MESSAGE])
 
-Alias of this method. : unescape_html , ueHTML
+The error message is accepted.
 
-HTML is decoded and the result is returned.
+The error defined to omit messaging is returned by the ARRAY reference.
 
-The argument follows L<HTML::Entities>.
+0 returns in case of undefined.
 
-=head2 $e->encode_entities_numeric([STR], [UNSAFE]);
+=head2 encode_entities ([HTML_TEXT], [ARGS])
 
-HTML encodes the numerical value.
+It escapes in the HTML tag.
 
-The argument follows L<HTML::Entities>.
+* L<HTML::Entities> is used.
 
-=head2 $e->uri_escape([STR], [UNSAFE]);
+Ailias is 'escape_html' and 'eHTML'.
 
-Alias of this method. : escape_uri , eURI
+=head2 decode_entities ([PLAIN_TEXT], [ARGS])
 
-The result of encoding URI is returned.
+The HTML tag where it is escaped is restored.
 
-The argument follows L<URI::Escape>.
+* L<HTML::Entities> is used.
 
-=head2 $e->uri_escape_utf8([STR], [UNSAFE]);
+Ailias is 'unescape_html' and 'ueHTML'.
 
-When URL is encoded, the UTF-8 character is treated.
+=head2 encode_entities_numeric ([HTML_TEXT])
 
-The argument follows L<URI::Escape>.
+The figure is made an escape object.
 
-=head2 $e->uri_unescape([STR], [UNSAFE]);
+* L<HTML::Entities> is used.
 
-Alias of this method. : unescape_uri , ueURI
+=head2 uri_escape
 
-The result of the URI decipherment is returned.
+URI is encoded.
 
-The argument follows L<URI::Escape>.
+Ailias is 'escape_uri' and 'eURI'.
 
-=head2 $e->create_dispatch
+* L<URI::Escape> is used.
 
-The dispatch object is generated.
-An overwrite of the controller of this method and customizing for me are
- also good.
+=head2 uri_unescape
 
-=head2 $e->plugin
+The URI decipherment is done.
 
-The plugin is require.
-However, it is not added to @ISA, and 'setup' method is not called.
-This merely does require.
+Ailias is 'unescape_uri' and 'ueURI'.
 
-=head2 $e->default_view([VIEW_NAME]);
+* L<URI::Escape> is used.
 
-It exchanges it for VIEW that does VIEW of default.
+=head2 uri_escape_utf8
 
-If [VIEW_NAME] is unspecification, the name of present default VIEW is returned.
+Unicode also encodes URI to the object.
 
-=head2 $e->log
-
-The Egg::Debug::Log object is returned.
-
-=head2 $e->disp_error([MESSAGE]);
-
-When the error occurs by processing $e->run, it reports on the error on
- the screen where Egg is yellow.
-
-=head2 $e->debug_out([MESSAGE]);
-
-The message of argument is output to STDERR while operating by debug mode.
-This any method is replaced with the code not done usually.
+* L<URI::Escape> is used.
 
 =head1 SEE ALSO
 
-L<Egg::Release>,
-L<Egg::Model>,
-L<Egg::View>,
-L<Egg::Request>,
-L<Egg::Response>,
-L<Egg::D::Stand>,
-L<Egg::Debug::Base>,
-L<HTML::Entities>,
 L<URI::Escape>,
+L<HTML::Entities>,
+L<Egg::Engine::V1>,
+L<Egg::Exception>
+L<Egg::Release>,
 
 =head1 AUTHOR
 
@@ -373,7 +353,7 @@ Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

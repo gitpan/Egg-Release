@@ -3,18 +3,16 @@ package Egg::Plugin::Filter;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Filter.pm 34 2006-12-14 08:17:52Z lushe $
+# $Id: Filter.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
-use NEXT;
-use Error;
 use constant EGG=> 0;
 use constant VAL=> 1;
 use constant ARG=> 2;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 our %filters= (
  trim=> sub {
@@ -143,16 +141,16 @@ sub setup {
 	my $config= $e->config->{plugin_filter} ||= {};
 	if ($config->{plugins} && ref($config->{plugins}) eq 'ARRAY') {
 		for my $pkg (@{$config->{plugins}}) {
-			$pkg->require or throw Error::Simple __PACKAGE__. qq/: Error: $@/;
+			$pkg->require or Egg->throw(__PACKAGE__.": Error: $@");
 			my $hash= $pkg->filters || next;
 			@filters{keys %$hash}= values %$hash;
 		}
 	}
-	$e->NEXT::setup;
+	$e->next::method;
 }
 sub filter {
 	my $e= shift;
-	$_[0] || throw Error::Simple q/I want filter definition./;
+	$_[0] || Egg->throw("I want filter definition.");
 	my($args, $param);
 	if (ref($_[0])) {
 		$args = shift;
@@ -172,7 +170,7 @@ sub filter {
 				my($name, @args)= $piece=~/\:/ ? (split /\:/, $piece): ($piece, ());
 				my $func= $filters{$name} || next FILTERPIECE;
 				eval { $func->($e, $value, \@args) };
-				if (my $err= $@) { throw Error::Simple __PACKAGE__. qq/: Error: $err/ }
+				if (my $err= $@) { Egg->throw(__PACKAGE__.": Error: $err") }
 			}
 		}
 	}
@@ -182,7 +180,6 @@ sub filter {
 1;
 
 __END__
-
 
 =head1 NAME
 

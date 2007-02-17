@@ -1,9 +1,9 @@
 package Egg::View::Template;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
+# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Template.pm 65 2006-12-19 18:38:00Z lushe $
+# $Id: Template.pm 185 2007-02-17 07:18:18Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use base qw/Egg::View/;
 use HTML::Template;
 use Egg::View::Template::Params;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
  {
 	no strict 'refs';  ## no critic
@@ -25,6 +25,10 @@ our $VERSION= '0.01';
 	}
   };
 
+sub setup {
+	my($class, $e, $conf)= @_;
+	$conf->{path} ||= $e->config->{template_path};
+}
 sub new {
 	my $view= shift->SUPER::new(@_);
 	$view->{filter}= [];
@@ -36,7 +40,8 @@ sub output {
 	my $view= shift;
 	my $e   = shift;
 	my $tmpl= $view->template_file($e) || return;
-	$e->response->body( $view->render($tmpl) );
+	my $body= $view->render($tmpl);
+	$e->response->body( $body );
 	1;
 }
 sub render {
@@ -46,8 +51,7 @@ sub render {
 	my $e= $view->{e};
 
 	@{$view->params}{keys %$args}= values %$args;
-	my $config= $e->config->{view_template} || {};
-	my %conf= %$config;
+	my %conf= %{$view->config};
 	if    (ref($tmpl) eq 'SCALAR') { $conf{scalarref}= $tmpl; $conf{cache}= 0 }
 	elsif (ref($tmpl) eq 'ARRAY')  { $conf{arrayref} = $tmpl }
 	else                           { $conf{filename} = $tmpl };
@@ -145,10 +149,10 @@ The HASH reference of parameter is returned.
 
 =head1 SEE ALSO
 
-L<Egg::Release>,
+L<HTML::Template>,
 L<Egg::View>,
 L<Egg::View::Template::Params>,
-L<HTML::Template>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
@@ -156,7 +160,7 @@ Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
