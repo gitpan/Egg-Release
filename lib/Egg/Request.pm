@@ -3,7 +3,7 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Request.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ no warnings 'redefine';
 
 __PACKAGE__->mk_accessors( qw/r debug path/ );
 
-our $VERSION= '0.10';
+our $VERSION= '0.11';
 
 *address= \&remote_addr;
 *port   = \&server_port;
@@ -31,9 +31,11 @@ our $VERSION= '0.10';
 
 sub setup {
 	my($class, $e)= @_;
+	$e->config->{request} ||= {};
 	my $base= $e->namespace;
 	no strict 'refs';  ## no critic
 	*{"Egg::handler"}= sub { shift; $base->run(@_) };
+	@_;
 }
 sub new {
 	my $class= shift;

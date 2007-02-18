@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Egg.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.00';
+our $VERSION= '1.01';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -122,6 +122,7 @@ sub __egg_setup {
 
 	my $engine= $G->{ENGINE_CLASS}=
 	     $ENV{"$ucName\_ENGINE"}
+	  || $ENV{"$ucName\_ENGINE_CLASS"}
 	  || $conf->{engine_class}
 	  || 'Egg::Engine::V1';
 	{
@@ -144,8 +145,9 @@ sub __egg_setup {
 	$dispath->_setup($e);
 
 	my $request= $G->{REQUEST_CLASS}=
-	  $ENV{"$ucName\_REQUEST"} ? do {
-		$ENV{"$ucName\_REQUEST"};
+	  $ENV{"$ucName\_REQUEST"} ? do { $ENV{"$ucName\_REQUEST"};
+	    }:
+	  $ENV{"$ucName\_REQUEST_CLASS"} ? do { $ENV{"$ucName\_REQUEST_CLASS"};
 	    }:
 	  $conf->{request_class} ? do {
 		$conf->{request_class};
@@ -168,6 +170,7 @@ sub __egg_setup {
 
 	my $response= $G->{RESPONSE_CLASS}=
 	    $ENV{"$ucName\_RESPONSE"}
+	 || $ENV{"$ucName\_RESPONSE_CLASS"}
 	 || $conf->{response_class}
 	 || 'Egg::Response';
 	$response->require or Egg::Error->throw($@);

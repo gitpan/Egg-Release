@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Build.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Build.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	my $class= shift;
@@ -382,19 +382,9 @@ permission: 0755
 value: |
   #!<# perl_path #> -w
   use strict;
-  use lib qw( <# lib_dir #> );
+  use lib qw{ <# project_root #>/<# lib_dir #> };
   
   $ENV{MOD_PERL} or die "GATEWAY_INTERFACE not Perl!";
-  
-  use mod_perl2 ();
-  use ModPerl::Util ();
-  use Apache2::Request;
-  use Apache2::RequestRec ();
-  use Apache2::RequestIO ();
-  use Apache2::RequestUtil ();
-  use Apache2::Connection ();
-  use Apache2::Const -compile => ':common';
-  use Apache2::Status;
   
   #use <# project #>;
   #

@@ -1,5 +1,13 @@
 Revision history for Perl extension Egg::Release.
 
+1.01  2007/02/18
+	- Some of the request module were corrected.
+	- Bugfix etc. of some files.
+
+1.00  2007/02/17
+	- It composed again and the version improved.
+	  * Interchangeability is lost partially.
+
 0.37  2007/01/31
 	- The processing when Model and View were set up was mended a little.
 	    Egg ( 0.19 => 0.20 )

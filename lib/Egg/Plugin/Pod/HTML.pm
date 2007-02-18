@@ -3,7 +3,7 @@ package Egg::Plugin::Pod::HTML;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: HTML.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: HTML.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use Egg::Const;
@@ -26,7 +26,7 @@ sub setup {
 sub pod2html {
 	my $e = shift;
 	my $pm= shift || return $e->finished( NOT_FOUND );
-	return $e->finished( FORBIDDEN ) if $pm!~/^[A-Za-z_][A-Za-z_\-\:]+$/;
+	return $e->finished( FORBIDDEN ) if $pm!~/^[A-Za-z_][A-Za-z0-9_\-\:]+$/;
 
 	File::Temp->require;
 	my $arg = shift || {};

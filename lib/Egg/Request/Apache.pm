@@ -3,14 +3,14 @@ package Egg::Request::Apache;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Apache.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Apache.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
 no warnings 'redefine';
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 sub setup {
 	my($class, $e)= @_;

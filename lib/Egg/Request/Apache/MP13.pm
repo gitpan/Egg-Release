@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP13;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MP13.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: MP13.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
@@ -23,7 +23,7 @@ sub setup {
 }
 sub new {
 	my $req= shift->SUPER::new(@_);
-	my $conf= $req->e->config->{request} || {};
+	my $conf= $req->e->config->{request} ||= {};
 	$req->r( Apache::Request->new($req->r, %$conf) );
 	$req;
 }

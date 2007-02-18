@@ -3,7 +3,7 @@ package Egg::Helper;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Helper.pm 187 2007-02-17 07:29:15Z lushe $
+# $Id: Helper.pm 201 2007-02-18 09:49:23Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Egg::Exception;
 use Egg::Engine;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 my %Global;
 sub global { \%Global }
@@ -71,8 +71,8 @@ sub run {
 		$class->setup_global();
 		$class->isa_self($pkg)->new();
 
-	# Model, View, Engine, Dispatch, Plugin.
-	} elsif ($mode=~m{^([MVEDP]\:\:?[A-Z][A-Za-z0-9_\:]+)}) {
+	# Model, View, Engine, Dispatch, Plugin, etc.
+	} elsif ($mode=~m{^([A-Z]\:\:?[A-Z][A-Za-z0-9_\:]+)}) {
 		my $pkg= $1;
 		$class->project_name($pname)
 		  || Egg::Error->throw('I want project name.');

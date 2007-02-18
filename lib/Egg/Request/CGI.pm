@@ -3,21 +3,39 @@ package Egg::Request::CGI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: CGI.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: CGI.pm 202 2007-02-18 10:11:27Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
 no warnings 'redefine';
 
-our $VERSION= '0.06';
+our $VERSION= '0.07';
 
+sub setup {
+	my($class, $e)= @_;
+	$class->setup_config($e->config->{request} ||= {});
+	$class->SUPER::setup($e);
+}
+sub setup_config {
+	my($class, $conf)= @_;
+
+	$CGI::POST_MAX= $conf->{POST_MAX}
+	  if $conf->{POST_MAX};
+
+	$CGI::DISABLE_UPLOADS= $conf->{DISABLE_UPLOADS}
+	  if $conf->{DISABLE_UPLOADS};
+
+	$CGITempFile::TMPDIRECTORY= $conf->{TEMP_DIR}
+	  if $conf->{TEMP_DIR};
+
+	$Egg::CRLF= $CGI::CRLF;
+	@_;
+}
 sub new {
-	my $req= shift->SUPER::new(@_);
-	$req->r(
-	  Egg::Request::CGI::base->new
-	    ($req->r, ($req->e->config->{request} || {}) )
-	  );
+	my($class, $e, $r)= @_;
+	my $req= $class->SUPER::new($e, $r);
+	$req->r( Egg::Request::CGI::base->new($r) );
 	$req;
 }
 sub prepare_params {
@@ -37,22 +55,6 @@ use strict;
 use CGI qw/:cgi/;
 
 our @ISA= 'CGI';
-
-sub new {
-	my($class, $r, $conf)= @_;
-
-	$CGI::POST_MAX= $conf->{POST_MAX}
-	  if $conf->{POST_MAX};
-
-	$CGI::DISABLE_UPLOADS= $conf->{DISABLE_UPLOADS}
-	  if $conf->{DISABLE_UPLOADS};
-
-	$CGITempFile::TMPDIRECTORY= $conf->{TEMP_DIR}
-	  if $conf->{TEMP_DIR};
-
-	$Egg::CRLF= $CGI::CRLF;
-	$class->SUPER::new($r);
-}
 
 1;
 
