@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 201 2007-02-18 09:49:23Z lushe $
+# $Id: Egg.pm 203 2007-02-19 14:46:38Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.01';
+our $VERSION= '1.02';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -130,7 +130,9 @@ sub __egg_setup {
 		push @{"$class\::ISA"}, $engine;
 	  };
 	$engine->require or Egg::Error->throw($@);
+	$e->debug_out("# + Egg-$class Start!!");
 	$engine->startup($e);
+	$e->debug_out("# + engine-class : $engine-". $engine->VERSION);
 
 	my $unload;
 	my $dispath= $G->{DISPATCH_CLASS}=

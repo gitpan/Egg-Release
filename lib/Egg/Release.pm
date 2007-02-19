@@ -3,12 +3,12 @@ package Egg::Release;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Release.pm 202 2007-02-18 10:11:27Z lushe $
+# $Id: Release.pm 203 2007-02-19 14:46:38Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '1.01';
+our $VERSION= '1.02';
 
 1;
 
