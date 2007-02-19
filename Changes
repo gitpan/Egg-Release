@@ -1,5 +1,9 @@
 Revision history for Perl extension Egg::Release.
 
+1.03  2007/02/20
+	- The mistake of the sample of Dispatch is corrected.
+	- Additionally, some corrections.
+
 1.02  2007/02/19
 	- The croak method was added to Egg.pm.
 	- Egg::Model::DBI was updated.

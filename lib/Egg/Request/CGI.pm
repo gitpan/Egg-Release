@@ -3,33 +3,32 @@ package Egg::Request::CGI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: CGI.pm 202 2007-02-18 10:11:27Z lushe $
+# $Id: CGI.pm 207 2007-02-19 17:58:18Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
 no warnings 'redefine';
 
-our $VERSION= '0.07';
+our $VERSION= '0.08';
 
 sub setup {
 	my($class, $e)= @_;
-	$class->setup_config($e->config->{request} ||= {});
+	$class->setup_config($e->config->{request});
 	$class->SUPER::setup($e);
 }
 sub setup_config {
-	my($class, $conf)= @_;
+	my $class= shift;
+	my $conf = shift || {};
 
 	$CGI::POST_MAX= $conf->{POST_MAX}
 	  if $conf->{POST_MAX};
-
 	$CGI::DISABLE_UPLOADS= $conf->{DISABLE_UPLOADS}
 	  if $conf->{DISABLE_UPLOADS};
-
 	$CGITempFile::TMPDIRECTORY= $conf->{TEMP_DIR}
 	  if $conf->{TEMP_DIR};
-
 	$Egg::CRLF= $CGI::CRLF;
+
 	@_;
 }
 sub new {

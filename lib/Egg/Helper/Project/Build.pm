@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Build.pm 201 2007-02-18 09:49:23Z lushe $
+# $Id: Build.pm 204 2007-02-19 17:50:52Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub new {
 	my $class= shift;
@@ -195,9 +195,7 @@ filename: etc/mod_perl_<# lc_name #>.conf
 value: |
   LoadModule perl_module modules/mod_perl.so
   
-  # PerlRequire  <# project_root #>/bin/startup_<# lc_name #>.pl
-  
-  <VirtualHost  hostname.example.com:80>
+  <VirtualHost *:80>
     ServerName  hostname.example.com
     DocumentRoot <# project_root #>/htdocs
   
@@ -376,43 +374,6 @@ value: |
   
   __END__
   <# document #>
----
-filename: bin/startup_<# lc_name #>.pl
-permission: 0755
-value: |
-  #!<# perl_path #> -w
-  use strict;
-  use lib qw{ <# project_root #>/<# lib_dir #> };
-  
-  $ENV{MOD_PERL} or die "GATEWAY_INTERFACE not Perl!";
-  
-  #use <# project #>;
-  #
-  # * Installation of module.
-  # perl -MCPAN -e "install Apache::DBI";
-  #
-  #{
-  #  use Apache::DBI;
-  #  my $e= <# project #>->new;
-  #  if (my $dbi= $e->config->{model}{DBI}) {
-  #      Apache::DBI->connect_on_init(
-  #        $dbi->{dsn},
-  #        $dbi->{user},
-  #        $dbi->{password},
-  #        $dbi->{options},
-  #        );
-  #      Apache::DBI->setPingTimeOut($dbi->{dsn}, 0);
-  #    }
-  #  };
-  #
-  # * Apache2::Request seems not to be included in the mod_perl
-  #   package of Fedora Core4.
-  # * It was possible to solve it in that case as follows.
-  #
-  # perl -MCPAN -e 'install Apache2::Request'
-  #
-  
-  1;
 ---
 filename: t/01_<# project #>.t
 value: |

@@ -3,19 +3,21 @@ package Egg::Helper::Project::BlankPage;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: BlankPage.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: BlankPage.pm 204 2007-02-19 17:50:52Z lushe $
 #
 use strict;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub out {
 	my($dispatch, $e)= @_;
 	my $a= {
-	  project_name => $e->namespace,
-	  origin_site  => 'http://egg.bomcity.com/',
-	  static_uri   => $e->config->{static_uri},
-	  request_path => $e->request->path,
+	  project_name  => $e->namespace,
+	  origin_site   => 'http://egg.bomcity.com/',
+	  static_uri    => $e->config->{static_uri},
+	  request_path  => $e->request->path,
+	  dispatch_class=> $e->dispatch_calss,
+	  example_code  => $e->dispatch->_example_code,
 	  };
 	eval { $a->{project_version}= $e->VERSION };
 	$a->{project_version} ||= '*.**';
@@ -72,6 +74,7 @@ pre {
 #shadow {
 	width          : 640px;
 	padding:0px    : 0px;
+	margin         : 0px auto 0px auto;
 	border         : 0px;
 	border-right   : #000000 solid 2px;
 	border-bottom  : #000000 solid 2px;
@@ -126,48 +129,8 @@ Request PATH:
 </ul>
 <h2>Project name and version - $a->{project_name}-$a->{project_version}</h2>
 <div class="box">
-<h3>Example of dispatch code. &nbsp; for Egg::Dispatch::Runmode.</h3>
-<pre><tt>package $a->{project_name}\::D;
-use strict;
-use Egg::Const;
-use Tie::RefHash;
-
-use $a->{project_name}::D::Members;
-use $a->{project_name}::D::BBS;
-
-__PACKAGE__->run_modes(
-
-  _default=> sub { 1 },
-
-  help=> { _any=> sub { '$a->{project_name}::D::Help' } },
-
-  members=> {
-    login => \&$a->{project_name}::D::Members::login,
-    logout=> \&$a->{project_name}::D::Members::logout,
-    { login_check=> 'post' } => \&$a->{project_name}::D::Members::login_check,
-    qr/([a-z][a-z0-9_]+)/ => \&$a->{project_name}::D::Members::orign_disp,
-    _default => sub { \$_[0]->finished( FORBIDDEN ) },
-    _begin => \&$a->{project_name}::D::Members::begin,
-    _end   => \&$a->{project_name}::D::Members::end,
-    },
-
-  bbs=> {
-    { _default=> 'get' }=> \&$a->{project_name}::D::BBS::article_view,
-    { edit => 'post' }=> \&$a->{project_name}::D::BBS::article_edit,
-    { post => 'post' }=> \&$a->{project_name}::D::BBS::article_post,
-    _begin => \&$a->{project_name}::D::Members::begin,
-    _end   => \&$a->{project_name}::D::Members::end,
-    },
-
-  );
-
-#
-# Only when using it with usual CGI.
-# __PACKAGE__->mode_param('mode');
-#
-
-1;
-</tt></pre>
+<h3>Example of dispatch code. &nbsp; for $a->{dispatch_class}.</h3>
+<pre><tt>$a->{example_code}</tt></pre>
 </div>
 <a target="_blank" href="$a->{origin_site}">
 <img src="$a->{static_uri}images/egg468x60.gif" width="468" height="60" alt="Powerd by Egg." /></a>

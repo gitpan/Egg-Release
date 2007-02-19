@@ -3,14 +3,14 @@ package Egg::Dispatch;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Dispatch.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Dispatch.pm 204 2007-02-19 17:50:52Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 use UNIVERSAL::require;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub _before_setup  {}
 sub _extension_cut { $_[1] }
@@ -42,6 +42,7 @@ sub _setup {
 
 	@_;
 }
+sub _example_code { 'unknown.' }
 
 1;
 

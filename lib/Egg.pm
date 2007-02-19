@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 203 2007-02-19 14:46:38Z lushe $
+# $Id: Egg.pm 204 2007-02-19 17:50:52Z lushe $
 #
 use strict;
 use warnings;
@@ -90,15 +90,18 @@ sub __egg_setup {
 	(-e $conf->{root} && -d _) || die "Path 'root' is not found.";
 	$conf->{root}=~s{/+$} [];
 
-	for ([qw{ content_type }, 'text/html; charset=euc-jp'],
+	for (
+	  [qw{ content_type }, 'text/html; charset=euc-jp'],
 	  [qw{ template_extention .tt }],  [qw{ template_default_name index }],
 	  [qw{ max_snip_deep 5 }],  [qw{ content_language ja }],
 	  [qw{ static htdocs }],    [qw{ static_uri / }],
 	  ) {
 		$conf->{$_->[0]} ||= $_->[1];
 	}
-	for ([qw{ etc etc }], [qw{ temp tmp }],
-	  [qw{ cache cache }], ['lib', "lib/$class"]) {
+	for (
+	  [qw{ etc etc }], [qw{ temp tmp }],
+	  [qw{ cache cache }], ['lib', "lib/$class"]
+	  ) {
 		$conf->{$_->[0]}= "$conf->{root}/$_->[1]";
 	}
 	$conf->{static_uri}=~s{/+$} [];

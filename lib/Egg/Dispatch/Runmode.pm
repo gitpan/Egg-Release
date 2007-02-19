@@ -3,7 +3,7 @@ package Egg::Dispatch::Runmode;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Runmode.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Runmode.pm 204 2007-02-19 17:50:52Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use UNIVERSAL::require;
 use Tie::RefHash;
 use base qw/Egg::Dispatch/;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 __PACKAGE__->mk_accessors(qw/page_title/);
 
@@ -192,6 +192,52 @@ sub _reset {
 	$self->{__parts}= [];
 	$self->e->{action}= [];
 	$self->{__begin_code}= $self->{__action_code}= $self->{__end_code}= 0;
+}
+sub _example_code {
+	my($self)= @_;
+	my $a= { project_name=> $self->e->namespace };
+
+	<<END_OF_EXAMPLE;
+package $a->{project_name}\::D;
+use strict;
+use Egg::Const;
+
+use $a->{project_name}::D::Members;
+use $a->{project_name}::D::BBS;
+
+__PACKAGE__->run_modes( refhash(
+
+  _default=> sub {},
+
+  help=> sub {},
+
+  { ANY=> 'members', label=> 'Members' }=> refhash(
+    { ANY=> 'login', label=> 'Login'  }=> &yen;&$a->{project_name}::D::Members::login,
+    { ANY=> 'logout' label=> 'Logout' }=> &yen;&$a->{project_name}::D::Members::logout,
+    { POST=> 'login_check' }=> &yen;&$a->{project_name}::D::Members::login_check,
+    qr/([a-z][a-z0-9_]+)/ => &yen;&$a->{project_name}::D::Members::orign_disp,
+    _default => sub { \$_[0]->finished( FORBIDDEN ) },
+    _begin => &yen;&$a->{project_name}::D::Members::begin,
+    _end   => &yen;&$a->{project_name}::D::Members::end,
+    ),
+
+  { ANY=> 'bbs', label=> 'bulletin board' }=> refhash(
+    { GET  => '_default' }=> &yen;&$a->{project_name}::D::BBS::article_view,
+    { POST => 'edit' }=> &yen;&$a->{project_name}::D::BBS::article_edit,
+    { POST => 'post' }=> &yen;&$a->{project_name}::D::BBS::article_post,
+    _begin => &yen;&$a->{project_name}::D::Members::begin,
+    _end   => &yen;&$a->{project_name}::D::Members::end,
+    ),
+
+  ));
+
+#
+# Only when using it with usual CGI.
+# __PACKAGE__->mode_param('mode');
+#
+
+1;
+END_OF_EXAMPLE
 }
 
 1;
