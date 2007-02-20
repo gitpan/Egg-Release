@@ -23,6 +23,7 @@ lib/Egg/Helper/P/Prototype.pm
 lib/Egg/Helper/P/YAML.pm
 lib/Egg/Helper/Project/BlankPage.pm
 lib/Egg/Helper/Project/Build.pm
+lib/Egg/Helper/R/FastCGI.pm
 lib/Egg/Helper/V/Mason.pm
 lib/Egg/Model.pm
 lib/Egg/Model/DBI.pm
@@ -36,6 +37,7 @@ lib/Egg/Plugin/Encode/CGI.pm
 lib/Egg/Plugin/FillInForm.pm
 lib/Egg/Plugin/Filter.pm
 lib/Egg/Plugin/Filter/EUC_JP.pm
+lib/Egg/Plugin/FormValidator/Simple.pm
 lib/Egg/Plugin/Pod/HTML.pm
 lib/Egg/Plugin/Redirect/Page.pm
 lib/Egg/Plugin/Upload.pm
@@ -50,6 +52,7 @@ lib/Egg/Request/Apache/MP13.pm
 lib/Egg/Request/Apache/MP19.pm
 lib/Egg/Request/Apache/MP20.pm
 lib/Egg/Request/CGI.pm
+lib/Egg/Request/FastCGI.pm
 lib/Egg/Response.pm
 lib/Egg/Response/TieCookie.pm
 lib/Egg/View.pm

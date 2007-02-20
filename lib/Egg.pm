@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 204 2007-02-19 17:50:52Z lushe $
+# $Id: Egg.pm 216 2007-02-20 07:17:45Z lushe $
 #
 use strict;
 use warnings;
@@ -349,7 +349,6 @@ Please use Egg::Plugin::Encode.
 
 =item * Addition of standard plugin.
 
-  Cache::Memcached
   DBI::*
   Dispatch::AnyCall
   Encode

@@ -3,12 +3,12 @@ package Egg::Release;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Release.pm 206 2007-02-19 17:55:00Z lushe $
+# $Id: Release.pm 216 2007-02-20 07:17:45Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '1.03';
+our $VERSION= '1.04';
 
 1;
 
@@ -35,6 +35,9 @@ I think that it can use a flexible, strong template environment.
 
 It came to be able to set the label of each action by dispatch.
 The label is convenient to make page title and Topic Path.
+
+It corresponds to 'FastCGI' more than v1.04.
+Please see the document of L<Egg::Request::FastCGI> about use.
 
 =head1 TUTORIAL
 
@@ -987,15 +990,6 @@ package¡§ L<Egg::Plugin::Dispatch::AnyCall>,
 The result of doing passed [YAML_DATA] in Perth is returned.
 
 package¡§ L<Egg::Plugin::YAML>,
-
-=head2 $e->memcached
-
- type: Plugin
- name: Cache::Memcached
-
-The cash object to use 'memcached' is returned.
-
-package¡§ L<Egg::Plugin::Cache::Memcached>,
 
 =head2 $e->dbh
 

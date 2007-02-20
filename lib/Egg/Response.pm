@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Response.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Response.pm 214 2007-02-20 06:59:13Z lushe $
 #
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ no warnings 'redefine';
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.08';
+our $VERSION= '0.09';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -39,6 +39,7 @@ sub body {
 	return $res->{body} if @_< 1;
 	my($body)= @_;
 	$res->{body}= ref($body) ? $body: \$body;
+	${$res->{body}} ||= "";
 	1;
 }
 sub attachment {

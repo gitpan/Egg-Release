@@ -3,14 +3,14 @@ package Egg::Request::CGI;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: CGI.pm 207 2007-02-19 17:58:18Z lushe $
+# $Id: CGI.pm 211 2007-02-20 06:49:25Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Request/;
 no warnings 'redefine';
 
-our $VERSION= '0.08';
+our $VERSION= '0.09';
 
 sub setup {
 	my($class, $e)= @_;
@@ -45,7 +45,7 @@ sub output {
 	my $req   = shift;
 	my $header= shift || return 0;
 	my $body  = ref($_[0]) ? $_[0]: \"";
-	CORE::print STDOUT $$header. $$body;
+	CORE::print STDOUT $$header, $$body;
 	$req->{e}->debug_out($$header);
 }
 

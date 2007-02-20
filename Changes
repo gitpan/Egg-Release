@@ -1,5 +1,12 @@
 Revision history for Perl extension Egg::Release.
 
+1.04  2007/02/20
+	- 'Use of uninitialized value .....' was made not to be vomited when
+	  contents were output. Egg::Response are fixed.
+	- The module to correspond to 'FastCGI' was enclosed.
+	  Egg::Request::FastCGI,  Egg::Helper::R::FastCGI,
+	- The 'FormValidator::Simple' plugin was enclosed.
+
 1.03  2007/02/20
 	- The mistake of the sample of Dispatch is corrected.
 	- Additionally, some corrections.
@@ -8,7 +15,8 @@ Revision history for Perl extension Egg::Release.
 	- The croak method was added to Egg.pm.
 	- Egg::Model::DBI was updated.
 	    = If Ima::DBI was able to be used, this was used.
-	      Therefore, I think that the setting of Apache::DBI becomes there is no necessity.
+	      Therefore, I think that the setting of Apache::DBI becomes there is
+	      no necessity.
 
 1.01  2007/02/18
 	- Some of the request module were corrected.
