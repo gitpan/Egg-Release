@@ -1,5 +1,10 @@
 Revision history for Perl extension Egg::Release.
 
+1.05  2007/02/20
+	- When request PATH was acquired, PATH_INFO of the environment variable was
+	  prioritized.
+	- It is fixed as for the document and the helper of FastCGI.
+
 1.04  2007/02/20
 	- 'Use of uninitialized value .....' was made not to be vomited when
 	  contents were output. Egg::Response are fixed.

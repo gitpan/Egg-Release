@@ -3,7 +3,7 @@ package Egg::Request;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@bomcity.com>
 #
-# $Id: Request.pm 201 2007-02-18 09:49:23Z lushe $
+# $Id: Request.pm 217 2007-02-20 13:11:17Z lushe $
 #
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ no warnings 'redefine';
 
 __PACKAGE__->mk_accessors( qw/r debug path/ );
 
-our $VERSION= '0.11';
+our $VERSION= '0.12';
 
 *address= \&remote_addr;
 *port   = \&server_port;
@@ -71,17 +71,13 @@ sub prepare {
 	my($req)= @_;
 	my $config= $req->e->config;
 
-	my $path;
-	if ($ENV{REDIRECT_URL}) {
-		$path= $ENV{REDIRECT_URL};
-		$path=~s{$ENV{PATH_INFO}$} [];
-	} else {
-		$path= $ENV{SCRIPT_NAME} || '/';
-	}
-	$ENV{PATH_INFO} and $path.= $ENV{PATH_INFO};
-
-	$path=~m{^/} ? do { $req->path($path); $path=~s{^/} [] }
-	             : do { $req->path("/$path") };
+	my $path= $ENV{REDIRECT_URI} ? do {
+		$ENV{PATH_INFO} || $ENV{REDIRECT_URI} || '/';
+	  }: do {
+		my $tmp= $ENV{SCRIPT_NAME} || '/';
+		$ENV{PATH_INFO} ? "$tmp$ENV{PATH_INFO}": $tmp;
+	  };
+	$req->path( $path=~m{^/} ? $path: "/$path" );
 
 	$req->create_snip($path, $config->{max_snip_deep}) || return 0;
 	$req->prepare_params;

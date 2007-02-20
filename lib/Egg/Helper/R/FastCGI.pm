@@ -3,20 +3,19 @@ package Egg::Helper::R::FastCGI;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: FastCGI.pm 213 2007-02-20 06:51:45Z lushe $
+# $Id: FastCGI.pm 217 2007-02-20 13:11:17Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	my $self= shift->SUPER::new;
 	my $g= $self->global;
 	$g->{example_file}= "etc/$g->{examples}/FastCGI.confg.example";
 	$g->{uc_project_name}= uc($self->project_name);
-	$g->{lc_project_name}= lc($self->project_name);
 
 	$self->{add_info}= "";
 	chdir($g->{project_root});
@@ -113,9 +112,13 @@ value: |
   > For Lighttpd.
   
   server.document-root = "/home/Egg/Forum/htdocs"
-  fastcgi.server = ( "<# lc_project_name #>.fcgi" => ((
+  url.rewrite-once = (
+    "^/([A-Za-z0-9_\-\+\:\%/]+)?(\.html)?([\?\#].+?)?$"
+      => "/dispatch.fcgi/$1$2$3",
+    )
+  fastcgi.server = ( "dispatch.fcgi" => ((
       "socket"   => "<# project_root #>/tmp/fcgi.socket",
-      "bin-path" => "<# project_root #>/bin/dispatch.fcgi",
+      "bin-path" => "<# project_root #>/htdocs/dispatch.fcgi",
   #    "min-procs" => 1,
   #    "max-procs" => 3,
   #    "idle-timeout" => 20

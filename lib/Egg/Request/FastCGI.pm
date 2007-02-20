@@ -3,14 +3,14 @@ package Egg::Request::FastCGI;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: FastCGI.pm 211 2007-02-20 06:49:25Z lushe $
+# $Id: FastCGI.pm 217 2007-02-20 13:11:17Z lushe $
 #
 use strict;
 use warnings;
 use FCGI;
 use base qw{ Egg::Request::CGI };
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
 	CGI::_reset_globals();
@@ -72,13 +72,33 @@ For Apache.
 For Lighttpd.
 
    server.document-root = "/home/Egg/Forum/htdocs"
-   fastcgi.server = ( ".fcgi" => ((
+   fastcgi.server = ( "dispatch.fcgi" => ((
       "socket"   => "/PROJECT_ROOT/tmp/fcgi.socket",
       "bin-path" => "/PROJECT_ROOT/htdocs/dispatch.fcgi",
   #   "min-procs" => 1,
   #   "max-procs" => 3,
   #   "idle-timeout" => 20
       ))
+
+* Only when it is this, it is necessary to call __PACKAGE__->mode_param by
+  'lib/MYPROJECT/D.pm'.
+
+Or,
+
+  $HTTP["host"] == "domain.name" {
+    server.document-root = "/home/Egg/Forum/htdocs"
+    url.rewrite-once = (
+      "^/([A-Za-z0-9_\-\+\:\%/]+)?(\.html)?([\?\#].+?)?$"
+        => "/dispatch.fcgi/$1$2$3",
+      )
+    fastcgi.server = ( "/dispatch.fcgi" => ((
+        "socket"   => "/PROJECT_ROOT/tmp/fcgi.socket",
+        "bin-path" => "/PROJECT_ROOT/htdocs/dispatch.fcgi",
+        ))
+      )
+    }
+
+If it is this, it is possible to use it with URI when Apache::Handler is used.
 
 * Please see http://www.lighttpd.net/.
 
