@@ -1,9 +1,9 @@
 package Egg::Response;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno <mizuno@bomcity.com>
+# Masatoshi Mizuno <mizunoE<64>bomcity.com>
 #
-# $Id: Response.pm 214 2007-02-20 06:59:13Z lushe $
+# $Id: Response.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ no warnings 'redefine';
 __PACKAGE__->mk_accessors
  ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.09';
+our $VERSION= '0.10';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -40,7 +40,7 @@ sub body {
 	my($body)= @_;
 	$res->{body}= ref($body) ? $body: \$body;
 	${$res->{body}} ||= "";
-	1;
+	$res->{body};
 }
 sub attachment {
 	my $res= shift;
@@ -80,7 +80,7 @@ sub create_no_cache {
 	my($res, $CL)= @_;
 	  "Expires: 0$CL"
 	. "Pragma: no-cache$CL"
-	. "Cache-Control: no-cache$CL"
+	. "Cache-Control: no-cache, no-store, must-revalidate$CL"
 	. "Last-Modified: ". HTTP::Date::time2str(time). $CL;
 }
 sub create_ok_cache {

@@ -3,7 +3,7 @@ package Egg::View::Template;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Template.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Template.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use base qw/Egg::View/;
 use HTML::Template;
 use Egg::View::Template::Params;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
  {
 	no strict 'refs';  ## no critic
@@ -37,12 +37,11 @@ sub new {
 	$view;
 }
 sub output {
-	my $view= shift;
-	my $e   = shift;
-	my $tmpl= $view->template_file($e) || return;
+	my($view, $e)= splice @_, 0, 2;
+	my $tmpl= shift || $view->template_file($e)
+	   || Egg::Error->throw('I want template.');
 	my $body= $view->render($tmpl);
 	$e->response->body( $body );
-	1;
 }
 sub render {
 	my $view= shift;
@@ -50,6 +49,7 @@ sub render {
 	my $args= shift || {};
 	my $e= $view->{e};
 
+	@{$view->params}{keys %{$e->stash}}= values %{$e->stash};
 	@{$view->params}{keys %$args}= values %$args;
 	my %conf= %{$view->config};
 	if    (ref($tmpl) eq 'SCALAR') { $conf{scalarref}= $tmpl; $conf{cache}= 0 }

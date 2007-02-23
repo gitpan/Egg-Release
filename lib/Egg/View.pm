@@ -3,15 +3,19 @@ package Egg::View;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: View.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: View.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.07';
+our $VERSION= '0.08';
 
 our %PARAMS= (
+  no_cache_header=>
+      qq{<meta http-equiv="Pragma" content="no-cache">\n}
+    . qq{<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n}
+    . qq{<meta http-equiv="expires" content="0">},
   );
 
 sub new {

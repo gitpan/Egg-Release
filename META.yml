@@ -12,8 +12,7 @@ no_index:
     - t
 requires: 
   CGI: 0
-  CGI::Cookie: 0
-  Class::Accessor::Fast: 0
+  Class::Accessor: 0
   Class::C3: 0
   Class::Data::Inheritable: 0
   DBI: 0
@@ -43,4 +42,4 @@ requires:
   UNIVERSAL::require: 0
   URI: 0
   YAML: 0
-version: 1.05
+version: 1.08

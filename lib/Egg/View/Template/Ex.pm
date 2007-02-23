@@ -3,21 +3,23 @@ package Egg::View::Template::Ex;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Ex.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Ex.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::View::Template/;
 use HTML::Template::Ex;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
-sub createTemplate {
+sub create_template {
 	my($view, $conf, $e)= @_;
 	HTML::Template::Ex->new($e, $conf);
 }
 
 1;
+
+__END__
 
 =head1 NAME
 

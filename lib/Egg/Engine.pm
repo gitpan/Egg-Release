@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Engine.pm 203 2007-02-19 14:46:38Z lushe $
+# $Id: Engine.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Egg::Exception;
 use HTML::Entities;
 use URI::Escape;
 
-our $VERSION= '0.10';
+our $VERSION= '0.11';
 
 *escape_html  = \&encode_entities;
 *eHTML        = \&encode_entities;
@@ -26,7 +26,7 @@ our $VERSION= '0.10';
 {
 	no warnings 'redefine';
 	sub encode_entities {
-		shift; my $args= $_[1] || q/\\\<>&\"\'/;
+		shift; my $args= $_[1] || q//;
 		&HTML::Entities::encode_entities($_[0], $args);
 	}
 	sub decode_entities
@@ -97,6 +97,7 @@ sub prepare   { @_ }
 sub execute   { @_ }
 sub finalize  { @_ }
 sub finalize_error { @_ }
+sub error_document { @_ }
 
 sub view  { Egg::Error->throw('The method is not prepared.') }
 sub model { Egg::Error->throw('The method is not prepared.') }
@@ -137,8 +138,11 @@ sub debug_report_output {
 }
 sub output_content {
 	my($e)= @_;
-	return if $e->finished;
 	my $res= $e->response;
+	if ($e->finished) {
+		return if $res->status== 200;
+		return $e->error_document($res->status);
+	}
 	if (my($status)= $res->status=~/^(30[1237])/) {
 		my $location= $res->location
 		  || return $e->finished(500, q/Location is not specified./);

@@ -7,8 +7,7 @@ version_from 'lib/Egg/Release.pm';
 license      'perl';
 
 requires 'CGI';
-requires 'CGI::Cookie';
-requires 'Class::Accessor::Fast';
+requires 'Class::Accessor';
 requires 'Class::Data::Inheritable';
 requires 'Class::C3';
 requires 'Devel::StackTrace';

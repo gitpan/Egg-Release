@@ -1,5 +1,19 @@
 Revision history for Perl extension Egg::Release.
 
+1.08  2007/02/23
+	- Egg::Plugin::ErrorDocument was added.
+	- Bug fix of some modules and it corrected it.
+
+1.07  2007/02/22
+	- Bug fix for Plugin::Pod::HTML.
+	- Bug fix for Egg::Helper::O::MakeMaker.
+	- Bug fix for Egg::Engine::V1.
+	- Bug fix for Egg::View::Template.
+
+1.06  2007/02/21
+	- It is fixed as for mistake of the code of the controller who generates it.
+	  Wrong as '__setup_warning' was made '__warning_setup'.
+
 1.05  2007/02/20
 	- When request PATH was acquired, PATH_INFO of the environment variable was
 	  prioritized.

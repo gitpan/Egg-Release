@@ -3,14 +3,14 @@ package Egg::Helper::O::MakeMaker;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: MakeMaker.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: MakeMaker.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -27,6 +27,7 @@ sub new {
 	$G->{module_version} = $G->{version} || '0.01';
 	$self->setup_document_code;
 
+	-e $G->{target_path} and die 'It already exists.';
 	$self->chdir($G->{target_path}, 1);
 	eval{
 		{

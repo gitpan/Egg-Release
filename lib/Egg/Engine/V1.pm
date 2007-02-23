@@ -3,13 +3,13 @@ package Egg::Engine::V1;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: V1.pm 203 2007-02-19 14:46:38Z lushe $
+# $Id: V1.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use UNIVERSAL::require;
 use base qw/Egg::Engine/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub startup {
 	my($class, $e)= @_;
@@ -162,7 +162,7 @@ sub __include_comps {
 			push @$list, $name;
 			$stock->{$name}= $pkg;
 		} else {
-			$@=~/^Can\'t locate .+/ and next;
+			$@=~m{^Can\'t locate $base/.+} and next;
 			Egg::Error->throw($@);
 		}
 	}

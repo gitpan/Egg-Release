@@ -3,13 +3,13 @@ package Egg::View::Mason;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Mason.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Mason.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use base qw/Egg::View/;
 use HTML::Mason;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 sub setup {
 	my($class, $e, $conf)= @_;
@@ -24,11 +24,11 @@ sub setup {
 	$conf->{data_dir} ||= $e->config->{temp};
 }
 sub output {
-	my($view, $e)= @_;
-	my $template= $view->template_file($e) || return;
+	my($view, $e)= splice @_, 0, 2;
+	my $template = shift || $view->template_file($e)
+	   || Egg::Error->throw('I want template.');
 	my $body= $view->render($template);
 	$e->response->body($body);
-	1;
 }
 sub render {
 	my $view= shift;

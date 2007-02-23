@@ -1,9 +1,9 @@
 package Egg::Request;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno <mizuno@bomcity.com>
+# Masatoshi Mizuno <mizunoE<64>bomcity.com>
 #
-# $Id: Request.pm 217 2007-02-20 13:11:17Z lushe $
+# $Id: Request.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;

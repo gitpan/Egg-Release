@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Build.pm 204 2007-02-19 17:50:52Z lushe $
+# $Id: Build.pm 219 2007-02-21 11:20:24Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 sub new {
 	my $class= shift;
@@ -237,7 +237,7 @@ value: |
   
   our $VERSION= '<# version #>';
   
-  # __PACKAGE__->__setup_warning();
+  # __PACKAGE__->__warning_setup();
   __PACKAGE__->__egg_setup( <# project #>::config->out );
   
   1;

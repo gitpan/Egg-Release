@@ -3,7 +3,7 @@ package Egg::Dispatch::Runmode;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Runmode.pm 204 2007-02-19 17:50:52Z lushe $
+# $Id: Runmode.pm 230 2007-02-23 06:50:37Z lushe $
 #
 use strict;
 use warnings;
@@ -11,9 +11,7 @@ use UNIVERSAL::require;
 use Tie::RefHash;
 use base qw/Egg::Dispatch/;
 
-our $VERSION = '0.06';
-
-__PACKAGE__->mk_accessors(qw/page_title/);
+our $VERSION = '0.08';
 
 *start_mode= \&default_mode;
 {
@@ -511,9 +509,10 @@ If the label is defined in run_modes, the label is preserved.
 
 This is useful for making Topic PATH.
 
+  my $topic= qq{ <a href="/">HOME</a> };
   for (0..$#{$e->action}) {
-  	my $path = join('/', @{$e->action}[0..$_]);
-  	my $label= $e->dispatch->label($_);
+  	my $path = join('/', @{$e->action}[0..$_]) || "";
+  	my $label= $e->dispatch->label($_) || next;
   	$topic.= qq{ &gt; <a href="/$path">$label</a> };
   }
 
