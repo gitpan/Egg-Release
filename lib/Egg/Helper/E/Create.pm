@@ -4,13 +4,13 @@ use strict;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Create.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Create.pm 236 2007-02-24 10:26:28Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -39,7 +39,7 @@ sub new {
 	eval {
 		my @list= $self->parse_yaml(join '', <DATA>);
 		$self->save_file($g, $_) for @list;
-		$self->distclean_execute_make;
+##		$self->distclean_execute_make;
 	  };
 	chdir($g->{start_dir});
 

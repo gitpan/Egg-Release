@@ -3,13 +3,13 @@ package Egg::Helper::O::Test::Prepare;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Prepare.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Prepare.pm 236 2007-02-24 10:26:28Z lushe $
 #
 use strict;
 use warnings;
 use Data::Dumper;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub prepare {
 	my $self = shift;
@@ -18,6 +18,8 @@ sub prepare {
 	$self->create_project_root($pname) unless $self->project_root;
 	my $g= $self->global;
 	$g->{lc_name}= lc($self->project_name);
+
+	$g->{extend_lib}= $args->{extend_lib} || "";
 
 	$self->prepare_include_path
 	  ($args->{include_path}) if $args->{include_path};
@@ -63,7 +65,7 @@ END_OF_CODE
 			$self->save_file($g, $_) for @$files;
 		}
 		$self->create_dir("$g->{project_root}/$_")
-		  for qw(root cache tmp tmp/uploads comp htdocs);
+		  for qw(root cache tmp tmp/uploads comp htdocs t);
 	  };
 	$self->chdir($g->{start_dir});
 
@@ -493,7 +495,7 @@ permission: 0755
 value: |
   #!<# perl_path #>
   package <# project #>::trigger;
-  use lib qw( <# project_root #>/lib );
+  use lib qw( <# project_root #>/lib <# extend_lib #>);
   use <# project #>;
   <# project #>->handler(@_);
 ---
@@ -501,7 +503,7 @@ filename: bin/<# lc_name #>_helper.pl
 permission: 0755
 value: |
   #!<# perl_path #>
-  use lib qw(<# project_root #>/lib);
+  use lib qw( <# project_root #>/lib <# extend_lib #>);
   use Egg::Helper;
   Egg::Helper->run(
   shift(@ARGV),

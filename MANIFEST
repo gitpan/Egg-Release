@@ -1,6 +1,7 @@
 Build.PL
 Changes
 lib/Egg.pm
+lib/Egg/Base.pm
 lib/Egg/Component.pm
 lib/Egg/Const.pm
 lib/Egg/Debug/Base.pm

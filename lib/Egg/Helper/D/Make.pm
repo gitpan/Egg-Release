@@ -3,13 +3,13 @@ package Egg::Helper::D::Make;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Make.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Make.pm 236 2007-02-24 10:26:28Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -26,7 +26,7 @@ sub new {
 	$g->{dispatch_distname}= join('::', @$part);
 	$g->{dispatch_filename}= join('/' , @$part). '.pm';
 	$g->{dispatch_runname} = join('_', map{lc($_)}@{$part}[2..$#{$part}]);
-	$g->{dispatch_new_version}= $VERSION+ 0.01;
+	$g->{dispatch_new_version}= 0.01;
 
 	-e "$g->{lib_dir}/$g->{dispatch_filename}"
 	  and die "It already exists : $g->{lib_dir}/$g->{dispatch_filename}";
@@ -39,12 +39,13 @@ sub new {
 	eval {
 		my @list= $self->parse_yaml(join '', <DATA>);
 		$self->save_file($g, $_) for @list;
-		$self->distclean_execute_make;
+##		$self->distclean_execute_make;
 	  };
 	chdir($g->{start_dir});
 
 	if (my $err= $@) {
 		unlink("$g->{lib_dir}/$g->{dispatch_filename}");
+		unlink("$g->{project_root}/t/$g->{number}_$g->{dispatch_name}.t");
 		die $err;
 	} else {
 		print <<END_OF_INFO;
@@ -148,7 +149,7 @@ value: |
   use warnings;
   use Egg::Const;
   
-  our $VERSION= '<# version #>';
+  our $VERSION= '<# dispatch_new_version #>';
   
   sub default {
   	my($dispatch, $e)= @_;

@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Egg.pm 216 2007-02-20 07:17:45Z lushe $
+# $Id: Egg.pm 236 2007-02-24 10:26:28Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.02';
+our $VERSION= '1.03';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -99,8 +99,8 @@ sub __egg_setup {
 		$conf->{$_->[0]} ||= $_->[1];
 	}
 	for (
-	  [qw{ etc etc }], [qw{ temp tmp }],
-	  [qw{ cache cache }], ['lib', "lib/$class"]
+	  [qw{ etc etc }], [qw{ temp tmp }], [qw{ cache cache }],
+	  ['lib', "lib/$class"], [qw{ lib_root lib }],
 	  ) {
 		$conf->{$_->[0]}= "$conf->{root}/$_->[1]";
 	}
@@ -243,7 +243,7 @@ sub snip {
 sub path {
 	my $e= shift;
 	my $lavel= shift || Egg::Error->throw('I want the label.');
-	my $path = shift || Egg::Error->throw('I want the path.');
+	my $path = shift || return $e->config->{$lavel};
 	my $base= $e->config->{$lavel}
 	  || Egg::Error->throw('There is no value corresponding to the label.');
 	$path=~s{^/+} [];

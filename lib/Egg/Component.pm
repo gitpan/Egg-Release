@@ -3,7 +3,7 @@ package Egg::Component;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Component.pm 186 2007-02-17 07:19:59Z lushe $
+# $Id: Component.pm 235 2007-02-23 13:18:49Z lushe $
 #
 use strict;
 use base qw/Class::Accessor::Fast/;
@@ -16,7 +16,7 @@ __PACKAGE__->mk_accessors(qw/name e config parameters/);
 *params= \&parameters;
 
 sub setup   { @_ }
-sub prepare { 0  }
+sub prepare { 0 }
 
 sub new {
 	my $proto = shift;

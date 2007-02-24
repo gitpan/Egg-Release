@@ -3,7 +3,7 @@ package Egg::Plugin::Filter;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Filter.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Filter.pm 235 2007-02-23 13:18:49Z lushe $
 #
 use strict;
 use warnings;
