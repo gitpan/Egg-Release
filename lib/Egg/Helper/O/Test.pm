@@ -1,9 +1,9 @@
 package Egg::Helper::O::Test;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Test.pm 187 2007-02-17 07:29:15Z lushe $
+# $Id: Test.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
@@ -13,13 +13,13 @@ use base qw/Egg::Helper::O::Test::Prepare Egg::Component/;
 use UNIVERSAL::require;
 use Egg::Exception;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 local $SIG{__DIE__}= sub { Egg::Error->throw(@_) };
 
 __PACKAGE__->mk_accessors(qw/cleanup/);
 
-*temp_path= \&out_path;
+*temp_path= \&temp_dir;
 *env      = \&setup_env;
 *catch    = \&response_catch;
 *attach   = \&attach_request;
@@ -192,10 +192,13 @@ sub create_project_root {
 	my $pname= $self->project_name=~/\:/
 	   ? $self->project_name( shift || 'EggVirtual')
 	   : $self->project_name;
+	my $pass = shift || 0;
 	my $g= $self->global;
 	$g->{out_path} ||= $self->temp_dir;
 	my $proot= "$g->{out_path}/$pname";
 	$self->project_root($proot);
+	unshift @INC, "$proot/lib";
+	return $proot if $pass;
 	-e $proot and Egg::Error->throw("'$proot' already exists.");
 	$proot;
 }
@@ -387,7 +390,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

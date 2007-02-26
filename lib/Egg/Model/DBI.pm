@@ -1,9 +1,9 @@
 package Egg::Model::DBI;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBI.pm 203 2007-02-19 14:46:38Z lushe $
+# $Id: DBI.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
@@ -21,7 +21,7 @@ if ($@) {
 	*_connect= sub { $_[0]->db_Main };
 }
 
-our $VERSION= '0.06';
+our $VERSION= '0.07';
 
 __PACKAGE__->mk_accessors( qw/pid tid db_handler/ );
 
@@ -153,7 +153,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

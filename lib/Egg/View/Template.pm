@@ -1,9 +1,9 @@
 package Egg::View::Template;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Template.pm 230 2007-02-23 06:50:37Z lushe $
+# $Id: Template.pm 250 2007-02-25 11:40:06Z lushe $
 #
 use strict;
 use warnings;
@@ -11,19 +11,7 @@ use base qw/Egg::View/;
 use HTML::Template;
 use Egg::View::Template::Params;
 
-our $VERSION= '0.03';
-
- {
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	for my $name ( qw/associate filter/ ) {
-		*{__PACKAGE__."::push_$name"}= sub {
-			return unless @_> 1;
-			my($view, $code)= @_;
-			push @{$view->{$name}}, $code;
-		 };
-	}
-  };
+our $VERSION= '0.04';
 
 sub setup {
 	my($class, $e, $conf)= @_;
@@ -44,14 +32,29 @@ sub output {
 	$e->response->body( $body );
 }
 sub render {
+	my $conf= shift->_create_config(@_);
+	my $tmpl= HTML::Template->new(%$conf);
+	my $body= $tmpl->output;
+	return \$body;
+}
+sub filter    { shift->_push_var('filter', @_) }
+sub associate { shift->_push_var('associate', @_) }
+
+sub _push_var {
+	my($view, $type)= splice @_, 0, 2;
+	return unless @_;
+	push @{$view->{$type}}, shift;
+}
+sub _create_config {
 	my $view= shift;
 	my $tmpl= shift || return (undef);
-	my $args= shift || {};
+	my $args= $_[0] ? ($_[1] ? {@_}: $_[0]): {};
 	my $e= $view->{e};
 
-	@{$view->params}{keys %{$e->stash}}= values %{$e->stash};
-	@{$view->params}{keys %$args}= values %$args;
+	while (my($key, $value)= each %{$e->stash})
+	  { $view->params->{$key} ||= $value }
 	my %conf= %{$view->config};
+	@conf{keys %$args}= values %$args;
 	if    (ref($tmpl) eq 'SCALAR') { $conf{scalarref}= $tmpl; $conf{cache}= 0 }
 	elsif (ref($tmpl) eq 'ARRAY')  { $conf{arrayref} = $tmpl }
 	else                           { $conf{filename} = $tmpl };
@@ -60,15 +63,9 @@ sub render {
 	push @{$view->{associate}}, $e->request;
 	$conf{associate}= $view->{associate};
 
-	$conf{filter}= $view->{filter} if (@{$view->{filter}});
+	$conf{filter}= $view->{filter} if @{$view->{filter}};
 
-	my $template= $view->create_template(\%conf, $e);
-	my $body= $template->output;
-	return \$body;
-}
-sub create_template {
-	my($view, $conf)= @_;
-	HTML::Template->new(%$conf);
+	\%conf;
 }
 
 1;
@@ -156,7 +153,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

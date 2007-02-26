@@ -1,24 +1,22 @@
 package Egg::View::Mason;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Mason.pm 230 2007-02-23 06:50:37Z lushe $
+# $Id: Mason.pm 248 2007-02-25 11:33:06Z lushe $
 #
 use strict;
 use base qw/Egg::View/;
 use HTML::Mason;
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 
 sub setup {
 	my($class, $e, $conf)= @_;
 	$conf->{comp_root} ||= do {
-		my $c= $e->config;
-		my @options= ['main', $c->{template_path}[0]];
-		for (1..$#{$c->{template_path}}) {
-			push @options, ['private', $c->{template_path}[1]],
-		}
+		my $path= $e->config->{template_path};
+		my @options= ['main', $path->[0]];
+		push @options, ["private$_", $path->[$_]] for (1..$#{$$path});
 		\@options;
 	  };
 	$conf->{data_dir} ||= $e->config->{temp};
@@ -33,15 +31,21 @@ sub output {
 sub render {
 	my $view= shift;
 	my $template= shift || return(undef);
+	my $args= $_[0] ? ($_[1] ? {@_}: $_[0]): {};
 	$template=~m{^[^/]} and $template= "/$template";
 	my $body;
+	my %conf= %{$view->config};
+	@conf{keys %$args}= values %$args;
 	my $mason= HTML::Mason::Interp->new(
-	  %{$view->config},
-	  allow_globals=> [qw/$e $p/],
+	  %conf,
+	  allow_globals=> [qw/$e $s $p/],
 	  out_method   => \$body,
 	  );
-	$mason->set_global(@$_)
-	  for ( [ '$e'=> $view->{e} ], [ '$p'=> $view->params ] );
+	$mason->set_global(@$_) for (
+	  [ '$e' => $view->{e} ],
+	  [ '$s' => $view->{e}->stash ],
+	  [ '$p' => $view->params ],
+	  );
 	$mason->exec($template);
 	return \$body;
 }
@@ -71,7 +75,7 @@ This is a setting example.
 
 Example of code.
 
- $e->stash->{param1}= "fooooo";
+ $s->{param1}= "fooooo";
  
  $e->view->param( 'param2'=> 'booooo' );
  
@@ -89,7 +93,7 @@ Example of template.
  <& /comp/banner_head, a=> { type => 1 } &>
  <& /comp/side_menu,   a=> { guest=> 1 } &>
  
- <h1><% $e->stash->{param1} %></h1>
+ <h1><% $s->{param1} %></h1>
  
  <h2><% $p->{param2} %></h2>
  
@@ -122,20 +126,32 @@ The following global variable can be used.
 
 =item * $e = Egg object.
 
+=item * $s = $e->stash.
+
 =item * $p = $e->view->params.
 
 =back
+
+=head1 METHODS
+
+=head2 output ([EGG_OBJECT], [TEMPLATE])
+
+The template is output, and it sets it in $e->response->body.
+
+=head2 render ([TEMPLATE])
+
+The template is output, and it returns it by the SCALAR reference.
 
 =head1 SEE ALSO
 
 L<HTML::Mason>,
 L<Egg::View>,
-L<Egg::Component>,
+L<Egg::Engine>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

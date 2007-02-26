@@ -1,7 +1,7 @@
-use 5.008006;
 use inc::Module::Install;
 
 name         'Egg-Release';
+author       'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>';
 all_from     'lib/Egg/Release.pm';
 version_from 'lib/Egg/Release.pm';
 license      'perl';
@@ -31,15 +31,15 @@ requires 'IO::Scalar';
 requires 'Jcode';
 requires 'ModPerl::VersionUtil';
 requires 'Module::Install';
-requires 'Test::More';
 requires 'Time::HiRes';
 requires 'UNIVERSAL::require';
 requires 'Tie::RefHash';
 requires 'URI';
 requires 'YAML';
 
+build_requires 'Test::More';
 build_requires 'Test::Pod';
 
+use_test_base;
 auto_install;
 WriteAll;
-EXE_FILES

@@ -1,6 +1,7 @@
 abstract: WEB application framework release version.
-author: Masatoshi Mizuno, <mizunoE<64>bomcity.com>
+author: Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 build_requires: 
+  Test::More: 0
   Test::Pod: 0
 distribution_type: module
 generated_by: Module::Install version 0.64
@@ -36,10 +37,9 @@ requires:
   Jcode: 0
   ModPerl::VersionUtil: 0
   Module::Install: 0
-  Test::More: 0
   Tie::RefHash: 0
   Time::HiRes: 0
   UNIVERSAL::require: 0
   URI: 0
   YAML: 0
-version: 1.09
+version: 1.11

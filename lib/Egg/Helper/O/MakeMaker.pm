@@ -1,16 +1,16 @@
 package Egg::Helper::O::MakeMaker;
 #
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: MakeMaker.pm 230 2007-02-23 06:50:37Z lushe $
+# $Id: MakeMaker.pm 245 2007-02-24 18:21:27Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -58,7 +58,6 @@ README
 lib/<# module_filename #>
 t/00_use.t
 t/89_pod.t
-t/99_perlcritic.t
 MANIFEST_OF_END
 
 	$self->save_file
@@ -101,7 +100,7 @@ Egg::Helper::O::MakeMaker - The skeleton of the module for the pearl is generate
 =head1 SYNOPSIS
 
   perl -MEgg::Helper::O::MakeMaker \
-  -e "Egg::Helper::O::MakeMaker->out" > /path/to/egg_makemaker.pl
+    -e "Egg::Helper::O::MakeMaker->out" > /path/to/egg_makemaker.pl
   
   chmod 755 /path/to/egg_makemaker.pl
   
@@ -125,7 +124,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -142,13 +141,17 @@ __DATA__
 filename: Makefile.PL
 value: |
   use inc::Module::Install;
-  name '<# module_name #>';
-  author '<# author #>';
-  all_from 'lib/<# module_filename #>';
+  
+  name         '<# module_name #>';
+  all_from     'lib/<# module_filename #>';
   version_from 'lib/<# module_filename #>';
+  author       '<# author #>';
+  license      '<# license #>';
   
   build_requires 'Test::More';
   build_requires 'Test::Pod';
+  # build_requires 'Test::Perl::Critic';
+  # build_requires 'Test::Pod::Coverage';
   
   use_test_base;
   auto_include;
@@ -160,14 +163,19 @@ value: |
   use Module::Build;
   
   my $builder = Module::Build->new(
-    module_name => '<# module_distname #>',
-    license => '<# license #>',
-    dist_author => '<# author #>',
-    dist_version_from=> 'lib/<# module_filename #>',
+  
+    module_name       => '<# module_distname #>',
+    dist_version_from => 'lib/<# module_filename #>',
+    dist_author       => '<# author #>',
+    license           => '<# license #>',
+  
     requires => {
-      'Test::More' => 0,
-      'Test::Pod'  => 0,
+      'Test::More'           => 0,
+      'Test::Pod'            => 0,
+  #    'Test::Perl::Critic'  => 0,
+  #    'Test::Pod::Coverage' => 0,
       },
+  
     );
   
   $builder->create_build_script();
@@ -187,7 +195,28 @@ value: |
   
   our $VERSION = '<# module_version #>';
   
-  # Preloaded methods go here.
+  # These are hooks for the plugin of Egg.
+  #
+  # sub setup {
+  # 	my($e)= @_;
+  # 	... ban, bo, bon.
+  # 	$e->next::method;
+  # }
+  # sub prepare {
+  # 	my($e)= @_;
+  # 	... ban, bo, bon.
+  # 	$e->next::method;
+  # }
+  # sub finalize {
+  # 	my($e)= @_;
+  # 	... ban, bo, bon.
+  # 	$e->next::method;
+  # }
+  # sub finalize_error {
+  # 	my($e)= @_;
+  # 	... ban, bo, bon.
+  # 	$e->next::method;
+  # }
   
   1;
   
@@ -218,13 +247,20 @@ value: |
   plan skip_all => "Test::Pod 1.00 required for testing POD" if $@;
   all_pod_files_ok();
 ---
-filename: t/99_perlcritic.t
+filename: t/98_perlcritic.t
 value: |
   use strict;
   use Test::More;
   eval q{ use Test::Perl::Critic };
   plan skip_all => "Test::Perl::Critic is not installed." if $@;
   all_critic_ok("lib");
+---
+filename: t/99_pod_coverage.t~
+value: |
+  use Test::More;
+  eval "use Test::Pod::Coverage 1.00";
+  plan skip_all => "Test::Pod::Coverage 1.00 required for testing POD coverage" if $@;
+  all_pod_coverage_ok();
 ---
 filename: Changes
 value: |
@@ -265,12 +301,6 @@ value: |
      ./Build
      ./Build test
      ./Build install
-  
-  DEPENDENCIES
-  
-  This module requires these other modules and libraries:
-  
-    blah blah blah
   
   AUTHOR
   

@@ -3,10 +3,12 @@ use warnings;
 use Module::Build;
 
 my $builder = Module::Build->new(
-  module_name      => 'Egg::Release',
-  license          => 'perl',
-  dist_author      => 'Masatoshi Mizuno <mizuno@bomcity.com>',
-  dist_version_from=> 'lib/Egg/Release.pm',
+
+  module_name       => 'Egg::Release',
+  dist_version_from => 'lib/Egg/Release.pm',
+  dist_author       => 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>',
+  license           => 'perl',
+
   requires => {
     'CGI' => 0,
     'Class::Accessor' => 0,
@@ -40,6 +42,7 @@ my $builder = Module::Build->new(
     'URI' => 0,
     'YAML' => 0,
     },
+
   );
 
 $builder->create_build_script();

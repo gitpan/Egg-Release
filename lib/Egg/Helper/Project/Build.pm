@@ -1,16 +1,16 @@
 package Egg::Helper::Project::Build;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 219 2007-02-21 11:20:24Z lushe $
+# $Id: Build.pm 245 2007-02-24 18:21:27Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 
 sub new {
 	my $class= shift;
@@ -119,7 +119,7 @@ I am expecting the thing that a wonderful application can be done.
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -136,14 +136,19 @@ __DATA__
 filename: Makefile.PL
 value: |
   use inc::Module::Install;
-  name '<# project #>';
-  all_from 'lib/<# project #>.pm';
-  version_from 'lib/<# project #>.pm';
   
-  requires 'Egg::Release';
+  name         '<# project #>';
+  all_from     'lib/<# project #>.pm';
+  version_from 'lib/<# project #>.pm';
+  author       '<# author #>';
+  license      '<# license #>';
+  
+  requires 'Egg::Release' => 1.10;
   
   build_requires 'Test::More';
   build_requires 'Test::Pod';
+  # build_requires 'Test::Perl::Critic';
+  # build_requires 'Test::Pod::Coverage';
   
   use_test_base;
   auto_include;
@@ -154,15 +159,20 @@ value: |
   use Module::Build;
   
   my $builder = Module::Build->new(
-    module_name => '<# project #>',
-    license => '<# license #>',
-    dist_author => '<# author #>',
-    dist_version_from=> 'lib/<# project #>.pm',
+  
+    module_name       => '<# project #>',
+    dist_version_from => 'lib/<# project #>.pm',
+    dist_author       => '<# author #>',
+    license           => '<# license #>',
+  
     requires => {
-      'Egg::Release' => 1.00,
+      'Egg::Release' => 1.10,
       'Test::More'   => 0,
       'Test::Pod'    => 0,
+  #    'Test::Perl::Critic'  => 0,
+  #    'Test::Pod::Coverage' => 0,
       },
+  
     );
   
   $builder->create_build_script();
@@ -176,7 +186,7 @@ value: |
   use <# project #>;
   
   <# project #>->handler(@_);
-
+  
 ---
 filename: bin/<# lc_name #>_helper.pl
 permission: 0755
@@ -359,18 +369,18 @@ value: |
   
   # * Example
   # use <# project #>::D::Members;
-  # __PACKAGE__->run_modes(
-  #   _default=> sub {},  ## template => index.tt
-  #   members=> {
+  # __PACKAGE__->run_modes( refhash(
+  #   { ANY=> '_default', label=> 'HOME' }=> sub {},  ## template => index.tt
+  #   { ANY=> 'members',  label=> 'Members page.' }=> refhash(
   #     _begin=> \&<# project #>::D::Members::session_start,
   #     _default=> sub {
   #       my($d, $e)= @_;
-  #       $e->finished( FORBIDDEN );
+  #       $e->finished( FORBIDDEN );  ## see Egg::Plugin::ErrorDocument.
   #       },
-  #     profile=> sub {},  ## template => members/profile.tt
+  #     { ANY=> 'profile', label=> 'Profile View.' }=> sub {},  ## template => members/profile.tt
   #     _end=> \&<# project #>::D::Members::session_end,
-  #     },
-  #   );
+  #     ),
+  #   ));
   
   __END__
   <# document #>
@@ -414,7 +424,7 @@ value: |
   plan skip_all => "Test::Pod 1.00 required for testing POD" if $@;
   all_pod_files_ok();
 ---
-filename: t/99_perlcritic.t~~
+filename: t/98_perlcritic.t~~
 value: |
   use strict;
   use Test::More;
@@ -425,6 +435,13 @@ value: |
   # Please install Test::Perl::Critic to do this test effectively.
   # - perl -MCPAN -e "install Test::Perl::Critic"
   #
+---
+filename: t/99_pod_coverage.t~~
+value: |
+  use Test::More;
+  eval "use Test::Pod::Coverage 1.00";
+  plan skip_all => "Test::Pod::Coverage 1.00 required for testing POD coverage" if $@;
+  all_pod_coverage_ok();
 ---
 filename: Changes
 value: |
@@ -465,12 +482,6 @@ value: |
      ./Build
      ./Build test
      ./Build install
-  
-  DEPENDENCIES
-  
-  This module requires these other modules and libraries:
-  
-    blah blah blah
   
   AUTHOR
   

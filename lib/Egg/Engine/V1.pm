@@ -1,15 +1,15 @@
 package Egg::Engine::V1;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: V1.pm 230 2007-02-23 06:50:37Z lushe $
+# $Id: V1.pm 252 2007-02-26 12:09:04Z lushe $
 #
 use strict;
 use UNIVERSAL::require;
 use base qw/Egg::Engine/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.05';
 
 sub startup {
 	my($class, $e)= @_;
@@ -18,39 +18,83 @@ sub startup {
 	my $G= $e->global;
 
 	my(@models, @views, %models, %views);
-	$G->{MODEL_CLASS}= \%models;
-	$G->{MODEL_LIST} = \@models;
-	$G->{VIEW_CLASS} = \%views;
-	$G->{VIEW_LIST}  = \@views;
+	$G->{MODEL_CLASS} = \%models;
+	$G->{MODEL_LIST}  = \@models;
+	$G->{VIEW_CLASS}  = \%views;
+	$G->{VIEW_LIST}   = \@views;
 
 	for my $type
 	  (['model', \@models, \%models], ['view',  \@views,  \%views ]) {
 		my $ucName= uc($type->[0]);
+		my $ufName= ucfirst($type->[0]);
 
 		no strict 'refs';  ## no critic
+
+	## 'is_model' and 'is_view' Method.
 		*{__PACKAGE__."::is_$type->[0]"}= sub {
 			my $egg = shift;
 			my $name= shift || return 0;
 			$egg->global->{"$ucName\_CLASS"}{$name} || 0;
 		  };
+
+	## 'models' and 'views' Method.
+		*{__PACKAGE__."::$type->[0]s"}=
+		  sub { $_[0]->global->{"$ucName\_LIST"} };
+
+	## 'model_class' and 'view_class' Method.
+		*{__PACKAGE__."::$type->[0]_class"}=
+		  sub { $_[0]->global->{"$ucName\_CLASS"} };
+
+	## 'regist_model' and 'regist_view' Method.
+		*{__PACKAGE__."::regist_$type->[0]"}= sub {
+			my $egg = shift;
+			my $name= shift
+			   || Egg::Error->throw(qq{ I want regist_$type->[0] ( name ).});
+			my $pkg = shift
+			   || do { $name=~/^\+(.+)/ ? $1: "Egg::$ufName\::$name" };
+			$pkg->require or Egg::Error->throw($@) if $_[0];
+			$egg->global->{"$ucName\_CLASS"}{$name}
+			  and Egg::Error->throw("Tried to redefine $ucName name.");
+			push @{$egg->global->{"$ucName\_LIST"}}, $name;
+			$egg->global->{"$ucName\_CLASS"}{$name}= $pkg;
+			$name;
+		  };
+
 		my $default= "default_$type->[0]";
+
+	## 'default_model' and 'default_view' Method.
 		*{__PACKAGE__."::$default"}= sub {
 			my $egg= shift;
 			$egg->{$default}= $egg->__check_comps($type->[0], @_) if $_[0];
 			$egg->{$default} ||= $egg->global->{"$ucName\_LIST"}->[0] || 0;
 		  };
-		*{__PACKAGE__."::$type->[0]s"}=
-		  sub { $_[0]->global->{"$ucName\_LIST"} };
-		*{__PACKAGE__."::$type->[0]_class"}=
-		  sub { $_[0]->global->{"$ucName\_CLASS"} };
+
+	## 'model' and 'view' Method.
+		*{__PACKAGE__."::$type->[0]"}= sub {
+			my $egg= shift;
+			if ($_[0]) {
+				$egg->{"__$type->[0]"}{$_[0]}
+				  ||= $egg->__create_comps($type->[0], @_);
+			} else {
+				$egg->{"__$type->[0]"}{$egg->$default}
+				  ||= $egg->__create_comps($type->[0], $egg->$default);
+			}
+		  };
+
+	## MODEL and VIEW setup.
 		$conf->{$type->[0]}= {};
 		if (my $list= $conf->{$ucName}) {
-			&__include_comps($e, @$_, @$type) for @$list;
+			my $regist= "regist_$type->[0]";
+			for (@$list) {
+				$e->$regist($_->[0], 0, 1);
+				$conf->{$type->[0]}{$_->[0]}= $_->[1];
+			}
 		}
 		for my $name (@{$type->[1]}) {
 			my $pkg= $type->[2]{$name} || next;
 			$pkg->setup($e, $conf->{$type->[0]}{$name});
 		}
+
 	}
 
 	$class->SUPER::startup($e);
@@ -105,68 +149,16 @@ sub step3 {
 	$e->output_content;
 	$e;
 }
-sub model {
-	my $e= shift;
-	if ($_[0]) {
-		$e->{model}{$_[0]} ||= $e->__create_comps('model', @_);
-	} else {
-		$e->{model}{$e->default_model}
-		  ||= $e->__create_comps('model', $e->default_model);
-	}
-}
-sub view {
-	my $e= shift;
-	if ($_[0]) {
-		$e->{view}{$_[0]} ||= $e->__create_comps('view', @_);
-	} else {
-		$e->{view}{$e->default_view} ||= do {
-			my $default= $e->global->
-			  {VIEW_CLASS}{$e->default_view} || return 0;
-			$default->new($e, $e->config->{view}{$e->default_view});
-		  };
-	}
-}
 sub __create_comps {
 	my $e   = shift;
 	my $type= shift || return 0;
-	my $name= $e->__check_comps($type, @_) || return 0;
-	my $pkg = $e->global->{uc($type).'_CLASS'}{$name} || return 0;
-	$pkg->can('ACCEPT_CONTEXT')
-	  ? $pkg->ACCEPT_CONTEXT($e, $e->config->{$type}{$name})
-	  : $pkg->new($e, $e->config->{$type}{$name});
-}
-sub __check_comps {
-	my $e   = shift;
-	my $type= shift || return 0;
 	my $name= shift || return 0;
-	return $name if ($e->global->{uc($type)."_CLASS"}{$name});
-	my $pkg= $e->__include_comps($name, $_[0], $type, @_);
-	$pkg->setup($e, $e->config->{$type}{$name});
-	return $name;
-}
-sub __include_comps {
-	my $e      = shift;
-	my $name   = shift || return 0;
-	my $conf   = shift || {};
-	my $type   = shift || return 0;
-	my $ucType = uc($type);
-	my $ucfType= ucfirst($type);
-	my $ueType = uc(($type=~/^(.)/)[0]);
-	my $list   = shift || $e->global->{"$ucType\_LIST"};
-	my $stock  = shift || $e->global->{"$ucType\_CLASS"};
-	my $base= $e->namespace;
-	for my $b ("$base\::$ucfType", "$base\::$ueType", "Egg::$ucfType") {
-		my $pkg= "$b\::$name";
-		if ($pkg->require) {
-			$e->config->{$type}{$name}= $conf;
-			push @$list, $name;
-			$stock->{$name}= $pkg;
-		} else {
-			$@=~m{^Can\'t locate $base/.+} and next;
-			Egg::Error->throw($@);
-		}
-	}
-	return $stock->{$name};
+	my $cmethod= "$type\_class";
+	my $pkg = $e->$cmethod->{$name}
+	   || Egg::Error->throw("'$name' $type is not set up.");
+	$pkg->can('ACCEPT_CONTEXT')
+	   ? $pkg->ACCEPT_CONTEXT($e, $e->config->{$type}{$name})
+	   : $pkg->new($e, $e->config->{$type}{$name});
 }
 
 1;
@@ -260,7 +252,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

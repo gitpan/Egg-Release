@@ -1,9 +1,9 @@
 package Egg::Plugin::FormValidator::Simple;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Simple.pm 216 2007-02-20 07:17:45Z lushe $
+# $Id: Simple.pm 245 2007-02-24 18:21:27Z lushe $
 #
 use strict;
 use FormValidator::Simple;
@@ -148,7 +148,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT
 

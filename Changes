@@ -1,5 +1,17 @@
 Revision history for Perl extension Egg::Release.
 
+1.11  2007/02/26
+	- Bug fix for Egg::Engine::V1.
+	- Bug fix for Egg::Engine
+	- Bug fix for Egg::Helper;
+	- Bug fix for Egg::Helper::O::Test;
+	* A dynamic loading of view and the model component is abolished.
+	* Some operation of Egg::Engine has changed.
+
+1.10  2007/02/25
+	- fixed for Egg::Helper::*.
+	- fixed for Egg::View::*.
+
 1.09  2007/02/24
 	- Egg::Base was added.
 	- Bug fix of some modules and it corrected it.

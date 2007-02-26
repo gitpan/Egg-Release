@@ -1,9 +1,9 @@
 package Egg::Helper::O::Test::Prepare;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Prepare.pm 236 2007-02-24 10:26:28Z lushe $
+# $Id: Prepare.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
@@ -15,7 +15,11 @@ sub prepare {
 	my $self = shift;
 	my $args = $_[0] ? ($_[1] ? {@_}: $_[0]): {};
 	my $pname= $args->{project_name} || 0;
-	$self->create_project_root($pname) unless $self->project_root;
+
+	$self->create_project_root($pname, $args->{create_ok})
+	  unless $self->project_root;
+	return if $args->{create_ok};
+
 	my $g= $self->global;
 	$g->{lc_name}= lc($self->project_name);
 
@@ -434,7 +438,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

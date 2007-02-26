@@ -1,9 +1,9 @@
 package Egg::Plugin::Upload;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno <mizunoE<64>bomcity.com>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Upload.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Upload.pm 245 2007-02-24 18:21:27Z lushe $
 #
 use strict;
 use warnings;
@@ -153,7 +153,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

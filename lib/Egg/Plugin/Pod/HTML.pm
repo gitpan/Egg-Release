@@ -1,9 +1,9 @@
 package Egg::Plugin::Pod::HTML;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno <mizuno@bomcity.com>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: HTML.pm 201 2007-02-18 09:49:23Z lushe $
+# $Id: HTML.pm 245 2007-02-24 18:21:27Z lushe $
 #
 use strict;
 use Egg::Const;
@@ -153,7 +153,8 @@ Dispatch.
   
     pod => sub {
       my($dispat, $e)= @_;
-      $e->response->body( $ );
+      my $body= $e->pod2html( $e->snip(1) ) || return $e->finished( 404 );
+      $e->response->body( $body );
       },
   
     );
@@ -162,38 +163,31 @@ Request url.
 
   http://domain.name/pod/HTML::Mason
 
-=head1 DESCRIPTION
+=head1 METHODS
 
-Stub documentation for Egg::Plugin::Pod::HTML, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+=head2 pod2html ([MODULE_NAME], [ARGS])
 
-Blah blah blah.
+The result of the return of 'pod2html' command is returned by the SCALAR reference.
 
-=head2 EXPORT
+  my $html= $e->pod2html('CGI::Cookie');
 
-None by default.
+=head2 pod2html_body ([MODULE_NAME], [ARGS])
 
+The part of '<body> ... </body>' is returned from the result of pod2html.
 
+  my $body= $e->pod2html_body('CGI::Cookie');
 
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-root, E<lt>root@localdomainE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 by root
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

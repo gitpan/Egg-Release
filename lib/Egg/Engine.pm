@@ -1,9 +1,9 @@
 package Egg::Engine;
 #
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Engine.pm 230 2007-02-23 06:50:37Z lushe $
+# $Id: Engine.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Egg::Exception;
 use HTML::Entities;
 use URI::Escape;
 
-our $VERSION= '0.11';
+our $VERSION= '0.13';
 
 *escape_html  = \&encode_entities;
 *eHTML        = \&encode_entities;
@@ -91,11 +91,10 @@ sub run {
 	}
 	$e->response->result;
 }
-sub startup   { @_ }
-sub setup     { @_ }
-sub prepare   { @_ }
-sub execute   { @_ }
-sub finalize  { @_ }
+sub setup    { @_ }
+sub startup  { @_ }
+sub prepare  { @_ }
+sub finalize { @_ }
 sub finalize_error { @_ }
 sub error_document { @_ }
 
@@ -353,7 +352,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

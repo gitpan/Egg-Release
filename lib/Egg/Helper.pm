@@ -1,9 +1,9 @@
 package Egg::Helper;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 201 2007-02-18 09:49:23Z lushe $
+# $Id: Helper.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Egg::Exception;
 use Egg::Engine;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.04';
+our $VERSION= '0.06';
 
 my %Global;
 sub global { \%Global }
@@ -46,6 +46,12 @@ sub global { \%Global }
 			print "- $accessor file : $file1 => $file2\n";
 			1;
 		  };
+	}
+	sub get_options {
+		my $class   = shift;
+		my $options = shift || "i-in= D-debug o-out= h-help";
+		Getopt::Easy::get_options
+		  ( $options, $class->help_message($Global{mode}) );
 	}
   };
 
@@ -76,11 +82,12 @@ sub run {
 		my $pkg= $1;
 		$class->project_name($pname)
 		  || Egg::Error->throw('I want project name.');
-		$class->setup_global($args);
+		my $helper= $class->isa_self($pkg);
+		$helper->setup_global($args);
 		$Global{project_root}=
 		  $class->path_regular($Global{project_root})
 		  || Egg::Error->throw('I want project_root.');
-		$class->isa_self($pkg)->new();
+		$helper->new();
 
 	# Help.
 	} else {
@@ -132,10 +139,9 @@ sub setup_global {
 	my $class= shift;
 	my $args = shift || {};
 	$args->{any_name}= shift(@ARGV)
-	  if ($ARGV[0] && $ARGV[0]=~m{^[A-Za-z][A-Za-z0-9_\:\-]*$});
+	 if ($ARGV[0] && $ARGV[0]=~m{^[A-Za-z].*?$});
 
-	get_options "o-out=  i-in=  h-help  D-debug",
-	  $class->help_message($Global{mode});
+	$class->get_options;
 
 	$SIG{__DIE__}= sub { Egg::Error->throw(@_) } if $O{debug};
 
@@ -216,6 +222,11 @@ sub remove_dir {
 	File::Path::rmtree($path) || return 0;
 	print "- remove dir : $path\n";
 	1;
+}
+sub remove_file {
+	my $self = shift;
+	my $file = shift || Egg::Error->throw('I want file path.');
+	print "+ remove file: $file\n" if unlink($file);
 }
 sub read_file {
 	my $self = shift;
@@ -638,7 +649,7 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

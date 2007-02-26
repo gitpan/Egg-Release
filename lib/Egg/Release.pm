@@ -1,14 +1,14 @@
 package Egg::Release;
 #
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 236 2007-02-24 10:26:28Z lushe $
+# $Id: Release.pm 251 2007-02-26 11:58:47Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '1.09';
+our $VERSION= '1.11';
 
 1;
 
@@ -1033,7 +1033,7 @@ L<Egg::View>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
