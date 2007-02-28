@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -189,7 +189,7 @@ value: |
   #
   # sub prepare {
   #   my($e)= @_;
-  #   $e->response->content_type("text/html; charset=UTF8");
+  #   $e->response->content_type("text/html; charset=UTF-8");
   #   $e->response->content_language( $e->config->{content_language} || 'jp' );
   #   $e->next::method;
   # }

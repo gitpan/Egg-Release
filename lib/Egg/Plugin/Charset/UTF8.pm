@@ -14,7 +14,7 @@ our $VERSION = '0.01';
 
 sub prepare {
 	my($e)= @_;
-	$e->response->content_type("text/html; charset=EUC-JP");
+	$e->response->content_type("text/html; charset=UTF-8");
 	$e->response->content_language( $e->config->{content_language} || 'jp' );
 	$e->next::method;
 }
@@ -24,7 +24,7 @@ sub _charset_convert_type {
 }
 sub _output_convert_charset {
 	my($e, $body)= @_;
-	Jcode->new($body)->euc;
+	Jcode->new($body)->utf8;
 }
 
 1;
