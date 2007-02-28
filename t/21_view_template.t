@@ -30,7 +30,7 @@ ok( $view->param( address => $e->request->address ) );
 is $view->params->{address}, '127.0.0.1';
 
 if (my $catch= $t->response_catch($e)) {
-	like $$catch, qr#\bContent\-Type\:\s+text/html$CRLF#s;
+	like $$catch, qr#\bContent\-Type\:\s+text/html[^\r\n]*$CRLF#s;
 	like $$catch, qr#<html>.+?</html>#s;
 	like $$catch, qr#<head>.+?</head>#s;
 	like $$catch, qr#<title>test_page</title>#s;

@@ -20,6 +20,7 @@ lib/Egg/Helper/M/DBI.pm
 lib/Egg/Helper/O/MakeMaker.pm
 lib/Egg/Helper/O/Test.pm
 lib/Egg/Helper/O/Test/Prepare.pm
+lib/Egg/Helper/P/Charset.pm
 lib/Egg/Helper/P/Prototype.pm
 lib/Egg/Helper/P/YAML.pm
 lib/Egg/Helper/Project/BlankPage.pm
@@ -28,6 +29,10 @@ lib/Egg/Helper/R/FastCGI.pm
 lib/Egg/Helper/V/Mason.pm
 lib/Egg/Model.pm
 lib/Egg/Model/DBI.pm
+lib/Egg/Plugin/Charset.pm
+lib/Egg/Plugin/Charset/EUC_JP.pm
+lib/Egg/Plugin/Charset/Shift_JIS.pm
+lib/Egg/Plugin/Charset/UTF8.pm
 lib/Egg/Plugin/DBI/Accessors.pm
 lib/Egg/Plugin/DBI/Accessors/Extra.pm
 lib/Egg/Plugin/DBI/CommitOK.pm

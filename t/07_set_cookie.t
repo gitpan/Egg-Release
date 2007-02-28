@@ -1,5 +1,5 @@
 
-use Test::More tests=> 18;
+use Test::More tests=> 13;
 use Egg::Helper;
 my $t= Egg::Helper->run('O:Test');
 $t->prepare;
@@ -9,16 +9,11 @@ my $CRLF= $Egg::CRLF;
 
 ok( $res->cookie( test=> { value=> 'hoge' } ) );
 ok( $res->cookie('test') );
-isa_ok $res->cookie('test'), 'Egg::Response::TieCookie::Params';
 ok( $res->cookie('test')->{value} );
 is $res->cookie('test')->{value}, 'hoge';
-is $res->cookie('test')->value,   'hoge';
-is $res->cookie('test')->plain_value, 'hoge';
 ok( $res->cookies->{test2}= { value=> 'hoge2' } );
 ok( $res->cookies->{test2} );
-isa_ok $res->cookies->{test2}, 'Egg::Response::TieCookie::Params';
 ok( $res->cookies->{test2}{value} );
-is $res->cookies->{test2}->value, 'hoge2';
 ok( my $out= $res->create_header );
 like $$out, qr{\bSet\-Cookie\:\s+.*?test\=hoge\;.+?$CRLF}is;
 like $$out, qr{\bSet\-Cookie\:\s+.*?test2\=hoge2\;.+?$CRLF}is;

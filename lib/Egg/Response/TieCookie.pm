@@ -3,72 +3,61 @@ package Egg::Response::TieCookie;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: TieCookie.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: TieCookie.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
-our $VERSION= '0.02';
+our $VERSION= '0.04';
 
 sub TIEHASH {
-	my($class, $encode_func)= @_;
-	my %cookie;
-	bless { cookie=> \%cookie, encode=> $encode_func }, $class;
+	my($class, $e)= @_;
+	bless {
+	  cookies=> {},
+	  secure => $e->request->secure,
+	  default=> ($e->config->{cookie_default} || {}),
+	  }, $class;
 }
 sub FETCH {
-	$_[0]->{cookie}{$_[1]} || undef;
+	$_[0]->{cookies}{$_[1]} || undef;
 }
 sub STORE {
 	my $self= shift;
 	my $key = shift || return 0;
-	my $hash= shift;
-	if (ref($hash) eq 'HASH') {
-		my %store= %$hash;
-		$store{__encode}= $self->{encode};
-		$store{name} ||= $key;
-		$self->{cookie}{$key}=
-		  Egg::Response::TieCookie::Params->new(\%store);
-		return $self->{cookie}{$key};
-	} else {
-		delete($self->{cookie}{$key}) if $self->{cookie}{$key};
-		return (undef);
-	}
+	my $hash= $_[0] ? (ref($_[0]) eq 'HASH' ? $_[0]: { value=> $_[0] })
+	                : { value => 0 };
+
+	exists($hash->{value}) or die q{ I want cookie 'value'. };
+	$hash->{name} ||= $key;
+
+	$hash->{$_} ||= $self->{default}{$_} || undef
+	  for qw/ domain expires path /;
+
+	$hash->{secure}= $self->{default}{secure} || $self->{secure}
+	  unless defined($hash->{secure});
+
+	$self->{cookies}{$key}= $hash;
+	return $hash;
 }
 sub DELETE {
 	my($self, $key)= @_;
-	delete($self->{cookie}{$key});
+	delete($self->{cookies}{$key});
 }
 sub CLEAR {
 	my($self)= @_;
-	%{$self->{cookie}}= ();
+	%{$self->{cookies}}= ();
 }
 sub EXISTS {
 	my($self, $key)= @_;
-	exists($self->{cookie}{$key});
+	exists($self->{cookies}{$key});
 }
 sub FIRSTKEY {
 	my($self)= @_;
-	my $reset= keys %{$self->{cookie}};
-	each %{$self->{cookie}};
+	my $reset= keys %{$self->{cookies}};
+	each %{$self->{cookies}};
 }
 sub NEXTKEY {
-	each %{$_[0]->{cookie}};
+	each %{$_[0]->{cookies}};
 }
-
-package Egg::Response::TieCookie::Params;
-use strict;
-use base qw/Class::Accessor::Fast/;
-
-__PACKAGE__->mk_accessors( qw/name expires domain path secure/ );
-
-sub new {
-	my($class, $hash)= @_;
-	bless $hash, $class;
-}
-sub value {
-	my($self)= @_;
-	$self->{__encode}->(\$self->{value});
-}
-sub plain_value { $_[0]->{value} }
 
 1;
 

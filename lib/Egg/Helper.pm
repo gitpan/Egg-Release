@@ -3,7 +3,7 @@ package Egg::Helper;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 251 2007-02-26 11:58:47Z lushe $
+# $Id: Helper.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Egg::Exception;
 use Egg::Engine;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.06';
+our $VERSION= '0.07';
 
 my %Global;
 sub global { \%Global }
@@ -225,8 +225,10 @@ sub remove_dir {
 }
 sub remove_file {
 	my $self = shift;
-	my $file = shift || Egg::Error->throw('I want file path.');
-	print "+ remove file: $file\n" if unlink($file);
+	Egg::Error->throw('I want file path.') unless @_;
+	for my $file (@_) {
+		print "+ remove file: $file\n" if unlink($file);
+	}
 }
 sub read_file {
 	my $self = shift;

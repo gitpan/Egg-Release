@@ -29,7 +29,7 @@ ok( $view->param( page_title => 'test_page' ) );
 ok( $view->params->{page_title} eq 'test_page' );
 
 if (my $catch= $t->response_catch($e)) {
-	like $$catch, qr#\bContent\-Type\:\s+text/html$CRLF#s;
+	like $$catch, qr#\bContent\-Type\:\s+text/html[^\r\n]*$CRLF#s;
 	like $$catch, qr#<html>.+?</html>#s;
 	like $$catch, qr#<head>.+?</head>#s;
 	like $$catch, qr#<title>test_page</title>#s;

@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Build.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.05';
+our $VERSION= '0.06';
 
 sub new {
 	my $class= shift;
@@ -294,13 +294,21 @@ value: |
   # Accessor to stash. * Do not overwrite a regular method.
   #  accessor_names=> [qw/hoge/],
   
+  # Cookie default setup.
+  #  cookie => {
+  #    domain  => 'mydomain',
+  #    path    => '/',
+  #    expires => 0,
+  #    secure  => 0,
+  #    },
+  
   # Model configuration.
   #  MODEL=> [
-  #    [ 'DBI'=> {
+  #    [ DBI => {
   #          dsn=> 'dbi:[DBD]:dbname=[DB];host=localhost;port=5432',
   #          user    => '[USERNAME]',
   #          password=> '[PASSWORD]',
-  #          options => { RaiseError=> 1, AutoCommit=> 1 },
+  #          options => { AutoCommit=> 1, RaiseError=> 0 },
   #        },
   #      ],
   #    ],

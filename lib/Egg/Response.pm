@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Response.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -15,23 +15,19 @@ use base qw/Egg::Component/;
 no warnings 'redefine';
 
 __PACKAGE__->mk_accessors
- ( qw/headers status location content_type no_cache ok_cache cookies_ok/ );
+ ( qw/headers status content_type location no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.10';
+our $VERSION= '0.11';
 our $AUTOLOAD;
 
 *output   = \&body;
 *set_cache= \&ok_cache;
 
 sub new {
-	my $res = shift->SUPER::new(@_);
-	my $conf= $res->e;
+	my $res= shift->SUPER::new(@_);
+	$res->{body}= $res->{status}= 0;
 	$res->{headers}= HTTP::Headers->new;
-	$res->{headers}->content_language
-	  ($conf->{content_language}) if $conf->{content_language};
-	$res->{body}  = "";
-	$res->{status}= 0;
-	$res->content_type( $conf->{content_type} || 'text/html' );
+	$res->content_type( $res->e->config->{content_type} || 'text/html' );
 	$res;
 }
 sub body {
@@ -42,39 +38,40 @@ sub body {
 	${$res->{body}} ||= "";
 	$res->{body};
 }
+sub create_header {
+	my $res  = shift;
+	my $body = ref($_[0]) ? $_[0]: \{};
+	my($e, $headers, $CL)= ($res->e, $res->headers, $Egg::CRLF);
+
+	my $header;
+	my $ctype= $res->content_type || 'text/html';
+	if ($ctype=~m{^text/}i && (my $lang=
+	  $headers->{'content-language'} || $e->config->{content_language})) {
+		$header.= "Content-Language: $lang$CL";
+	}
+
+	while (my($name, $value)= each %$headers) {
+		next if $name=~/^Content\-(?:Type|Length|Language)$/i;
+		$header.= "$name\: $_$CL" for (ref($value) eq 'ARRAY' ? @$value: $value);
+	}
+
+	if ($res->no_cache && HTTP::Date->require) {
+		$header.= $res->create_no_cache($CL);
+	} elsif ($res->set_cache && HTTP::Date->require) {
+		$header.= $res->create_ok_cache($CL);
+	}
+
+	$header.= "Content-Length: ". length($$body). $CL if $res->status< 400;
+	$header.= $res->create_cookies if $res->cookies_ok;
+	$header.= "Content-Type: $ctype$CL";
+	$header.= 'X-Egg-'. $e->namespace. ': '. $e->VERSION. "$CL$CL";
+	\$header;
+}
 sub attachment {
 	my $res= shift;
 	$res->headers->header
 	  ( 'content-disposition'=> "attachment; filename=$_[0]" ) if @_> 0;
 	$res->headers->{'content-disposition'} || "";
-}
-sub create_header {
-	my $res = shift; my $e= $res->{e};
-	my $body= ref($_[0]) ? $_[0]: \{};
-	my($req, $headers, $CL)= ($e->request, $res->headers, $Egg::CRLF);
-	my $header;
-	my $ctype= $res->content_type || $header->content_type || "";
-	if ($ctype=~m{^text/}i) {
-		$header.= "Content-Language: $headers->{'content-language'}$CL"
-		  if $headers->{'content-language'};
-	}
-	while (my($name, $value)= each %$headers) {
-		next if $name=~/^Content\-(?:Type|Length|Language)$/i;
-		$header.= "$name\: $_$CL" for (ref($value) eq 'ARRAY' ? @$value: $value);
-	}
-	if ($res->status< 400) {
-		if ($res->no_cache && HTTP::Date->require) {
-			$header.= $res->create_no_cache($CL);
-		} elsif ($res->set_cache && HTTP::Date->require) {
-			$header.= $res->create_ok_cache($CL);
-		}
-		$header.= "Content-Length: ". length($$body). $CL;
-	}
-	$header.= $res->create_cookies if $res->cookies_ok;
-	$header.= "Content-Type: $ctype$CL";
-	$header.= 'X-Egg-'. $e->namespace. ': '. $e->VERSION
-	       .  "$CL$CL";
-	\$header;
 }
 sub create_no_cache {
 	my($res, $CL)= @_;
@@ -90,9 +87,6 @@ sub create_ok_cache {
 }
 sub create_cookies {
 	my($res)= @_;
-	my $secure= $res->{e}->request->secure
-	  ? sub { defined($_[0]) ? ($_[0] ? 1: 0): 1 }
-	  : sub { $_[0] || 0 };
 	my $cookies;
 	while (my($name, $hash)= each %{$res->cookies}) {
 		my $value= CGI::Cookie->new(
@@ -101,7 +95,7 @@ sub create_cookies {
 		 -expires=> $hash->{expires},
 		 -domain => $hash->{domain},
 		 -path   => $hash->{path},
-		 -secure => $secure->($hash->{secure}),
+		 -secure => $hash->{secure},
 		 ) || next;
 		$cookies.= "Set-Cookie: $value$Egg::CRLF";
 	}
@@ -119,7 +113,7 @@ sub cookies {
 	$res->{cookies} ||= do {
 		$res->{cookies_ok}= 1;
 		my %cookies;
-		tie %cookies, 'Egg::Response::TieCookie', sub { ${$_[0]} };
+		tie %cookies, 'Egg::Response::TieCookie', $res->e;
 		\%cookies;
 	  };
 }

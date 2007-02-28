@@ -3,7 +3,7 @@ package Egg::Dispatch::Runmode;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Runmode.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Runmode.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -11,11 +11,12 @@ use UNIVERSAL::require;
 use Tie::RefHash;
 use base qw/Egg::Dispatch/;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 *start_mode= \&default_mode;
 {
 	no strict 'refs';  ## no critic
+	no warnings 'redefine';
 	sub run_modes {
 		my $self = shift;
 		my $class= ref($self) || $self;
@@ -39,24 +40,21 @@ our $VERSION = '0.08';
 	}
 	sub mode_param {
 		my $prot= shift;
-		if (my $class= ref($prot)) {
-			return ${"$class\::PARAM_CODE"} ||= sub {};
-		} else {
-			my $param_name= shift || Egg::Error->throw('I want param name.');
-			${"$prot\::PARAM_CODE"}= sub {
-				my($self, $e)= @_;
-				if (my $snip= $e->request->params->{$param_name}) {
-					$snip=~tr/\t\r\n//d; $snip=~s/ +//g;
-					return $snip
-					  ? [map{lc($_)}(split /[\/\:\-]+/, $snip)]: [];
-				}
-				return [];
-			  };
-		}
+		return 0 if ref($prot);
+		my $param_name= shift || Egg::Error->throw('I want param name.');
+		${"$prot\::_get_mode"}= sub {
+			my($self, $e)= @_;
+			if (my $snip= $ENV{uc($e->namespace).'_REQUEST_PARTS'}
+			           || $e->request->params->{$param_name}) {
+				$snip=~tr/\t\r\n//d; $snip=~s/ +//g;
+				return $snip ? [ split /[\/\:\-]+/, $snip ]: [];
+			}
+			return [];
+		  };
+		$prot;
 	}
 	sub _before_setup {
 		my($class, $e, $dispat)= @_;
-		no warnings 'redefine';
 		*{"$dispat\::refhash"}= sub {
 			my %refhash;
 			tie %refhash, 'Tie::RefHash', @_;
@@ -71,8 +69,8 @@ sub _new {
 	my $dispat= $e->global->{EGG_DISPATCH_BASE};
 	my $self= bless { e=> $e,
 	  default_name=> $e->config->{template_default_name} }, $dispat;
-	$self->{snip}= $self->mode_param->($self, $e)
-	            || [map{lc($_)}@{$e->snip}];
+	$self->{snip}= $self->_get_mode($e)
+	            || [ map{lc($_)}@{$e->snip} ];
 	$self->{debug_out}= $e->global->{EGG_DISPATCH_DEBUGOUT};
 	$self->{label}= [];
 	$self;
@@ -89,6 +87,7 @@ sub label {
 	return $self->{label} unless @_;
 	$self->{label}->[$_[0]] || "";
 }
+sub _get_mode { 0 }
 sub _scan_mode_exted { @_ }
 
 sub _scan_mode {

@@ -29,7 +29,6 @@ is $egg->request->param('test3'), 3;
 is $egg->is_request, 'Egg::Request::CGI';
 ok( my $req= $egg->request );
 isa_ok $req, 'Egg::Request::CGI';
-
 is $req->uri, $uri;
 is $req->host, 'domain.name';
 is $req->host_name, 'domain.name';
@@ -40,7 +39,6 @@ is $req->scheme, 'https';
 is $req->path,   '/test';
 is $req->args,   'test1=1&test2=2';
 is $req->port,   443;
-
 is $req->agent,   $project_name;
 is $req->address, '127.0.0.1';
 ok( $req->cookies );
@@ -51,7 +49,6 @@ is $egg->is_response, 'Egg::Response';
 ok( my $res= $egg->response );
 isa_ok $res, 'Egg::Response';
 ok( my $cookies= $res->cookies );
-
 isa_ok $cookies, 'HASH';
 isa_ok tied(%$cookies), 'Egg::Response::TieCookie';
 is $egg->is_engine, 'Egg::Engine::V1';
@@ -62,7 +59,6 @@ isa_ok $dis, "$project_name\::D";
 ok( $dis->isa('Egg::Dispatch::Runmode') );
 ok( my $run= $dis->run_modes );
 isa_ok $run, 'HASH';
-
 ok( $run->{_default} );
 isa_ok $run->{_default}, 'CODE';
 ok( ! $egg->model );
@@ -70,14 +66,14 @@ ok( $egg->is_view('Template') );
 is $egg->default_view, 'Template';
 ok( my $view= $egg->view );
 isa_ok $view, 'Egg::View::Template';
-
 ok( $egg->config->{view}{Template} );
 is $egg->config->{root}, $t->project_root;
 ok( my $catch= $t->response_catch($egg, 'handler') );
 ok( $CRLF= $Egg::CRLF );
 like $$catch, qr/\bX\-Egg\-$project_name\:\s+[\d\.]+$CRLF/s;
-like $$catch, qr/\bContent\-Type\:\s+text\/html$CRLF/s;
+like $$catch, qr/\bContent\-Type\:\s+text\/html[^\r\n]*$CRLF/s;
 like $$catch, qr/<html.*?>.+?<\/html>/s;
 like $$catch, qr/<body>.+?<\/body>/s;
 like $$catch, qr/<title>$project_name\-[\d\.]+<\/title>/s;
 like $$catch, qr/<h1>.+?BLANK\s+PAGE.+?<\/h1>/;
+=cut

@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Engine.pm 251 2007-02-26 11:58:47Z lushe $
+# $Id: Engine.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -84,7 +84,8 @@ sub run {
 		} else {
 			$error= $@;
 		}
-		$e->finalize_error;
+		eval { $e->finalize_error };
+		if (my $err= $@) { $error.= "\n\n$err" }
 		my $comp= $e->template || '*';
 		$e->log->notes("$comp: $error");
 		$e->disp_error("$comp: $error");

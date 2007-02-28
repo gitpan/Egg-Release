@@ -3,7 +3,7 @@ package Egg::Plugin::Encode;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Encode.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -13,18 +13,6 @@ our $VERSION= '0.01';
 {
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
-
-	*{'Egg::Response::cookies'}= sub {
-		my($res)= @_;
-		$res->{cookies} ||= do {
-			$res->{cookies_ok}= 1;
-			my %cookies;
-			my $icode= $res->e->config->{character_in}. '_conv';
-			tie %cookies, 'Egg::Response::TieCookie', sub { $res->{e}->$icode(@_) };
-			\%cookies;
-		  };
-	  };
-
 	sub setup {
 		my($e)= @_;
 		$e->config->{character_in} ||= 'euc';

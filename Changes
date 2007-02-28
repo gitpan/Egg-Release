@@ -1,5 +1,16 @@
 Revision history for Perl extension Egg::Release.
 
+1.12  2007/02/28
+	- fixed for Egg::Response.
+	- fixed for Egg::Engine::V1.
+	- fixed for Egg::Plugin::Encode.
+	- fixed for Egg::Response::TieCookie.
+	* Egg::Response::TieCookie::Params is abolished.
+	- Egg::Plugin::Charset and Egg::Helper::P::Charset was added.
+	- fixed for Egg::Helper::Project::Build.
+	- fixed for Egg::Dispatch::Runmode.
+	- Bug fix for Egg::Helper::P::YAML.
+
 1.11  2007/02/26
 	- Bug fix for Egg::Engine::V1.
 	- Bug fix for Egg::Engine

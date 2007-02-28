@@ -3,13 +3,13 @@ package Egg::Engine::V1;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: V1.pm 252 2007-02-26 12:09:04Z lushe $
+# $Id: V1.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use UNIVERSAL::require;
 use base qw/Egg::Engine/;
 
-our $VERSION= '0.05';
+our $VERSION= '0.06';
 
 sub startup {
 	my($class, $e)= @_;
@@ -39,11 +39,11 @@ sub startup {
 
 	## 'models' and 'views' Method.
 		*{__PACKAGE__."::$type->[0]s"}=
-		  sub { $_[0]->global->{"$ucName\_LIST"} };
+		   sub { $_[0]->global->{"$ucName\_LIST"} };
 
 	## 'model_class' and 'view_class' Method.
 		*{__PACKAGE__."::$type->[0]_class"}=
-		  sub { $_[0]->global->{"$ucName\_CLASS"} };
+		   sub { $_[0]->global->{"$ucName\_CLASS"} };
 
 	## 'regist_model' and 'regist_view' Method.
 		*{__PACKAGE__."::regist_$type->[0]"}= sub {
@@ -53,8 +53,10 @@ sub startup {
 			my $pkg = shift
 			   || do { $name=~/^\+(.+)/ ? $1: "Egg::$ufName\::$name" };
 			$pkg->require or Egg::Error->throw($@) if $_[0];
-			$egg->global->{"$ucName\_CLASS"}{$name}
-			  and Egg::Error->throw("Tried to redefine $ucName name.");
+			if ($egg->global->{"$ucName\_CLASS"}{$name}
+			 || $egg->global->{"$ucName\_CLASS"}{lc($name)}) {
+				Egg::Error->throw("Tried to redefine $ucName name.");
+			}
 			push @{$egg->global->{"$ucName\_LIST"}}, $name;
 			$egg->global->{"$ucName\_CLASS"}{$name}= $pkg;
 			$name;
@@ -74,7 +76,12 @@ sub startup {
 			my $egg= shift;
 			if ($_[0]) {
 				$egg->{"__$type->[0]"}{$_[0]}
-				  ||= $egg->__create_comps($type->[0], @_);
+				  || $egg->{"__$type->[0]"}{lc($_[0])}
+				  || do {
+					my $obj= $egg->__create_comps($type->[0], @_);
+					$egg->{"__$type->[0]"}{$_[0]}=
+					  $egg->{"__$type->[0]"}{lc($_[0])}= $obj;
+				  };
 			} else {
 				$egg->{"__$type->[0]"}{$egg->$default}
 				  ||= $egg->__create_comps($type->[0], $egg->$default);
@@ -155,10 +162,13 @@ sub __create_comps {
 	my $name= shift || return 0;
 	my $cmethod= "$type\_class";
 	my $pkg = $e->$cmethod->{$name}
-	   || Egg::Error->throw("'$name' $type is not set up.");
+	       || $e->$cmethod->{lc($name)}
+	       || Egg::Error->throw("'$name' $type is not set up.");
+	my $conf= $e->config->{$type}{$name}
+	       || $e->config->{$type}{lc($name)}
+	       || {};
 	$pkg->can('ACCEPT_CONTEXT')
-	   ? $pkg->ACCEPT_CONTEXT($e, $e->config->{$type}{$name})
-	   : $pkg->new($e, $e->config->{$type}{$name});
+	   ? $pkg->ACCEPT_CONTEXT($e, $conf): $pkg->new($e, $conf);
 }
 
 1;

@@ -3,7 +3,7 @@ package Egg::Helper::P::YAML;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: YAML.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: YAML.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
@@ -11,12 +11,18 @@ use YAML;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub new {
 	my $self = shift->SUPER::new();
 	my $pname= $self->project_name;
-	my $C= $self->load_config;
+	my $C= do {
+	  my $conf_name= "$pname\::config";
+	  unless ( $conf_name->require ) {
+	  	die "The configuration cannot be read. : $@";
+	  }
+	  $conf_name->out;
+	  };
 	my $G= $self->global;
 	$G->{etc} ||= $C->{etc} || 'etc';
 	my $yaml = $G->{etc}=~m{^/} ? $G->{etc}: "$G->{project_root}/$G->{etc}";
@@ -29,10 +35,11 @@ sub new {
 	eval{
 		$self->save_file( {}, {
 		  filename=> $yaml, value=>
-		    "---\n"
-		  . "--- $pname Configuration. - $pname.yaml\n"
-		  . "---\n"
-		  . "--- output date: $G->{gmtime_string} (GMT)\n"
+		    "#\n"
+		  . "# $pname Configuration. - $pname.yaml\n"
+		  . "#\n"
+		  . "# output date: $G->{gmtime_string} (GMT)\n"
+		  . "#\n"
 		  . YAML::Dump($C),
 		  });
 	  };
@@ -43,6 +50,9 @@ sub new {
 		if ($backup_ok) {
 			print <<END_OF_DONE;
 ... The generation of '$yaml' is completed.
+
+* Data old was backup : '$yaml.save_old'.
+
 END_OF_DONE
 		} else {
 			print <<END_OF_DONE;

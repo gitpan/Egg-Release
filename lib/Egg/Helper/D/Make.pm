@@ -3,13 +3,13 @@ package Egg::Helper::D::Make;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Make.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Make.pm 261 2007-02-28 19:32:16Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
 sub new {
 	my $self= shift->SUPER::new();
@@ -44,8 +44,10 @@ sub new {
 	chdir($g->{start_dir});
 
 	if (my $err= $@) {
-		unlink("$g->{lib_dir}/$g->{dispatch_filename}");
-		unlink("$g->{project_root}/t/$g->{number}_$g->{dispatch_name}.t");
+		$self->remove_file(
+		  "$g->{lib_dir}/$g->{dispatch_filename}",
+		  "$g->{project_root}/t/$g->{number}_$g->{dispatch_name}.t",
+		  );
 		die $err;
 	} else {
 		print <<END_OF_INFO;
