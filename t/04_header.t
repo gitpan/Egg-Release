@@ -1,5 +1,5 @@
 
-use Test::More tests=> 20; # qw/no_plan/
+use Test::More tests=> 20;
 use Egg::Helper;
 my $t= Egg::Helper->run('O:Test');
 $t->prepare;
@@ -13,7 +13,7 @@ ok( ref($res->headers) eq 'HTTP::Headers' );
 ok( $res->content_type('image/jpeg') );
 ok( my $header= $res->create_header($res->body) );
 like( $$header, qr{Content-Type\:\s+image/jpeg}is );
-ok( ! $res->headers->content_language('ja') );
+ok( $$header!~/Content-Language\:\s+[\n]+?/s );
 ok( $res->content_type("text/html") );
 ok( ! $res->content_encoding('deflate') );
 ok( ! $res->header( 'X-Test'=> 1 ) );

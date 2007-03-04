@@ -3,7 +3,7 @@ package Egg::Dispatch::Runmode;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Runmode.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Runmode.pm 279 2007-03-04 01:05:47Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use UNIVERSAL::require;
 use Tie::RefHash;
 use base qw/Egg::Dispatch/;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 *start_mode= \&default_mode;
 {
@@ -23,7 +23,9 @@ our $VERSION = '0.09';
 		if (@_) {
 			$class eq __PACKAGE__
 			 and Egg::Error->throw('Mistake of call method.');
-			${"$class\::RUN_MODES"}= ref($_[0]) ? $_[0]: {@_};
+			my $runmode= ref($_[0]) ? $_[0]: {@_};
+			$self->_check_hashkey($class, $runmode);
+			${"$class\::RUN_MODES"}= $runmode;
 		}
 		${"$class\::RUN_MODES"} || 0;
 	}
@@ -189,6 +191,16 @@ sub _reset {
 	$self->{__parts}= [];
 	$self->e->{action}= [];
 	$self->{__begin_code}= $self->{__action_code}= $self->{__end_code}= 0;
+}
+sub _check_hashkey {
+	my($self, $myname, $hash)= @_;
+	while (my($key, $value)= each %$hash) {
+		warn qq{Warning - $myname:}
+		   . qq{ I want setup of run_mode by using 'refhash' function.}
+		   if (! ref($key) && $key=~/^HASH\(0x[0-9a-f]+\)$/);
+		$self->_check_hashkey($myname, $value) if ref($value) eq 'HASH';
+	}
+	$self;
 }
 sub _example_code {
 	my($self)= @_;

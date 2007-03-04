@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Response.pm 280 2007-03-04 01:09:41Z lushe $
 #
 use strict;
 use warnings;
@@ -17,17 +17,20 @@ no warnings 'redefine';
 __PACKAGE__->mk_accessors
  ( qw/headers status content_type location no_cache ok_cache cookies_ok/ );
 
-our $VERSION= '0.11';
+our $VERSION= '0.12';
 our $AUTOLOAD;
 
 *output   = \&body;
 *set_cache= \&ok_cache;
 
 sub new {
-	my $res= shift->SUPER::new(@_);
+	my($class, $e)= @_;
+	my $res= $class->SUPER::new($e);
 	$res->{body}= $res->{status}= 0;
+	$res->content_type( $e->config->{content_type} || 'text/html' );
 	$res->{headers}= HTTP::Headers->new;
-	$res->content_type( $res->e->config->{content_type} || 'text/html' );
+	$res->{headers}->content_language
+	  ($e->config->{content_language}) if $e->config->{content_language};
 	$res;
 }
 sub body {
@@ -45,8 +48,7 @@ sub create_header {
 
 	my $header;
 	my $ctype= $res->content_type || 'text/html';
-	if ($ctype=~m{^text/}i && (my $lang=
-	  $headers->{'content-language'} || $e->config->{content_language})) {
+	if ($ctype=~m{^text/}i && (my $lang= $headers->{'content-language'})) {
 		$header.= "Content-Language: $lang$CL";
 	}
 

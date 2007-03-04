@@ -1,5 +1,9 @@
 Revision history for Perl extension Egg::Release.
 
+1.14  2007/03/04
+	- fixed for Egg::Helper::Project::Build.
+	- fixed for Egg::Dispatch::Runmode.
+
 1.13  2007/03/01
 	- Bug fix for Egg::Helper::P::Charset
 	- Bug fix for Egg::Plugin::Charset::UTF8

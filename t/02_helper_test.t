@@ -76,4 +76,3 @@ like $$catch, qr/<html.*?>.+?<\/html>/s;
 like $$catch, qr/<body>.+?<\/body>/s;
 like $$catch, qr/<title>$project_name\-[\d\.]+<\/title>/s;
 like $$catch, qr/<h1>.+?BLANK\s+PAGE.+?<\/h1>/;
-=cut

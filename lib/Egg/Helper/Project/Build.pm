@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Build.pm 279 2007-03-04 01:05:47Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.06';
+our $VERSION= '0.08';
 
 sub new {
 	my $class= shift;
@@ -363,15 +363,15 @@ value: |
   use warnings;<# debug_libs #>
   use Egg::Const;
   
-  __PACKAGE__->run_modes(
+  __PACKAGE__->run_modes( refhash(
   
-    _default=> sub {
+    { label=> '<# project_name #>', ANY=> '_default' }=> sub {
       my($dispatch, $e)= @_;
       require Egg::Helper::Project::BlankPage;
       $e->response->body( Egg::Helper::Project::BlankPage->out($e) );
       },
   
-    );
+    ));
   
   1;
   
