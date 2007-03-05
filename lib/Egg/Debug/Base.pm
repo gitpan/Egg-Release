@@ -3,14 +3,14 @@ package Egg::Debug::Base;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 281 2007-03-05 17:14:58Z lushe $
+# $Id: Base.pm 282 2007-03-05 17:37:44Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/confess/;
 use Egg::Release;
 
-our $VERSION= '0.04';
+our $VERSION= '0.05';
 
 sub debug_report {
 	my($class, $e)= @_;
@@ -148,6 +148,7 @@ END_OF_DISP
 	$res->no_cache(1);
 	$res->clear; $res->cookies({});
 	$res->header('X-Egg-'. $e->namespace. '-ERROR'=> 'true');
+	$e->finished(0);
 	$e->output_content;
 	return 0;
 }

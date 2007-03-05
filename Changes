@@ -1,5 +1,8 @@
 Revision history for Perl extension Egg::Release.
 
+1.16  2007/03/06
+	- Bug fix for Egg::Debug::Base.
+
 1.15  2007/03/05
 	- The 'uri_to' method is added to Egg::Engine.
 	- The code of 'debug_report' is moved from Egg::Engine to Egg::Debug::Base.

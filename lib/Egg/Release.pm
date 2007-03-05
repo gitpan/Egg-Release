@@ -3,12 +3,12 @@ package Egg::Release;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 281 2007-03-05 17:14:58Z lushe $
+# $Id: Release.pm 282 2007-03-05 17:37:44Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '1.15';
+our $VERSION= '1.16';
 
 1;
 
@@ -732,7 +732,7 @@ Please refer to the document of each module for more detailed information.
 
 The object for the project is received. 
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->prepare_component
 
@@ -748,25 +748,25 @@ package: L<Egg::Engine>.
 
 The error message with the debugging trace is output.
 
-package： L<Egg::Exception>.
+package｡ｧ L<Egg::Exception>.
 
 =head2 $e->debug
 
 True is restored when operating by debug mode.
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->flag
 
 The state of the flag set by the module option of Egg is returned.
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->stash
 
 It is a preservation place of the data that wants to share by each component. 
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $g->global
 
@@ -780,26 +780,26 @@ might happen.
 
 * The defined value cannot already been redefined in a usual substitution type.
 
-package： L<Egg::GlobalHash>.
+package｡ｧ L<Egg::GlobalHash>.
 
 =head2 $e->config
 
 The HASH reference of the configuration is returned. 
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->debug_out ([MESSAGE])
 
 [MESSAGE] is output to STDERR when debug mode is effective.
 If debug mode is invalid, nothing is done.
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->log
 
 The object for the log output is returned.
 
-package： L<Egg::Debug::Log>.
+package｡ｧ L<Egg::Debug::Log>.
 
 =head2 $e->path ([CONFIG_NAME], [PATH])
 
@@ -808,64 +808,64 @@ PATH that ties to $e->config->{[CONFIG_NAME]} [PATH] is returned.
 Please specify root, static, static_uri, etc, temp, cache, and lib, etc.
  for [CONFIG_NAME].
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 $e->action
 
 The action that dispatch set is returned by the ARRAY reference.
 
-package： L<Egg>.
+package｡ｧ L<Egg>.
 
 =head2 my $req= $e->request  or $e->req
 
 The object to process the request is restored.
 
-package： L<Egg::Request>, L<Egg::Request::Apache>, L<Egg::Request::CGI>,
+package｡ｧ L<Egg::Request>, L<Egg::Request::Apache>, L<Egg::Request::CGI>,
 
 =head2 $req->params  or  $req->parameters
 
 The request query is returned by the HASH reference. 
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 $req->param ([FIELD_NAME])
 
 The value of specified [FIELD_NAME] is returned.
 It is the same as $req->params->{[FIELD_NAME]}.
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 $req->cookies
 
 Cookie received from the client is returned by the HASH reference.
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 $req->cookie ([FIELD_NAME])
 
 The character string of cookie of specified [FIELD_NAME] is returned.
 It is the same as $req->cookies->{[FIELD_NAME]}.
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 $req->cookie_value ([FIELD_NAME])
 
 The value of cookie of specified [FIELD_NAME] is returned.
 It is the same as $req->cookies->{[FIELD_NAME]}->value.
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 $req->path
 
 Passing the request place is returned.
 
-package： L<Egg::Request>,
+package｡ｧ L<Egg::Request>,
 
 =head2 my $res= $e->response  or $e->res
 
 The object to process the response is restored.
 
-package： L<Egg::Response>,
+package｡ｧ L<Egg::Response>,
 
 =head2 $res->body ([RESPONSE_BODY])
 
@@ -873,7 +873,7 @@ The content output to the client is set.
 
 The value is returned by the SCALAR reference.
 
-package： L<Egg::Response>,
+package｡ｧ L<Egg::Response>,
 
 =head2 $res->cookie ( [FIELD_NAME] => [HASH] )
 
@@ -885,7 +885,7 @@ Cookie to set it in the client is set.
     ...
     } );
 
-package： L<Egg::Response>, L<Egg::Response::TieCookie>
+package｡ｧ L<Egg::Response>, L<Egg::Response::TieCookie>
 
 =head2 $res->redirect ( [LOCATION], [STATUS] )
 
@@ -893,7 +893,7 @@ The screen is forwarded to the place of [LOCATION].
 
 [STATUS] is omissible.
 
-package： L<Egg::Response>,
+package｡ｧ L<Egg::Response>,
 
 =head2 my $d= $e->dispatch  or $e->d
 
@@ -902,14 +902,14 @@ The dispatch object is restored.
 When the Egg object is received from the constructor directly, it is not 
 possible to use it until $e->prepare_component is called. 
 
-package： L<Egg::Dispatch>, L<Egg::Dispatch::Runmode>,
+package｡ｧ L<Egg::Dispatch>, L<Egg::Dispatch::Runmode>,
 
 =head2 $d->page_title
 
 The value of label obtained by the matched action returns. 
 There is a value of $e->snip of the object as it is when label is not obtained.
 
-package： L<Egg::Dispatch::Runmode>,
+package｡ｧ L<Egg::Dispatch::Runmode>,
 
 =head2 $d->label ([NUMBER])
 
@@ -917,7 +917,7 @@ The list of label obtained by the matched action returns.
 
 When [NUM] is specified, label of the place is restored. 
 
-package： L<Egg::Dispatch::Runmode>,
+package｡ｧ L<Egg::Dispatch::Runmode>,
 
 =head2 $d->mode_now ([NUMBER])
 
@@ -927,7 +927,7 @@ The subtracted value returns when [NUMBER] is given.
 
 * When mode_param is chiefly called, this value is needed.
 
-package： L<Egg::Dispatch::Runmode>,
+package｡ｧ L<Egg::Dispatch::Runmode>,
 
 =head2 $e->filter ([FILTER_CONFIG])
 
@@ -936,7 +936,7 @@ package： L<Egg::Dispatch::Runmode>,
 
 The extra one is removed from the request query. 
 
-package： L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
+package｡ｧ L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
 
 =head2 my $form= $e->form ([VALIDATE_CONFIG])
 
@@ -945,7 +945,7 @@ package： L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
 
 The validity of the request query is checked.
 
-package： L<Egg::Plugin::FormValidator::Simple>,
+package｡ｧ L<Egg::Plugin::FormValidator::Simple>,
 
 =head2 my $upload= $e->request->upload ([UPLOAD_FIELD_NAME]);
 
@@ -954,7 +954,7 @@ package： L<Egg::Plugin::FormValidator::Simple>,
 
 A form object corresponding to the file upload is acquired. 
 
-package： L<Egg::Plugin::Upload>,
+package｡ｧ L<Egg::Plugin::Upload>,
 
 =head2 $e->fillin_ok ([BOOLEAN])
 
@@ -967,7 +967,7 @@ A form burial by FillInForm is permitted before contents are output.
 order when using it together with the plug-in that converts the character-code
  of contents before it outputs it.
 
-package： L<Egg::Plugin::FillInForm>,
+package｡ｧ L<Egg::Plugin::FillInForm>,
 
 =head2 $e->call_to ([DISPATCH_SHORT_NAME], [DEFAULT_METHOD])
 
@@ -980,7 +980,7 @@ presumed and called.
 The method to specify by [DEFAULT_METHOD] or $e->config->{template_default_name}
  is called when failing in the call. 
 
-package： L<Egg::Plugin::Dispatch::AnyCall>,
+package｡ｧ L<Egg::Plugin::Dispatch::AnyCall>,
 
 =head2 $e->yaml_load ([YAML_DATA])
 
@@ -989,7 +989,7 @@ package： L<Egg::Plugin::Dispatch::AnyCall>,
 
 The result of doing passed [YAML_DATA] in Perth is returned.
 
-package： L<Egg::Plugin::YAML>,
+package｡ｧ L<Egg::Plugin::YAML>,
 
 =head2 $e->dbh
 
@@ -998,7 +998,7 @@ package： L<Egg::Plugin::YAML>,
 
 The data base steering wheel is returned.
 
-package： L<Egg::Plugin::DBI::CommitOK>,
+package｡ｧ L<Egg::Plugin::DBI::CommitOK>,
 
 =head2 $e->redirect_page ([LOCATION], [MESSAGE], [OPTION])
 
@@ -1007,7 +1007,7 @@ package： L<Egg::Plugin::DBI::CommitOK>,
 
 When the page is switched, an easy page is displayed. 
 
-package： L<Egg::Plugin::Redirect::Page>,
+package｡ｧ L<Egg::Plugin::Redirect::Page>,
 
 =head2 $e->pod2html ([MODULE_NAME])
 
@@ -1017,7 +1017,7 @@ package： L<Egg::Plugin::Redirect::Page>,
 The HTML source of the POD document of the Perl module demanded by [MODULE_NAME]
 is returned.
 
-package： L<Egg::Plugin::Pod::HTML>,
+package｡ｧ L<Egg::Plugin::Pod::HTML>,
 
 =head1 SEE ALSO
 
