@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Egg.pm 281 2007-03-05 17:14:58Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.03';
+our $VERSION= '1.04';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -62,7 +62,11 @@ sub import {
 	tie %global, 'Egg::GlobalHash', \%flags;
 	$_->require or die $@ for @requires;
 
-	*{"$Name\::debug_out"}= sub { } unless $flags{debug};
+	*{"$Name\::debug_out"}= $flags{debug} ? sub {
+		Egg::Debug::Base->require or Egg::Error->throw($@);
+		Egg::Debug::Base->debug_out(@_);
+	  }: sub {
+	  };
 }
 sub __egg_setup {
 	my $class= shift;

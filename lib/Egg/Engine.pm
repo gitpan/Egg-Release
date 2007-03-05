@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Engine.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Engine.pm 281 2007-03-05 17:14:58Z lushe $
 #
 use strict;
 use warnings;
@@ -11,8 +11,9 @@ use UNIVERSAL::require;
 use Egg::Exception;
 use HTML::Entities;
 use URI::Escape;
+use URI;
 
-our $VERSION= '0.13';
+our $VERSION= '0.15';
 
 *escape_html  = \&encode_entities;
 *eHTML        = \&encode_entities;
@@ -39,8 +40,18 @@ our $VERSION= '0.13';
 	  { shift; &URI::Escape::uri_escape_utf8(@_) }
 	sub uri_unescape
 	  { shift; &URI::Escape::uri_unescape(@_) }
+
   };
 
+sub uri_to {
+	my $e  = shift;
+	my $uri= shift || Egg::Error->throw('I want base URI');
+	my $result= URI->new($uri);
+	return $result unless @_;
+	my %arg= ref($_[0]) eq 'HASH' ? %{$_[0]}: @_;
+	$result->query_form(%arg);
+	$result;
+}
 sub page_title {
 	my($e)= @_;
 	$e->dispatch->page_title || $e->config->{title} || "";
@@ -73,22 +84,16 @@ sub prepare_view {
 	}
 }
 sub run {
-	local $SIG{__DIE__}= sub { Egg::Error->throw(@_) };
 	my $class= shift;
 	my $e= $class->new(@_);
+	local $SIG{__DIE__}= sub {
+	 $e->{die_recovered}= join '', @_;
+	 Egg::Error->throw(@_);
+	 };
 	eval { $e->start_engine };
-	if ($@) {
-		my $error;
-		if (my $class= ref($@)) {
-			$error= $class eq 'Egg::Error' ? $@->stacktrace: $@;
-		} else {
-			$error= $@;
-		}
-		eval { $e->finalize_error };
-		if (my $err= $@) { $error.= "\n\n$err" }
-		my $comp= $e->template || '*';
-		$e->log->notes("$comp: $error");
-		$e->disp_error("$comp: $error");
+	if (my $err= $@ || $e->{die_recovered}) {
+		$err= Egg::Error->new($err) if $e->{die_recovered};
+		$e->disp_error($err);
 	}
 	$e->response->result;
 }
@@ -103,39 +108,6 @@ sub view  { Egg::Error->throw('The method is not prepared.') }
 sub model { Egg::Error->throw('The method is not prepared.') }
 sub start_engine { Egg::Error->throw('The method is not prepared.') }
 
-sub debug_report {
-	my($e)= @_;
-	my $Name= $e->namespace. '-'. $e->VERSION;
-	my %list;
-	for my $type (qw/model view/) {
-		my $ucName= uc($type);
-		$list{$type}= join ', ', map{
-			my $pkg= $e->global->{"$ucName\_CLASS"}{$_};
-			my $version= $pkg->VERSION || "";
-			$_. ($version ? "-$version": "");
-		  } @{$e->global->{"$ucName\_LIST"}};
-	}
-	my $report= 
-	 "\n# << $Name start. --------------\n"
-	 . "# + request-path : ". $e->request->path. "\n"
-	 . "# + othre-class  : Req( " . $e->request_class . " ),"
-	 .                   " Res( " . $e->response_class. " ),"
-	 .                   " D( "   . $e->dispatch_calss. " )\n"
-	 . "# + view-class   : $list{view}\n"
-	 . "# + model-class  : $list{model}\n"
-	 . "# + load-plugins : ". (join ', ', @{$e->plugins}). "\n";
-	$e->request->param and do {
-		my $params= $e->request->params;
-		$report.= 
-		   "# + in request querys:\n"
-		 . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
-		 . "\n# + --------------------\n";
-	  };
-	$report;
-}
-sub debug_report_output {
-	$_[0]->debug_out( $_[0]->debug_report );
-}
 sub output_content {
 	my($e)= @_;
 	my $res= $e->response;
@@ -172,11 +144,8 @@ sub finished {
 	}
 	$e->{finished};
 }
-sub log {
-	$_[0]->{__egg_log} ||= do {
-		Egg::Debug::Log->require or Egg::Error->throw($@);
-		Egg::Debug::Log->new($_[0]);
-	 };
+sub debug_report_output {
+	$_[0]->debug_out( $_[0]->debug_report );
 }
 sub error {
 	my $e= shift;
@@ -190,13 +159,31 @@ sub error {
 	}
 	$e->{error} || 0;
 }
-sub disp_error {
-	Egg::Debug::Base->require or Egg::Error->throw($@);
-	Egg::Debug::Base->disp_error(@_);
+sub log {
+	$_[0]->{__egg_log} ||= do {
+		Egg::Debug::Log->require or Egg::Error->throw($@);
+		Egg::Debug::Log->new($_[0]);
+	 };
 }
-sub debug_out {
+sub debug_report {
 	Egg::Debug::Base->require or Egg::Error->throw($@);
-	Egg::Debug::Base->debug_out(@_);
+	Egg::Debug::Base->debug_report(@_);
+}
+sub disp_error {
+	my($e, $errstr)= @_;
+	my $error;
+	if (my $class= ref($errstr)) {
+		$error= $class eq 'Egg::Error' ? $errstr->stacktrace: $errstr;
+	} else {
+		$error= $errstr;
+	}
+	eval { $e->finalize_error };
+	if (my $err= $@) { $error.= "\n\n$err" }
+	my $comp = $e->template || '*';
+	   $error= "$comp: $error";
+	$e->log->notes($error);
+	Egg::Debug::Base->require or Egg::Error->throw($@);
+	Egg::Debug::Base->disp_error($e, $error);
 }
 
 1;
@@ -343,8 +330,22 @@ Unicode also encodes URI to the object.
 
 * L<URI::Escape> is used.
 
+=head2 uri_to ([BASE_URI], [ARGS])
+
+The object of URI is returned.
+
+When [ARGS] is passed, URI->query_form is done.
+
+  my $uri= $e->uri_to( 'http://domain/path/', {
+    param1 => 'fooo',
+    param2 => 'baaa',
+    });
+  
+  print $uri;
+
 =head1 SEE ALSO
 
+L<URI>
 L<URI::Escape>,
 L<HTML::Entities>,
 L<Egg::Engine::V1>,

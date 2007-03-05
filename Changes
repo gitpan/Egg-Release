@@ -1,5 +1,11 @@
 Revision history for Perl extension Egg::Release.
 
+1.15  2007/03/05
+	- The 'uri_to' method is added to Egg::Engine.
+	- The code of 'debug_report' is moved from Egg::Engine to Egg::Debug::Base.
+	- The thing that the error that doesn't do die occurs turns out.
+	  * It received by $e->{die_recovered} and it was assumed the emergency measure.
+
 1.14  2007/03/04
 	- fixed for Egg::Helper::Project::Build.
 	- fixed for Egg::Dispatch::Runmode.

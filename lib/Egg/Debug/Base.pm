@@ -3,15 +3,45 @@ package Egg::Debug::Base;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Base.pm 281 2007-03-05 17:14:58Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/confess/;
 use Egg::Release;
 
-our $VERSION= '0.03';
+our $VERSION= '0.04';
 
+sub debug_report {
+	my($class, $e)= @_;
+	my $Name= $e->namespace. '-'. $e->VERSION;
+	my %list;
+	for my $type (qw/model view/) {
+		my $ucName= uc($type);
+		$list{$type}= join ', ', map{
+			my $pkg= $e->global->{"$ucName\_CLASS"}{$_};
+			my $version= $pkg->VERSION || "";
+			$_. ($version ? "-$version": "");
+		  } @{$e->global->{"$ucName\_LIST"}};
+	}
+	my $report= 
+	 "\n# << $Name start. --------------\n"
+	 . "# + request-path : ". $e->request->path. "\n"
+	 . "# + othre-class  : Req( " . $e->request_class . " ),"
+	 .                   " Res( " . $e->response_class. " ),"
+	 .                   " D( "   . $e->dispatch_calss. " )\n"
+	 . "# + view-class   : $list{view}\n"
+	 . "# + model-class  : $list{model}\n"
+	 . "# + load-plugins : ". (join ', ', @{$e->plugins}). "\n";
+	$e->request->param and do {
+		my $params= $e->request->params;
+		$report.= 
+		   "# + in request querys:\n"
+		 . (join "\n", map{"# +   - $_ = $params->{$_}"}keys %$params)
+		 . "\n# + --------------------\n";
+	  };
+	$report;
+}
 sub debug_out {
 	my $class= shift;
 	my $e    = shift || confess q/I want Egg object./;
