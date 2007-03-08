@@ -1,14 +1,14 @@
 package Egg::Release;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
+# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 282 2007-03-05 17:37:44Z lushe $
+# $Id: Release.pm 285 2007-03-08 12:24:58Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '1.16';
+our $VERSION= '1.17';
 
 1;
 
@@ -732,7 +732,7 @@ Please refer to the document of each module for more detailed information.
 
 The object for the project is received. 
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->prepare_component
 
@@ -748,25 +748,25 @@ package: L<Egg::Engine>.
 
 The error message with the debugging trace is output.
 
-packageé°éß L<Egg::Exception>.
+package: L<Egg::Exception>.
 
 =head2 $e->debug
 
 True is restored when operating by debug mode.
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->flag
 
 The state of the flag set by the module option of Egg is returned.
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->stash
 
 It is a preservation place of the data that wants to share by each component. 
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $g->global
 
@@ -780,26 +780,26 @@ might happen.
 
 * The defined value cannot already been redefined in a usual substitution type.
 
-packageé°éß L<Egg::GlobalHash>.
+package: L<Egg::GlobalHash>.
 
 =head2 $e->config
 
 The HASH reference of the configuration is returned. 
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->debug_out ([MESSAGE])
 
 [MESSAGE] is output to STDERR when debug mode is effective.
 If debug mode is invalid, nothing is done.
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->log
 
 The object for the log output is returned.
 
-packageé°éß L<Egg::Debug::Log>.
+package: L<Egg::Debug::Log>.
 
 =head2 $e->path ([CONFIG_NAME], [PATH])
 
@@ -808,64 +808,64 @@ PATH that ties to $e->config->{[CONFIG_NAME]} [PATH] is returned.
 Please specify root, static, static_uri, etc, temp, cache, and lib, etc.
  for [CONFIG_NAME].
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 $e->action
 
 The action that dispatch set is returned by the ARRAY reference.
 
-packageé°éß L<Egg>.
+package: L<Egg>.
 
 =head2 my $req= $e->request  or $e->req
 
 The object to process the request is restored.
 
-packageé°éß L<Egg::Request>, L<Egg::Request::Apache>, L<Egg::Request::CGI>,
+package: L<Egg::Request>, L<Egg::Request::Apache>, L<Egg::Request::CGI>,
 
 =head2 $req->params  or  $req->parameters
 
 The request query is returned by the HASH reference. 
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 $req->param ([FIELD_NAME])
 
 The value of specified [FIELD_NAME] is returned.
 It is the same as $req->params->{[FIELD_NAME]}.
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 $req->cookies
 
 Cookie received from the client is returned by the HASH reference.
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 $req->cookie ([FIELD_NAME])
 
 The character string of cookie of specified [FIELD_NAME] is returned.
 It is the same as $req->cookies->{[FIELD_NAME]}.
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 $req->cookie_value ([FIELD_NAME])
 
 The value of cookie of specified [FIELD_NAME] is returned.
 It is the same as $req->cookies->{[FIELD_NAME]}->value.
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 $req->path
 
 Passing the request place is returned.
 
-packageé°éß L<Egg::Request>,
+package: L<Egg::Request>,
 
 =head2 my $res= $e->response  or $e->res
 
 The object to process the response is restored.
 
-packageé°éß L<Egg::Response>,
+package: L<Egg::Response>,
 
 =head2 $res->body ([RESPONSE_BODY])
 
@@ -873,7 +873,7 @@ The content output to the client is set.
 
 The value is returned by the SCALAR reference.
 
-packageé°éß L<Egg::Response>,
+package: L<Egg::Response>,
 
 =head2 $res->cookie ( [FIELD_NAME] => [HASH] )
 
@@ -885,7 +885,7 @@ Cookie to set it in the client is set.
     ...
     } );
 
-packageé°éß L<Egg::Response>, L<Egg::Response::TieCookie>
+package: L<Egg::Response>, L<Egg::Response::TieCookie>
 
 =head2 $res->redirect ( [LOCATION], [STATUS] )
 
@@ -893,7 +893,7 @@ The screen is forwarded to the place of [LOCATION].
 
 [STATUS] is omissible.
 
-packageé°éß L<Egg::Response>,
+package: L<Egg::Response>,
 
 =head2 my $d= $e->dispatch  or $e->d
 
@@ -902,14 +902,14 @@ The dispatch object is restored.
 When the Egg object is received from the constructor directly, it is not 
 possible to use it until $e->prepare_component is called. 
 
-packageé°éß L<Egg::Dispatch>, L<Egg::Dispatch::Runmode>,
+package: L<Egg::Dispatch>, L<Egg::Dispatch::Runmode>,
 
 =head2 $d->page_title
 
 The value of label obtained by the matched action returns. 
 There is a value of $e->snip of the object as it is when label is not obtained.
 
-packageé°éß L<Egg::Dispatch::Runmode>,
+package: L<Egg::Dispatch::Runmode>,
 
 =head2 $d->label ([NUMBER])
 
@@ -917,7 +917,7 @@ The list of label obtained by the matched action returns.
 
 When [NUM] is specified, label of the place is restored. 
 
-packageé°éß L<Egg::Dispatch::Runmode>,
+package: L<Egg::Dispatch::Runmode>,
 
 =head2 $d->mode_now ([NUMBER])
 
@@ -927,7 +927,7 @@ The subtracted value returns when [NUMBER] is given.
 
 * When mode_param is chiefly called, this value is needed.
 
-packageé°éß L<Egg::Dispatch::Runmode>,
+package: L<Egg::Dispatch::Runmode>,
 
 =head2 $e->filter ([FILTER_CONFIG])
 
@@ -936,7 +936,7 @@ packageé°éß L<Egg::Dispatch::Runmode>,
 
 The extra one is removed from the request query. 
 
-packageé°éß L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
+package: L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
 
 =head2 my $form= $e->form ([VALIDATE_CONFIG])
 
@@ -945,7 +945,7 @@ packageé°éß L<Egg::Plugin::Filter>, L<Egg::Plugin::Filter::EUC_JP>,
 
 The validity of the request query is checked.
 
-packageé°éß L<Egg::Plugin::FormValidator::Simple>,
+package: L<Egg::Plugin::FormValidator::Simple>,
 
 =head2 my $upload= $e->request->upload ([UPLOAD_FIELD_NAME]);
 
@@ -954,7 +954,7 @@ packageé°éß L<Egg::Plugin::FormValidator::Simple>,
 
 A form object corresponding to the file upload is acquired. 
 
-packageé°éß L<Egg::Plugin::Upload>,
+package: L<Egg::Plugin::Upload>,
 
 =head2 $e->fillin_ok ([BOOLEAN])
 
@@ -967,7 +967,7 @@ A form burial by FillInForm is permitted before contents are output.
 order when using it together with the plug-in that converts the character-code
  of contents before it outputs it.
 
-packageé°éß L<Egg::Plugin::FillInForm>,
+package: L<Egg::Plugin::FillInForm>,
 
 =head2 $e->call_to ([DISPATCH_SHORT_NAME], [DEFAULT_METHOD])
 
@@ -980,7 +980,7 @@ presumed and called.
 The method to specify by [DEFAULT_METHOD] or $e->config->{template_default_name}
  is called when failing in the call. 
 
-packageé°éß L<Egg::Plugin::Dispatch::AnyCall>,
+package: L<Egg::Plugin::Dispatch::AnyCall>,
 
 =head2 $e->yaml_load ([YAML_DATA])
 
@@ -989,7 +989,7 @@ packageé°éß L<Egg::Plugin::Dispatch::AnyCall>,
 
 The result of doing passed [YAML_DATA] in Perth is returned.
 
-packageé°éß L<Egg::Plugin::YAML>,
+package: L<Egg::Plugin::YAML>,
 
 =head2 $e->dbh
 
@@ -998,7 +998,7 @@ packageé°éß L<Egg::Plugin::YAML>,
 
 The data base steering wheel is returned.
 
-packageé°éß L<Egg::Plugin::DBI::CommitOK>,
+package: L<Egg::Plugin::DBI::CommitOK>,
 
 =head2 $e->redirect_page ([LOCATION], [MESSAGE], [OPTION])
 
@@ -1007,7 +1007,7 @@ packageé°éß L<Egg::Plugin::DBI::CommitOK>,
 
 When the page is switched, an easy page is displayed. 
 
-packageé°éß L<Egg::Plugin::Redirect::Page>,
+package: L<Egg::Plugin::Redirect::Page>,
 
 =head2 $e->pod2html ([MODULE_NAME])
 
@@ -1017,7 +1017,7 @@ packageé°éß L<Egg::Plugin::Redirect::Page>,
 The HTML source of the POD document of the Perl module demanded by [MODULE_NAME]
 is returned.
 
-packageé°éß L<Egg::Plugin::Pod::HTML>,
+package: L<Egg::Plugin::Pod::HTML>,
 
 =head1 SEE ALSO
 
@@ -1037,7 +1037,7 @@ Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

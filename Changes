@@ -1,5 +1,11 @@
 Revision history for Perl extension Egg::Release.
 
+1.17  2007/03/07
+	- fixed for Egg::Plugin::Encode;
+	  * The method concerning the UTF8 flag is added.
+	- Bug fix for Egg::Plugin::Encode::Apache.
+	- The 'add_length_header' method is added to Egg::Response.
+
 1.16  2007/03/06
 	- Bug fix for Egg::Debug::Base.
 
@@ -22,7 +28,7 @@ Revision history for Perl extension Egg::Release.
 	- fixed for Egg::Engine::V1.
 	- fixed for Egg::Plugin::Encode.
 	- fixed for Egg::Response::TieCookie.
-	* Egg::Response::TieCookie::Params is abolished.
+	  * Egg::Response::TieCookie::Params is abolished.
 	- Egg::Plugin::Charset and Egg::Helper::P::Charset was added.
 	- fixed for Egg::Helper::Project::Build.
 	- fixed for Egg::Dispatch::Runmode.
@@ -33,8 +39,8 @@ Revision history for Perl extension Egg::Release.
 	- Bug fix for Egg::Engine
 	- Bug fix for Egg::Helper;
 	- Bug fix for Egg::Helper::O::Test;
-	* A dynamic loading of view and the model component is abolished.
-	* Some operation of Egg::Engine has changed.
+	  * A dynamic loading of view and the model component is abolished.
+	  * Some operation of Egg::Engine has changed.
 
 1.10  2007/02/25
 	- fixed for Egg::Helper::*.

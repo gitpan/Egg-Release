@@ -43,7 +43,6 @@ my $catch= $t->catch_stdout( sub {
   });
 
 if ($catch) {
-	like $$catch, qr#Content\-Length\:\s+\d+#s;
 	like $$catch, qr#Content\-Type\:\s+text/html#s;
 	like $$catch, qr#X\-Egg\-$pname\:\s+[\d\.]+#s;
 	like $$catch, qr#<title>$pname\-[\d\.]+.*?</title>#s;

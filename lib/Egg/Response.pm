@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 280 2007-03-04 01:09:41Z lushe $
+# $Id: Response.pm 285 2007-03-08 12:24:58Z lushe $
 #
 use strict;
 use warnings;
@@ -14,10 +14,12 @@ use CGI::Cookie;
 use base qw/Egg::Component/;
 no warnings 'redefine';
 
-__PACKAGE__->mk_accessors
- ( qw/headers status content_type location no_cache ok_cache cookies_ok/ );
+__PACKAGE__->mk_accessors(qw/
+  headers status content_type location no_cache ok_cache cookies_ok
+  add_length_header
+  /);
 
-our $VERSION= '0.12';
+our $VERSION= '0.13';
 our $AUTOLOAD;
 
 *output   = \&body;
@@ -45,25 +47,24 @@ sub create_header {
 	my $res  = shift;
 	my $body = ref($_[0]) ? $_[0]: \{};
 	my($e, $headers, $CL)= ($res->e, $res->headers, $Egg::CRLF);
-
 	my $header;
 	my $ctype= $res->content_type || 'text/html';
 	if ($ctype=~m{^text/}i && (my $lang= $headers->{'content-language'})) {
 		$header.= "Content-Language: $lang$CL";
+		$header.= "Content-Length: ". length($$body). $CL
+		  if ($res->status== 200 && $res->add_length_header);
+	} else {
+		$header.= "Content-Length: ". length($$body). $CL;
 	}
-
 	while (my($name, $value)= each %$headers) {
 		next if $name=~/^Content\-(?:Type|Length|Language)$/i;
 		$header.= "$name\: $_$CL" for (ref($value) eq 'ARRAY' ? @$value: $value);
 	}
-
 	if ($res->no_cache && HTTP::Date->require) {
 		$header.= $res->create_no_cache($CL);
 	} elsif ($res->set_cache && HTTP::Date->require) {
 		$header.= $res->create_ok_cache($CL);
 	}
-
-	$header.= "Content-Length: ". length($$body). $CL if $res->status< 400;
 	$header.= $res->create_cookies if $res->cookies_ok;
 	$header.= "Content-Type: $ctype$CL";
 	$header.= 'X-Egg-'. $e->namespace. ': '. $e->VERSION. "$CL$CL";
@@ -244,6 +245,20 @@ HTTP status code that wants to be returned at the end of processing is set.
 =head2 $response->headers;
 
 Accessor to HTTP::Headers object.
+
+=head2 $response->add_length_header ([Boolean])
+
+When true is passed, it comes to include 'Content-Length' in the response header
+when the output contents are 'text/*'.
+
+* 'Content-Length' was always included in the version before.
+
+* Because the problem occurred when the utf8 flag was processed with STDOUT,
+  it changed to such a specification.
+
+  use Encode;
+  use utf8;
+  binmode STDOUT, ":utf8";
 
 =head1 SEE ALSO
 

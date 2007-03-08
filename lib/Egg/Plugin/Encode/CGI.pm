@@ -3,14 +3,14 @@ package Egg::Plugin::Encode::CGI;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: CGI.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: CGI.pm 285 2007-03-08 12:24:58Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
-{
+sub setup {
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	*{'Egg::Request::CGI::prepare_params'}= sub {
@@ -24,7 +24,7 @@ our $VERSION= '0.01';
 			 ? [ map{$e->$icode(\$_)}@$value ]: $e->$icode(\$value);
 		}
 	  };
-  };
+}
 
 1;
 

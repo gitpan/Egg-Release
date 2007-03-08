@@ -3,27 +3,33 @@ package Egg::Plugin::Encode;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Encode.pm 285 2007-03-08 12:24:58Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
+use utf8;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 {
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	sub setup {
 		my($e)= @_;
 		$e->config->{character_in} ||= 'euc';
-		${$e->namespace.'::__EGG_ENCODE'}= $e->create_encode;
-		if (my $pkg=
-		    $e->request_class=~m{^Egg\:\:Request\:\:Apache\:\:.+}
-		      ? __PACKAGE__.'::Apache'
-		  : $e->request_class=~m{^Egg\:\:Request\:\:CGI}
-		      ? __PACKAGE__.'::CGI'
-		  : 0 ) {
-			$pkg->require or Egg::Error->throw($@);
+		my $name= $e->namespace;
+		${"$name\::__EGG_ENCODE"}= $e->create_encode;
+		unless ($e->config->{disable_encode_query}) {
+			if (my $pkg=
+			    $e->request_class=~m{^Egg\:\:Request\:\:Apache\:\:.+}
+			      ? __PACKAGE__.'::Apache'
+			  : $e->request_class=~m{^Egg\:\:Request\:\:(?:Fast)?CGI}
+			      ? __PACKAGE__.'::CGI'
+			  : 0 ) {
+				$pkg->require or Egg::Error->throw($@);
+				$pkg->setup;
+				$e->debug_out("# + plugin_encode : $name - $pkg");
+			}
 		}
 		$e->next::method;
 	}
@@ -37,6 +43,10 @@ sub create_encode {
 sub euc_conv  { $_[0]->encode->set($_[1])->euc  }
 sub sjis_conv { $_[0]->encode->set($_[1])->sjis }
 sub utf8_conv { $_[0]->encode->set($_[1])->utf8 }
+
+sub is_utf8 { utf8::is_utf8($_[1]) }
+sub utf8enc { utf8::encode($_[1])  }
+sub utf8dec { utf8::decode($_[1])  }
 
 1;
 
@@ -105,6 +115,10 @@ And, please set the code to 'character_in' if you want to do to the code for
   
   character_in=> 'anycode',
 
+* It seems to fail in the encode of the request query in utf8 'character_in'.
+  The encode of the request query is turned off in setting 'B<disable_encode_query>'
+  as an emergency measure.
+
 =head1 METHODS
 
 =head2 encode
@@ -116,6 +130,18 @@ Default is 'Jcode'.
 =head2 euc_conv , utf8_conv , sjis_conv
 
 It is an accessor for the character-code conversion.
+
+=head2 is_utf8
+
+utf8::is_utf8 is done.
+
+=head2 utf8enc
+
+utf8::encode is done.
+
+=head2 utf8dec
+
+utf8::decode is done.
 
 =head1 SEE ALSO
 
