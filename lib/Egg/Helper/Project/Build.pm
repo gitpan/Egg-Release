@@ -10,7 +10,7 @@ use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.08';
+our $VERSION= '0.09';
 
 sub new {
 	my $class= shift;
@@ -277,7 +277,8 @@ value: |
   #  static_uri=> '/',
   
   # Character code for processing.
-  #  character_in=> 'euc',  # euc or sjis or utf8
+  #  character_in         => 'euc',  # euc or sjis or utf8
+  #  disable_encode_query => 0,
   
   # Template.
   #  template_default_name=> 'index',
@@ -343,6 +344,11 @@ value: |
   #       },
   #     ],
       ],
+  
+  #  * For ErrorDocument plugin.
+  #  plugin_error_document=> {
+  #    template_name=> 'error/document.tt',
+  #    },
   
     };
   sub out { $C }

@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 281 2007-03-05 17:14:58Z lushe $
+# $Id: Egg.pm 289 2007-03-16 09:06:30Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.04';
+our $VERSION= '1.07';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -166,8 +166,9 @@ sub __egg_setup {
 		  ModPerl::VersionUtil->is_mp2  ? 'Egg::Request::Apache::MP20'
 		: ModPerl::VersionUtil->is_mp19 ? 'Egg::Request::Apache::MP19'
 		: ModPerl::VersionUtil->is_mp1  ? 'Egg::Request::Apache::MP13'
+		: $MOD_PERL_VERSION > 2         ? 'Egg::Request::Apache::MP20'
 		: do {
-			$e->debug_out('Unsupported mod_perl version:$MOD_PERL_VERSION');
+			$e->debug_out("Unsupported mod_perl version:$MOD_PERL_VERSION");
 			$MOD_PERL_VERSION= 0;
 			'Egg::Request::CGI';
 		  };

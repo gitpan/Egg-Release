@@ -1,5 +1,8 @@
 Revision history for Perl extension Egg::Release.
 
+1.19  2007/03/16
+	- Bug fix for Egg.
+
 1.18  2007/03/15
 	- fixed for Egg::Dispatch::Runmode.
 	  * The value of snip was not done in 'lc'.
