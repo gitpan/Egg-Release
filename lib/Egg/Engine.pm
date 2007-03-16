@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Engine.pm 281 2007-03-05 17:14:58Z lushe $
+# $Id: Engine.pm 286 2007-03-16 03:38:22Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use HTML::Entities;
 use URI::Escape;
 use URI;
 
-our $VERSION= '0.15';
+our $VERSION= '0.17';
 
 *escape_html  = \&encode_entities;
 *eHTML        = \&encode_entities;
@@ -27,7 +27,7 @@ our $VERSION= '0.15';
 {
 	no warnings 'redefine';
 	sub encode_entities {
-		shift; my $args= $_[1] || q//;
+		shift; my $args= $_[1] || q{'&<>"};
 		&HTML::Entities::encode_entities($_[0], $args);
 	}
 	sub decode_entities
@@ -53,8 +53,12 @@ sub uri_to {
 	$result;
 }
 sub page_title {
-	my($e)= @_;
-	$e->dispatch->page_title || $e->config->{title} || "";
+	my $e= shift;
+	if ($e->dispatch && (my $title= $e->dispatch->page_title(@_))) {
+		return $title;
+	} else {
+		return $e->config->{title} || "";
+	}
 }
 sub create_dispatch {
 	my($e)= @_;

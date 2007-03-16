@@ -3,7 +3,7 @@ package Egg::Plugin::ErrorDocument;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: ErrorDocument.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: ErrorDocument.pm 286 2007-03-16 03:38:22Z lushe $
 #
 use strict;
 use warnings;
@@ -49,7 +49,7 @@ sub error_document {
 	my $view= $e->view($conf->{view_name})
 	  || Egg::Error->throw("I want you setup of View. ($conf->{view_name})");
 	$res->no_cache($conf->{no_cache});
-	$e->dispatch->page_title("$code - ". $e->response_status($code));
+	$e->page_title("$code - ". $e->response_status($code));
 	my $body= $view->output($e, $conf->{template_name});
 	$e->request->output($res->create_header($body), $body);
 	$e->finished($code) unless $e->finished;

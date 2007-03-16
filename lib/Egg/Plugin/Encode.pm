@@ -3,14 +3,13 @@ package Egg::Plugin::Encode;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 285 2007-03-08 12:24:58Z lushe $
+# $Id: Encode.pm 286 2007-03-16 03:38:22Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
-use utf8;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 {
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
@@ -40,9 +39,9 @@ sub create_encode {
 	Jcode->require or Egg::Error->throw($@);
 	Jcode->new('jcode object.');
 }
-sub euc_conv  { $_[0]->encode->set($_[1])->euc  }
-sub sjis_conv { $_[0]->encode->set($_[1])->sjis }
-sub utf8_conv { $_[0]->encode->set($_[1])->utf8 }
+sub euc_conv  { shift->encode->set(@_)->euc  }
+sub sjis_conv { shift->encode->set(@_)->sjis }
+sub utf8_conv { shift->encode->set(@_)->utf8 }
 
 sub is_utf8 { utf8::is_utf8($_[1]) }
 sub utf8enc { utf8::encode($_[1])  }

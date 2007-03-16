@@ -1,5 +1,10 @@
 Revision history for Perl extension Egg::Release.
 
+1.18  2007/03/15
+	- fixed for Egg::Dispatch::Runmode.
+	  * The value of snip was not done in 'lc'.
+	- Bug fix for Egg::Engine.
+
 1.17  2007/03/07
 	- fixed for Egg::Plugin::Encode;
 	  * The method concerning the UTF8 flag is added.

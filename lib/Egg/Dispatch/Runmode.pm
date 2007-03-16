@@ -3,7 +3,7 @@ package Egg::Dispatch::Runmode;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Runmode.pm 279 2007-03-04 01:05:47Z lushe $
+# $Id: Runmode.pm 286 2007-03-16 03:38:22Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use UNIVERSAL::require;
 use Tie::RefHash;
 use base qw/Egg::Dispatch/;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 *start_mode= \&default_mode;
 {
@@ -71,8 +71,7 @@ sub _new {
 	my $dispat= $e->global->{EGG_DISPATCH_BASE};
 	my $self= bless { e=> $e,
 	  default_name=> $e->config->{template_default_name} }, $dispat;
-	$self->{snip}= $self->_get_mode($e)
-	            || [ map{lc($_)}@{$e->snip} ];
+	$self->{snip}= $self->_get_mode($e) || [@{$e->snip}];
 	$self->{debug_out}= $e->global->{EGG_DISPATCH_DEBUGOUT};
 	$self->{label}= [];
 	$self;
