@@ -1,5 +1,9 @@
 Revision history for Perl extension Egg::Release.
 
+1.20  2007/03/20
+	- Bug fix for Egg::Plugin::ErrorDocument.
+	- fixed for Egg::Helper.
+
 1.19  2007/03/16
 	- Bug fix for Egg.
 

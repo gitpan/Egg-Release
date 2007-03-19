@@ -3,7 +3,7 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 279 2007-03-04 01:05:47Z lushe $
+# $Id: Build.pm 291 2007-03-19 23:37:19Z lushe $
 #
 use strict;
 use warnings;

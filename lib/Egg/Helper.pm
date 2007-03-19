@@ -3,7 +3,7 @@ package Egg::Helper;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: Helper.pm 291 2007-03-19 23:37:19Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Egg::Exception;
 use Egg::Engine;
 use base qw/Class::Accessor::Fast/;
 
-our $VERSION= '0.07';
+our $VERSION= '0.08';
 
 my %Global;
 sub global { \%Global }
@@ -270,14 +270,27 @@ sub save_file {
 	return 1;
 }
 sub execute_make {
-	$_[0]->is_unix ? $_[0]->exec_perl_Makefile: $_[0]->output_manifest;
+	my($self)= @_;
+	if ($self->is_unix) {
+		eval{ $self->exec_perl_Makefile };
+		if (my $err= $@) {
+			warn $err;
+			eval{ $self->output_manifest };
+		}
+	} else {
+		$self->output_manifest;
+	}
 }
 sub distclean_execute_make {
 	my($self)= @_;
 	if ($self->is_unix) {
 #		unlink("$Global{project_root}/MANIFEST");
 		`make distclean`;
-		$self->exec_perl_Makefile;
+		eval{ $self->exec_perl_Makefile };
+		if (my $err= $@) {
+			warn $err;
+			eval{ $self->output_manifest };
+		}
 	} else {
 		$self->output_manifest;
 	}

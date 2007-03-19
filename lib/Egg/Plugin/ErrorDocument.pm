@@ -3,12 +3,12 @@ package Egg::Plugin::ErrorDocument;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: ErrorDocument.pm 286 2007-03-16 03:38:22Z lushe $
+# $Id: ErrorDocument.pm 291 2007-03-19 23:37:19Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub setup {
 	my($e)= @_;
@@ -49,10 +49,12 @@ sub error_document {
 	my $view= $e->view($conf->{view_name})
 	  || Egg::Error->throw("I want you setup of View. ($conf->{view_name})");
 	$res->no_cache($conf->{no_cache});
+	$res->status(200);
+	$res->content_type($e->config->{content_type} || 'text/html');
 	$e->page_title("$code - ". $e->response_status($code));
 	my $body= $view->output($e, $conf->{template_name});
 	$e->request->output($res->create_header($body), $body);
-	$e->finished($code) unless $e->finished;
+	$e->finished(200) unless $e->finished;
 	$e;
 }
 sub response_status {

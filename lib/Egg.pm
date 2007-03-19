@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 289 2007-03-16 09:06:30Z lushe $
+# $Id: Egg.pm 291 2007-03-19 23:37:19Z lushe $
 #
 use strict;
 use warnings;
