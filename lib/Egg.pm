@@ -3,7 +3,7 @@ package Egg;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 291 2007-03-19 23:37:19Z lushe $
+# $Id: Egg.pm 61 2007-03-23 02:15:34Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Egg::GlobalHash;
 use Egg::Exception;
 use base qw{ Class::Accessor::Fast };
 
-our $VERSION= '1.07';
+our $VERSION= '1.08';
 
 __PACKAGE__->mk_accessors
   (qw{ namespace request response dispatch backup_action });
@@ -78,6 +78,7 @@ sub __egg_setup {
 	my $conf;
 	{
 		no strict 'refs';  ## no critic
+		no warnings 'redefine';
 		$conf= ${"$class\::__EGG_CONFIG"}= shift
 		   || Egg::Error->throw('I want configuration.');
 		my $accessors= $conf->{accessor_names} || [];

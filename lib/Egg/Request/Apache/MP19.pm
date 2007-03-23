@@ -3,7 +3,7 @@ package Egg::Request::Apache::MP19;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: MP19.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: MP19.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

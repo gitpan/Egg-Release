@@ -3,7 +3,7 @@ package Egg::Dispatch;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Dispatch.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: Dispatch.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

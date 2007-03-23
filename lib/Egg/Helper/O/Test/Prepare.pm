@@ -3,7 +3,7 @@ package Egg::Helper::O::Test::Prepare;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Prepare.pm 251 2007-02-26 11:58:47Z lushe $
+# $Id: Prepare.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

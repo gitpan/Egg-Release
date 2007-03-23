@@ -3,7 +3,7 @@ package Egg::Base;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 249 2007-02-25 11:34:40Z lushe $
+# $Id: Base.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use UNIVERSAL::require;

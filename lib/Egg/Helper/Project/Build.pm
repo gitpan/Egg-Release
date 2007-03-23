@@ -3,14 +3,14 @@ package Egg::Helper::Project::Build;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 291 2007-03-19 23:37:19Z lushe $
+# $Id: Build.pm 60 2007-03-23 01:12:30Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Component/;
 
-our $VERSION= '0.09';
+our $VERSION= '0.10';
 
 sub new {
 	my $class= shift;
@@ -209,19 +209,20 @@ value: |
     ServerName  hostname.example.com
     DocumentRoot <# project_root #>/htdocs
   
-    PerlOptions  +Parent
   #  PerlSwitches -w
+  #  PerlInitHandler Apache2::Reload
+    PerlOptions  +Parent
     PerlSwitches -I<# project_root #>/lib
     PerlModule   mod_perl2
     PerlModule   <# project #>
-  #  PerlInitHandler Apache2::Reload
-  
-    <LocationMatch "^/([A-Za-z0-9_\-\+\:\%/]+)?(\.html)?$">
+    <LocationMatch "^/([^\.]+)?(\.html)?$">
      SetHandler          perl-script
      PerlResponseHandler <# project #>
     </LocationMatch>
   
   </VirtualHost>
+  #
+  # When proxy such as Pound is put on frontend, it is likely to need it.
   #
   # * The reference ahead. -> http://stderr.net/apache/rpaf/ 
   #

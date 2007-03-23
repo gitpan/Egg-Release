@@ -3,7 +3,7 @@ package Egg::Engine;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Engine.pm 286 2007-03-16 03:38:22Z lushe $
+# $Id: Engine.pm 59 2007-03-22 14:03:14Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use HTML::Entities;
 use URI::Escape;
 use URI;
 
-our $VERSION= '0.17';
+our $VERSION= '0.18';
 
 *escape_html  = \&encode_entities;
 *eHTML        = \&encode_entities;
@@ -119,10 +119,10 @@ sub output_content {
 		return if $res->status== 200;
 		return $e->error_document($res->status);
 	}
-	if (my($status)= $res->status=~/^(30[1237])/) {
-		my $location= $res->location
-		  || return $e->finished(500, q/Location is not specified./);
-		my $header= $res->cookies_ok ? $res->create_cookies: "";
+	my($status)= $res->status || 200;
+	if ($status=~/^(30[1237])/ && (my $location= $res->location)) {
+		my $header;
+		$header = $res->create_cookies if $res->cookies_ok;
 		$header.= "Status: $status Found$Egg::CRLF"
 		       .  "Location: $location$Egg::CRLF$Egg::CRLF";
 		$e->request->output(\$header);
@@ -131,8 +131,7 @@ sub output_content {
 		$e->request->output($res->create_header($body), $body);
 	}
 	$res->body(undef);
-	return $e->finished(200) unless my $err= $@;
-	return $e->finished(500, $err);
+	$e->finished($status);
 }
 sub finished {
 	my $e= shift;

@@ -3,7 +3,7 @@ package Egg::Helper::P::YAML;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: YAML.pm 261 2007-02-28 19:32:16Z lushe $
+# $Id: YAML.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

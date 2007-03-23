@@ -3,7 +3,7 @@ package Egg::View::Template::Ex;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Ex.pm 250 2007-02-25 11:40:06Z lushe $
+# $Id: Ex.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

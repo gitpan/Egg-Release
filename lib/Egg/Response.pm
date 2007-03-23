@@ -3,7 +3,7 @@ package Egg::Response;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 285 2007-03-08 12:24:58Z lushe $
+# $Id: Response.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

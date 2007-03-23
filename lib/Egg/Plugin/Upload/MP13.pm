@@ -3,7 +3,7 @@ package Egg::Plugin::Upload::MP13;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: MP13.pm 245 2007-02-24 18:21:27Z lushe $
+# $Id: MP13.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

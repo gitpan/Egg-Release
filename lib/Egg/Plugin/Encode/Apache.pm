@@ -3,7 +3,7 @@ package Egg::Plugin::Encode::Apache;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Apache.pm 285 2007-03-08 12:24:58Z lushe $
+# $Id: Apache.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

@@ -3,7 +3,7 @@ package Egg::Plugin::Charset::UTF8;
 # Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: UTF8.pm 278 2007-03-04 00:54:42Z lushe $
+# $Id: UTF8.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;

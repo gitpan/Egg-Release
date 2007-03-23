@@ -3,7 +3,7 @@ package Egg::View::Template::Params;
 # Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Params.pm 185 2007-02-17 07:18:18Z lushe $
+# $Id: Params.pm 48 2007-03-21 02:23:43Z lushe $
 #
 use strict;
 use warnings;
