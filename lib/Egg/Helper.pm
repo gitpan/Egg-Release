@@ -1,197 +1,917 @@
 package Egg::Helper;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Helper.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Helper - Helper module for Egg WEB Aplication Framework.
+
+=head1 SYNOPSIS
+
+  # Obtaining of helper script.
+  perl -MEgg::Helper -e 'Egg::Helper->out' > egg_helper.pl
+  
+  # Generation of project.
+  perl egg_helper.pl Project MyApp -o /home
+  
+  # The helper of the project is used.
+  perl MyApp/bin/myapp_helper.pl Plugin::Maker NewPlugin
+
+=head1 DESCRIPTION
+
+This offers the helper function to use Egg WEB Aplication Framework.
+
+* This document is the one to make the helper script chiefly.
+  It is not personally related to the composition of WEB Aplication.
+
+=head1 DEVELOPER
+
+It becomes help of the helper script development, and it explains the behavior
+etc. of this module.
+
+This module starts the helper module specified from the command line according
+to the following procedures.
+
+=over 4
+
+=item * perl myapp_helper.pl Plugin::Maker NewPlugin
+
+Myapp_helper.pl is a helper script only for the project generated to the bin
+folder of the project.
+
+=item * run
+
+The command line is evaluated by this method.
+
+The part of continuing myapp_helper.pl Plugin::Maker is recognized as a helper
+module of the object that puts the start.
+
+And, it tries to evaluate a suitable name or the option.
+
+The part of NewPlugin is concretely identified to 'any_name' in this example. 
+It comes to be able to refer from the helper module with $helper-E<gt>global->{any_name}.
+If the character string that starts by '_' continues, it is treated as an option.
+It comes to be able to access it globally by the name defined by the method of
+'_setup_get_options'.
+
+=item * execute
+
+The object helper module is read after the command line is suitably evaluated,
+and the method of '_execute' is called.
+
+At this time, it adds in @ISA of the object helper module beforehand and it
+adds it to Egg::Helper.
+As a result, it comes to be able to call all methods of Egg::Helper from the
+object helper module like the method completely.
+Egg::Helper operates in a word consequentially like the framework for the helper
+module.
+
+=back
+
+A convenient code is only freely written now if a target helper module starts.
+
+=cut
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use Cwd;
 use Getopt::Easy;
-use FileHandle;
-use File::Spec;
 use File::Which;
-use File::Basename;
-use Egg::Plugin::YAML;
+use File::Path;
+use YAML;
+use Egg::Release;
 use Egg::Exception;
-use Egg::Engine;
-use base qw/Class::Accessor::Fast/;
+use base qw/Egg::Base/;
+use Carp qw/croak/;
 
-our $VERSION= '0.08';
+our $VERSION = '2.00';
 
-my %Global;
-sub global { \%Global }
+my $Alias= {
+  M => 'Model',  V => 'View',  D => 'Dispatch', R => 'Request',
+  P => 'Plugin', A => 'App',   H => 'Helper',
+  };
 
-*yaml_load    = \&parse_yaml;
-*escape_html  = \&Egg::Engine::escape_html;
-*unescape_html= \&Egg::Engine::unescape_html;
-*escape_uri   = \&Egg::Engine::escape_uri;
-*unescape_uri = \&Egg::Engine::unescape_uri;
-*error        = \&Egg::Engine::error;
-*fread        = \&read_file;
-*fwrite       = \&save_file;
+=head1 METHODS
 
+=head2 new
+
+Constructor.
+
+It uses it when processing it after the object is made by the method of
+'_execute'.
+
+The object of the HASH reference base is restored.
+
+=cut
+sub new { bless {}, shift }
+
+=head2 global
+
+It is an accessor to global HASH.
+
+When the method of '_execute' was called, some values had already been defined.
+
+=cut
+our %G;
+sub global { \%G }
+
+=head2 _setup_get_options ( [OPTION_STRING], [HELP_CODE] )
+
+It prepares it. receive the option from the command line.
+
+OPTION_STRING is an option to pass to Getopt::Easy.
+* ' o-out= g-debug h-help ' is added without fail.
+
+The default of HELP_CODE is $helper-E<gt>can('_output_help').
+
+  $helper->SUPER::_setup_get_options( ' u-user_name= p-password= ' );
+
+Please refer to the document of L<Getopt::Easy>.
+
+=cut
+sub _setup_get_options {
+	my $class    = shift;
+	my $options  = shift || "";
+	   $options .= " o-out= g-debug h-help";
+	my $help_code= shift || $class->can('_output_help');
+	Getopt::Easy::get_options( $options, $help_code );
+}
+
+=head2 run ( [MODE], [ARGS_HASH] )
+
+After the global variable is set up, the helper module is started.
+
+MODE is a name of the helper who puts the start.
+
+  * This name is progressed , saying that 'Egg::Helper::[MODE]'.
+  * MODE that doesn't contain ':' is not accepted.
+
+It is ,in a word, a part of 'Plugin::Maker' of the place said by the DEVELOPER
+explanation example.
+
+=cut
+sub run {
+	my $class= shift;
+	my $mode = shift || croak q{ I want 'MODE'. };
+	if ($mode eq 'Project') {
+		my $project= shift(@ARGV)
+		   || $ENV{EGG_PROJECT_NAME}
+		   || return $class->_output_help(q{ I want project name. });
+		$project=~/^[A-Z][A-Za-z0-9_]+$/
+		   || return $class->_output_help(q{ Bat project name. });
+		$class->_run("${mode}::Build", $project, @_);
+	} else {
+		$mode= ($Alias->{$1} || $1). "::$2"
+		   if $mode=~m{^([A-Z][A-Za-z0-9]+)\:+(.+)}o;
+		$mode=~s{\:+} [::]g;
+		$class->_run($mode, 0, @_);
+	}
+	1;
+}
+sub _run {
+	my $class= shift;
+	my $helper_class= $class->_setup_global(@_) || return 0;
+	my $self= $helper_class->new;
+	$self->_execute || $class->_output_help;
+}
+sub _setup_global {
+	my($class, $h_class, $pname)= splice @_, 0, 3;
+	my $args = ref($_[0]) eq 'HASH' ? $_[0]: {@_};
+
+	$h_class= "Egg::Helper::$h_class";
+	{
+		no strict 'refs';  ## no critic
+		push @{"${h_class}::ISA"}, __PACKAGE__;
+		$h_class->require || return $class->_output_help($@);
+	  };
+	my $g= $h_class->global;
+	$class->project_name($pname) if $pname;
+	$args->{any_name}= shift(@ARGV) if ($ARGV[0] && $ARGV[0]!~m{^\-});
+	$args->{any_name} ||= $ENV{EGG_ANY_NAME} || "";
+	$h_class->_setup_get_options;
+	$args->{debug}= $O{debug} || $ENV{EGG_DEBUG} || 0;
+
+	$SIG{__DIE__}= sub { Egg::Error->throw(@_) } if $args->{debug};
+
+	$h_class->_setup_output_path(\%O);
+	$args->{start_dir} ||= $h_class->get_cwd;
+	$g->{$_} ||= $args->{$_} for keys %$args;
+	@{$g}{ keys %O }= values %O;
+	$h_class;
+}
+sub _setup_output_path {
+	my $class= shift;
+	my $opt= shift || {};
+	my $dir= $class->dir_check
+	   ( $ENV{EGG_OUT_PATH} || $opt->{out} || $class->get_cwd );
+	delete($opt->{out}) if exists($opt->{out});
+	$class->global->{output_path}= $dir;
+}
+
+=head2 start_dir
+
+The current directory in the place where the helper script was started is 
+returned.
+
+=head2 project_root
+
+Route PATH of the project of the object is returned.
+
+* Anything doesn't return when project_root of ARGS_HASH passed with run is
+  erased.
+
+=cut
 {
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
-	for my $accessor (qw/copy move/) {
-		*{__PACKAGE__."::$accessor"}= sub {
-			my $self = shift;
-			my $file1= shift || Egg::Error->throw('I want file1');
-			my $file2= shift || Egg::Error->throw('I want file2');
-			File::Copy->require;
-			&{"File::Copy::$accessor"}($file1, $file2) || return 0;
-			print "- $accessor file : $file1 => $file2\n";
-			1;
-		  };
-	}
-	sub get_options {
-		my $class   = shift;
-		my $options = shift || "i-in= D-debug o-out= h-help";
-		Getopt::Easy::get_options
-		  ( $options, $class->help_message($Global{mode}) );
+	for my $accessor (qw/ start_dir project_root /) {
+		*{__PACKAGE__."::$accessor"}= sub { $_[0]->global->{$accessor} || "" };
 	}
   };
 
-sub run {
-	my $class= shift;
-	my $mode = $Global{mode}= shift || die 'I want mode.';
-	my $pname= shift || "";
-	my $args = shift || {};
+=head2 chdir ( [TARGET_DIR], [CREATE_FLAG] )
 
-	local $SIG{__DIE__}= sub { Egg::Error->throw(@_) }  ## no critic
-	  if $ENV{EGG_HELPER_DEBUG};
+The current directory is changed and it reports to STDOUT.
 
-	# Project.
-	if ($mode=~m{^Project\:+([A-Z][A-Za-z0-9_]+)}) {
-		$class->project_name($1);
-		$class->setup_global();
-		$class->isa_self('Project::Build')->new($1);
+After TARGET_DIR is made, chdir is done when CREATE_FLAG is given.
 
-	# Other.
-	} elsif ($mode=~m{^(O\:\:?[A-Z][A-Za-z0-9_\:]+)}) {
-		my $pkg= $1;
-		$Global{project_name}= $Global{project}= 'Other::Dummy';
-		$class->setup_global();
-		$class->isa_self($pkg)->new();
+=cut
+sub chdir {
+	my $self= shift;
+	my $path= shift || croak q{ I want path. };
+	$self->create_dir($path) if ($_[0] && ! -e $path);
+	CORE::chdir($path) || croak qq{ $! : $path };
+	print "= change dir : $path\n";
+	1;
+}
 
-	# Model, View, Engine, Dispatch, Plugin, etc.
-	} elsif ($mode=~m{^([A-Z]\:\:?[A-Z][A-Za-z0-9_\:]+)}) {
-		my $pkg= $1;
-		$class->project_name($pname)
-		  || Egg::Error->throw('I want project name.');
-		my $helper= $class->isa_self($pkg);
-		$helper->setup_global($args);
-		$Global{project_root}=
-		  $class->path_regular($Global{project_root})
-		  || Egg::Error->throw('I want project_root.');
-		$helper->new();
+=head2 create_dir ( [CREATE_PATH] )
 
-	# Help.
-	} else {
-		print $class->help_message($mode);
+After CREATE_PATH is made, it reports to STDOUT.
 
+It moves even if a deep hierarchy is suddenly specified because mkpath of
+L<File::Path> is used.
+
+=cut
+sub create_dir {
+	my $self= shift;
+	my $path= shift || croak q{ I want path. };
+	File::Path::mkpath($path, 1, 0755) || return 0;  ## no critic
+#	print "+ create dir : $path\n";
+	1;
+}
+
+=head2 remove_dir ( [DELETE_PATH] )
+
+After DELETE_PATH is deleted, it reports to STDOUT.
+
+Because rmtree of L<File::Path > is used, the subdirectory is recurrently
+deleted.
+
+=cut
+sub remove_dir {
+	my $self= shift;
+	my $path= shift || croak q{ I want dir. };
+	File::Path::rmtree($path) || return 0;
+	print "- remove dir : $path\n";
+	1;
+}
+
+=head2 remove_file ( [DELETE_FILE] )
+
+It reports to STDOUT if the deletion of DELETE_FILE is tested, and it succeeds.
+
+DELETE_FILE can be passed with ARRAY.
+
+=cut
+sub remove_file {
+	my $self= shift;
+	@_ || croak q{ I want file path. };
+	for my $file (ref($_[0]) eq 'ARRAY' ? @{$_[0]}: @_)
+	    { print "+ remove file: $file\n" if unlink($file) }
+}
+
+=head2 read_file ( [FILE_PATH] )
+
+The content is returned reading FILE_PATH.
+
+=over 4
+
+=item * Alias: fread
+
+=back
+
+=cut
+sub read_file {
+	require FileHandle;
+	my $self= shift;
+	my $file= shift || croak q{ I want file path. };
+	my $fh  = FileHandle->new($file) || croak qq{ '$file' : $! };
+	binmode $fh;
+	my $value= join '', <$fh>;
+	$fh->close;
+	$value || "";
+}
+*fread= \&read_file;
+
+=head2 save_file ( [SAVE_DATA_HASH], [REPLACE_PARAM_HASH] )
+
+It saves a file based on structural the following SAVE_DATA_HASH, and it
+reports to STDOUT.
+
+  filename ... PATH and name of made file.
+               If the directory doesn't exist making ahead, it makes it.
+  
+  value    ... Content of made file.
+  
+  filetype ... File type.
+  
+    - If it is a name that starts by bin, it starts doing decode_base64 of
+      L<MIME::Base64>, and it developing with the binary.
+  
+    - If it is a name that starts by script or bin_exec, chmod 0700 is done.
+
+Filename is put on $helper-E<gt>replace.
+
+Value is put on $helper-E<gt>replace in case of not being in the name that
+the file type starts by bin.
+
+  $helper->save_file({
+  
+    filename => 'etc/example.txt',
+    value    => $example_value,
+  
+    }, \%param_data );
+
+  $helper->save_file({
+  
+    filename => 'htdocs/images/example.png',
+    filetype => 'bin',
+    value    => $base64_encode_text,
+  
+    });
+
+=cut
+sub save_file {
+	my $self = shift;
+	my $data = shift || croak q{ I want data.  };
+	my $param= shift || 0;
+	my $path= $self->replace(($param || {}), $data->{filename})
+	                 || croak q{ I want data->{filename} };
+	my $ftype= $data->{filetype} || "";
+	my $value= $ftype=~/^bin/i ? do {
+		MIME::Base64->require;
+		MIME::Base64::decode_base64($data->{value});
+	  }: do {
+		$param ? do {
+			$self->replace($param, \$data->{value}, $path) || return "";
+		  }: do {
+			$data->{value} || return "";
+		  };
+	  };
+	my $basedir= File::Basename::dirname($path);
+	if (! -e $basedir || ! -d _) {
+		$self->create_dir($basedir) || die qq{ $! : $basedir };
 	}
+	my @path= split /[\\\/\:]+/, $path;
+	my $file= File::Spec->catfile(@path);
+	open FH, "> $file" || return die qq{ File Open Error: $path - $! };  ## no critic
+	binmode(FH);
+	print FH $value;
+	close FH;
+	if (-e $file) {
+		print "+ create file: $path\n";
+		if ($ftype=~m{^script}i or $ftype=~m{^bin_exec}i) {
+			if ( chmod 0700, $file ) { print "+ chmod 0700: $file\n" }  ## no critic
+		}
+	} else {
+		print "- create Failure : $path\n";
+	}
+	return 1;
 }
-sub isa_self {
-	my $class= shift;
-	my $pkg  = shift || Egg::Error->throw('I want package name.');
-	$pkg=~s{([A-Za-z0-9_]\:)([A-Za-z0-9_])} [$1:$2]go;
-	$pkg= "Egg::Helper::$pkg";
-	no strict 'refs';  ## no critic
-	push @{"$pkg\::ISA"}, __PACKAGE__;
-	$pkg->require or Egg::Error->throw($@);
-	$pkg;
+
+=head2 yaml_load ( [YAML_TEXT] or [YAML_FILE_PATH] )
+
+YAML_TEXT or YAML_FILE_PATH is done in Perth and the result is returned.
+
+=cut
+sub yaml_load {
+	my $self= shift;
+	my $data= shift || croak q{ I want yaml data. };
+	$data=~m{[\r\n]} ? YAML::Load($data): YAML::LoadFile($data);
 }
+
+=head2 load_project_config ( [PM_ONLY_FLAG] )
+
+The setting of the project is read and returned.
+
+When PM_ONLY_FLAG is given, it reads for only config.pm.
+
+=cut
+sub load_project_config {
+	my $self = shift;
+	my $pm   = shift || 0;
+	my $pname= $self->project_name || die q{ I want project_name. };
+	my $proot= $self->project_root || die q{ I want project_root. };
+	$pname->require or die $@;
+	my $conf= $pname->config || do {
+		my $load_conf_module= sub {
+			"${pname}::config"->require or die $@;
+			"${pname}::config"->out || die q{ configuration is not found. };
+		  };
+		$pm ? $load_conf_module->(): do {
+			my $lcpname= lc($pname);
+			my $yaml= -e "$proot/$lcpname.yaml"     ? "$proot/$lcpname.yaml"
+			        : -e "$proot/etc/$lcpname.yaml" ? "$proot/etc/$lcpname.yaml"
+			        :  0;
+			$yaml ? $self->yaml_load($yaml): $load_conf_module->();
+		  };
+	  };
+	$conf->{root}     || die q{ 'root' is not setup. };
+	$conf->{dir}      || die q{ 'dir' is not setup.  };
+	$conf->{dir}{lib} || die q{ 'dir' -> 'lib' is not setup. };
+	$conf->{dir}{tmp} || die q{ 'dir' -> 'tmp' is not setup. };
+	$self->replace_deep($conf, $conf->{dir});
+	$self->replace_deep($conf, $conf);
+	$conf->{dir}{root}        =  $conf->{root};
+	$conf->{dir}{temp}        =  $conf->{dir}{tmp};
+	$conf->{dir}{lib_project} = "$conf->{dir}{lib}/$pname";
+	$self->config($conf);
+}
+
+=head2 generate ( [OPERATION_ATTR_HASH] )
+
+The file complete set is generated based on structural the following
+OPERATION_ATTR_HASH.
+
+=over 4
+
+=item * chdir => [ [PATH], [FLAG] ]
+
+If chdir is done, it defines it.
+This is an argument passed to $helper-E<gt>chdir and an always ARRAY reference.
+
+=item * create_files => [ [SAVE_DATA_HASH] ]
+
+The made file data is defined by the ARRAY reference.
+
+Each value of ARRAY is an argument passed to $helper-E<gt>save_file.
+
+=item * create_dirs => [ [CREATE_PATH_ARRAY] ]
+
+An empty directory is made.
+
+=item * create_code => [CODE_REF],
+
+The code can be added. 
+
+The helper object is passed to the code.
+
+=item * makemaker_ok => [ 1 or 0 ]
+
+After the file complete set is generated, a series of perl Makefile.PL and
+others make test is done.
+
+=item * complete_msg => [COMPLETE_MESSAGE],
+
+COMPLETE_MESSAGE set when the generation processing is completed is output
+to STDOUT.
+
+=item * errors => [OPTION_HASH],
+
+It is a setting concerning the settlement when the error occurs.
+
+  rmdir => [DELETE_DIR_ARRAY]
+     List of deleted directory.
+     This list extends to $helper-E<gt>remove_dir.
+  
+  unlink => [DELETE_FILE_ARRAY]
+     List of deleted file.
+     This list extends to $helper-E<gt>remove_file.
+  
+  message => [ERROR_MESSAGE]
+     It is an error message.
+
+=back
+
+  $helper->generate(
+    chdir        => [qw{ /path/to/home 1 }],
+    create_files => \@files,
+    create_dirs  => \@dirs,
+    makemaker_ok => 0,
+    complete_msg => ' ... Coumpete. ',
+    create_code  => sub { ... },
+    errors => {
+      rmdir   => \@dirs,
+      unlink  => \@files,
+      message => ' ... Internal Error !! ',
+      },
+    );
+
+=cut
+sub generate {
+	my $self= shift;
+	my $attr= ref($_[0]) eq 'HASH' ? $_[0]: {@_};
+	my $g   = $self->global;
+	if (my $chdir= $attr->{chdir}) { $self->chdir(@$chdir) }
+	eval{
+		if (my $files= $attr->{create_files})
+		   { $self->save_file($_, $g) for @$files }
+		if (my $dirs = $attr->{create_dirs})
+		   { $self->create_dir($_) for @$dirs }
+		if (my $code = $attr->{create_code})
+		   { $code->($self, $attr) }
+		$self->_execute_makemaker if $attr->{makemaker_ok};
+		if (my $message= $attr->{complete_msg}) { print $message }
+	  };
+	$self->chdir($g->{start_dir});
+
+	my $error= $@ || return 1;
+	if (my $err= $attr->{errors}) {
+		my $msg= $err->{message} || "";
+		if (my $dirs = $err->{rmdir})  { $self->remove_dir(@$dirs) }
+		if (my $files= $err->{unlink}) { $self->remove_file(@$files) }
+		die "$msg : $error";
+	} else {
+		die $error;
+	}
+	$self;
+}
+
+=head2 testfile_number_now
+
+The number of the test file newly made is returned.
+
+'00' is returned when project_root cannot be acquired or project_root/t has
+been deleted or it fails in acquisition.
+
+  my $test_number= $helper->testfile_number_now;
+
+=cut
+sub testfile_number_now {
+	my($self)= @_;
+	my $testdir = $self->project_root || return '00';
+	   $testdir.= '/t';
+	-e $testdir || return '00';
+	my $number= 0;
+	for (grep /\.t$/, <$testdir/*>) {
+		my($num)= m{/(\d+)[^/]+$};
+		$number= $num if ($num && $num< 70 && $num> $number);
+	}
+	sprintf "%02d", ++$number;
+}
+
+=head2 mod_name_resolv ( [MODULE_PATH] )
+
+It checks whether file PATH composition is resolved and the name of each
+hierarchy is suitable as the module name of Perl.
+
+And, the result of the check is returned with ARRAY.
+
+If it is not suitable among hierarchies even by one place as the module name
+of Perl, 0 is returned.
+
+  $helper->mod_name_resolv('./MyApp/Orign/tools');
+
+=cut
+sub mod_name_resolv {
+	my $self= shift;
+	my $name= join ':', @_;
+	   $name=~s{\.pm} []; $name=~s{\s+} []sg;
+	my @parts;
+	for ( split /[\\\/\-\:]+/, $name ) {
+		/^[A-Za-z][A-Za-z0-9_]+$/ || return 0;
+		push @parts, $_;
+	}
+	wantarray ? @parts: (@parts ? \@parts: 0);
+}
+
+=head2 is_platform
+
+OS while operating it is returned.
+
+'Unix' returns if there is neither 'Win32' nor 'MacOS'.
+
+=cut
 sub is_platform {
 	{ MSWin32=> 'Win32', MacOS=> 'MacOS' }->{$^O} || 'Unix';
 }
+
+=head2 is_unix
+
+One returns if judged that $helper-E<gt>is_platform is 'Unix'.
+
+=cut
 sub is_unix {
 	$_[0]->is_platform eq 'Unix' ?  1: 0;
 }
+
+=head2 is_win32
+
+One returns if judged that $helper-E<gt>is_platform is 'Win32'.
+
+=cut
 sub is_win32 {
 	$_[0]->is_platform eq 'Win32' ? 1: 0;
 }
+
+=head2 is_mac
+
+One returns if judged that $helper-E<gt>is_platform is 'MacOS'.
+
+=cut
 sub is_mac {
 	$_[0]->is_platform eq 'MacOS' ? 1: 0;
 }
-sub perl_path {
-	my($self)= @_;
-	my $perl_path= $ENV{PERL_PATH} || which('perl')
-	 || die q/Please set environment variable 'PERL_PATH'./;
-	$self->path_regular($perl_path);
-}
+
+=head2 project_name ( [PROJECT_NAME] )
+
+When PROJECT_NAME is given, the project name is set again.
+
+However, if it is not suitable as ':' is contained as the project name, the
+exception is generated.
+
+When PROJECT_NAME is omitted, the project name under the setting is returned.
+
+* Because the helper module is loaded with the project name has been set,
+  it is not necessary to set it again usually.
+
+=cut
 sub project_name {
-	my $class= shift;
-	if (@_) {
-		my $pname= shift || return(undef);
-		if ($pname=~/^[A-Z][A-Za-z0-9_]+$/) {
-			$Global{project_name}= $Global{project}= $pname;
-		} else {
-			Egg::Error->throw("Bad format of project name: $pname");
-		}
-	}
-	$Global{project_name} || undef;
+	my $self= shift;
+	return $self->global->{project_name} || undef unless @_;
+	my $pname= shift || croak q{ I want 'project name'. };
+	$self->global->{project_name}= $pname=~m{^[A-Z][A-Za-z0-9_]+$}
+	   ? $pname: croak qq{ Bad format of project name: '$pname'. };
 }
-sub setup_global {
-	my $class= shift;
-	my $args = shift || {};
-	$args->{any_name}= shift(@ARGV)
-	 if ($ARGV[0] && $ARGV[0]=~m{^[A-Za-z].*?$});
 
-	$class->get_options;
+=head2 get_cwd
 
-	$SIG{__DIE__}= sub { Egg::Error->throw(@_) } if $O{debug};
+The current directory is returned.
 
-	$args->{start_dir}= $class->get_cwd();
-	$args->{perl_path}= $class->perl_path;
-	$args->{out_path} = $class->get_out_path(\%O);
-	$args->{out_path} = $class->path_regular($args->{out_path});
-	$args->{year}= (localtime time)[5]+ 1900;
-	$args->{revision}= '$'. 'Id'. '$';
-	$args->{gmtime_string}= gmtime time;
-	$args->{license}= $args->{version}= "";
-	@Global{keys %$args}= values %$args;
-	@Global{keys %O}= values %O;
-	$Global{examples}= $Global{example}= 'examples';
-}
-sub get_out_path {
-	my $class  = shift;
-	my $option = shift || {};
-	my $outpath= $option->{out} || $ENV{EGG_OUT_PATH} || $class->get_cwd();
-	my $regixp = $class->is_win32 ? qr{^(?:[C..Z]\:)?[/\\].+}: qr{^/.+};
-	if (! $outpath=~m{$regixp}) {
-		print "Warning: Output path is not Absolute PATH. : $outpath\n";
-	}
-	$outpath=~s{/+$} []o;
-	$outpath;
-}
+=cut
 sub get_cwd {
 	Cwd::getcwd();
 }
-sub setup_document_code {
+
+=head2 year
+
+A present Christian era is returned.
+
+=cut
+sub year {
+	(localtime time)[5]+ 1900;
+}
+
+=head2 dir_check ( [DIR_PATH] )
+
+DIR_PATH exists, and it is recordable is checked.
+
+When the check cannot be passed, the exception is generated.
+
+=cut
+sub dir_check {
+	my $class= shift;
+	my $dir  = shift || return (undef);
+	$dir=~s{[\\\/\:]+$} [];
+	(-e $dir && -d _ && -w _)
+	   || croak qq{ '$dir' is thing that is recordable directory. };
+	$dir || undef;
+}
+
+=head2 perl_path
+
+Passing the main body of perl is returned.
+
+The value is returned if environment variable 'PERL_PATH' is set, and 
+PATH is specified by L<File::Which> in case of not being.
+When everything fails, the exception is generated.
+
+=cut
+sub perl_path {
+	my($self)= @_;
+	$self->global->{perl_path}= $ENV{PERL_PATH}
+	  || which('perl')
+	  || croak q/Please set environment variable 'PERL_PATH'./;
+}
+
+=head2 _setup_rc
+
+Reading the rc file is tried by L<Egg::Plugin::rc>.
+And, 'copywright' etc. are set up to $helper-E<gt>global.
+
+Please refer to RESOURCE CODE VARIABLE for details.
+
+=cut
+sub _setup_rc {
+	my($self)= @_;
+	require Egg::Plugin::rc;
+	my $rc= Egg::Plugin::rc::load_rc
+	  ($self, current_dir=> ($self->global->{start_dir} || $self->get_cwd) )
+	  || {};
+	$rc->{author}     ||= $rc->{copywright} || "";
+	$rc->{copywright} ||= $rc->{author}     || "";
+	$rc->{headcopy}   ||= $rc->{copywright} || "";
+	$rc->{license}    ||= 'perl';
+
+	my %esc= ( "'"=> 'E<39>', '@'=> 'E<64>', "<"=> 'E<lt>', ">"=> 'E<gt>' );
+	for (qw{ author copyright headcopy }) {
+		$rc->{$_} ||= $ENV{LOGNAME} || $ENV{USER} || 'none.';
+		$rc->{$_}=~s{([\'\@<>])} [$esc{$1}]gso;
+	}
+	@G{ keys %$rc }= values %$rc;
+}
+
+=head2 _output_help
+
+-h It moves when help is demanded by the option etc.
+
+Override may do this method on the helper module side.
+
+=cut
+sub _output_help {
 	my $self= shift;
-	$Global{document} ||= sub {
-		my($proto, $param, $fname)= @_; $fname ||= "";
-		my $document= $self->pod_text;
-		$proto->conv($param, \$document, $fname);
+	my $message= shift || ""; $message &&= "$message \n\n";
+	print <<END_HELP;
+
+$message # usage: perl egg_helper.pl [MODE] [OPTION]
+
+END_HELP
+	exit(0);
+}
+
+=head2 out
+
+The helper script code is output.
+
+Please preserve the output code in a suitable place and use it.
+
+  perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/bin/egg_helper.pl
+
+=cut
+sub out {
+	my($class)= @_;
+	my $perlpath= $class->perl_path;
+	print <<SCRIPT;
+#!$perlpath
+use Egg::Helper;
+Egg::Helper->run( shift(\@ARGV) );
+SCRIPT
+}
+
+=head1 GLOBAL VARIABLE
+
+It is a key to global HASH that will be set up by the time the helper module
+is called list.
+
+=head2 project_name
+
+Project name.
+
+=head2 project_root
+
+Route PATH of project.
+
+=head2 any_name
+
+When the name has been passed to the helper script, it is set.
+
+=head2 debug
+
+-d When $ENV{EGG_DEBUG} is set, whether the option is effective it is set.
+
+* If this value is effective, it sets it up like displaying the stack trace
+  when the error occurs.
+
+=head2 start_dir
+
+The current directory is set.
+
+=head2 output_path
+
+-o If the option is effective, it is set.
+Or, if $ENV{EGG_OUT_PATH} is set, this value is set.
+If it is undefined, all current directories are set above.
+
+=head2 help
+
+-h If the option is effective, it is set.
+
+=head2 ... etc
+
+Additionally, the global value set beforehand changes by the option to pass
+to the setting and the run method of the method of '_setup_get_options'.
+
+=cut
+sub _setup_module_maker {
+	my $self = shift;
+	my $pkg  = shift || ref($self) || croak q{ I want package name. };
+	my $g    = $self->global;
+	my $pname= $self->project_name || "";
+	$self->perl_path;
+	$self->_setup_rc;
+
+	if (my $egg_inc= $ENV{EGG_INC}) {
+		$g->{egg_inc}= qq{\nuse lib qw(}
+		 . join(' ', split /\s*[\, ]\s*/, $egg_inc). qq{);\n};
+	} else {
+		$g->{egg_inc}= "";
+	}
+	$g->{created}  = "$pkg v". $pkg->VERSION;
+	$g->{revision} = '$'. 'Id'. '$';
+	$g->{lib_dir}  = "lib/$pname";
+	$g->{lc_project_name}= lc($pname);
+	$g->{uc_project_name}= uc($pname);
+	$g->{ucfirst_project_name}= ucfirst($pname);
+	$g->{module_version} ||= 0.01;
+	$g->{perl_version}= $] > 5.006 ? sprintf "%vd", $^V : sprintf "%s", $];
+	$g->{egg_release_version}= Egg::Release->VERSION;
+	$g->{gmtime_string}= gmtime time;
+	$g->{year}= sub { $self->year };
+	my $hash= $self->_load_data;
+	$hash->{document}= sub {
+		my($h, $param, $fname)= @_;
+		my $pod_text= $hash->{pod_text};
+		$h->replace($param, \$pod_text, ($fname || ""));
 	  };
-	$Global{dist} ||= sub {
-		my($proto, $param, $fname)= @_;
-		$fname= $self->path_regular($fname);
-		if (my $proot= $Global{project_root}) {
-			$fname=~s{^$proot} []o;
-		}
+	$hash->{dist}= sub {
+		my($proto, $param)= splice @_, 0, 2;
+		my $proot_regix= $g->{project_root};
+		   $proot_regix=~s{\\} ['\\']ge;
+		my $fname= $proto->_conv_unix_path(@_) || return "";
+		$fname=~s{^[A-Za-z]\:+} []o;
+		$fname=~s{^$proot_regix} []o;
 		$fname=~s{^/?lib} []o;
-		$fname=~s{^/} []o;
+		$fname=~s{^/+} []o;
 		$fname=~s{\.pm$} []o;
 		join '::', (split /\/+/, $fname);
 	  };
+	$self->{_setup_module_maker}= 1;
+	@{$g}{ keys %$hash }= values %$hash;
+}
+sub _load_data {
+	my($self)= @_;
+	$self->global->{_load_data} ||= $self->yaml_load( join '', <DATA> );
+}
+sub _setup_module_name {
+	my $self= shift;
+	my $name= ref($_[0]) eq 'ARRAY' ? $_[0]: \@_;
+	my $g= $self->global;
+	$g->{module_name}     = join('-', @$name);
+	$g->{module_filename} = join('/', @$name). '.pm';
+	$g->{module_distname} = join('::', @$name);
+	$g->{target_path}     = "$g->{output_path}/$g->{module_name}";
+	$g->{target_dir}      = "$g->{output_path}/"
+	                      . join('/', @{$name}[0..($#{$name}- 1)]);
 	$self;
 }
-sub path_regular {
+sub _execute_makemaker {
+	my($self)= @_;
+	return if (exists($ENV{EGG_MAKEMAKER}) and ! $ENV{EGG_MAKEMAKER});
+	if ($self->is_unix) {
+		eval{
+			system('perl Makefile.PL') and die $!;
+			system('make manifest')    and die $!;
+			system('make')             and die $!;
+			system('make test')        and die $!;
+			`make distclean`;
+		  };
+		if (my $err= $@) {
+			warn $err;
+			print <<END_WARN;
+$err
+
+----------------------------------------------------------------
+  !! Warning !! The error occurred.
+                Please execute 'make distclean'.
+END_WARN
+			$self->_output_manifest;
+		}
+	} else {
+		$self->_output_manifest;
+	}
+}
+sub _output_manifest {
+	my($self)= @_;
+	print <<END_OF_INFO;
+
+----------------------------------------------------------------
+  !! MANIFEST was not able to be adjusted. !!
+  !! Sorry to trouble you, but please edit MANIFEST later !!
+----------------------------------------------------------------
+
+END_OF_INFO
+}
+sub _common_check {
+	my($self)= @_;
+	my $g= $self->global;
+	$g->{project_root} || croak q{ I want setup 'project_root'. };
+	$g->{project_root}=~s{/+$} [];
+}
+sub _conv_unix_path {
 	my $self= shift;
 	my $path= shift || return "";
 	return $path if $self->is_unix;
@@ -199,476 +919,110 @@ sub path_regular {
 	$path=~s{$regixp+} [/]g;
 	$path;
 }
-sub chdir {
-	my $self= shift;
-	my $path= shift || Egg::Error->throw('I want path.');
-	$self->create_dir($path) if ($_[0] && ! -e $path);
-	CORE::chdir($path) || Egg::Error->throw("$! : $path");
-	print "= change dir : $path\n";
-	1;
-}
-sub create_dir {
-	my $self= shift;
-	my $path= shift || Egg::Error->throw('I want path.');
-	File::Path->require;
-	File::Path::mkpath($path, 1, 0755) || return 0;  ## no critic
-#	print "+ create dir : $path\n";
-	1;
-}
-sub remove_dir {
-	my $self= shift;
-	my $path= shift || Egg::Error->throw(q/I want dir./);
-	File::Path->require;
-	File::Path::rmtree($path) || return 0;
-	print "- remove dir : $path\n";
-	1;
-}
-sub remove_file {
-	my $self = shift;
-	Egg::Error->throw('I want file path.') unless @_;
-	for my $file (@_) {
-		print "+ remove file: $file\n" if unlink($file);
-	}
-}
-sub read_file {
-	my $self = shift;
-	my $file = shift || Egg::Error->throw('I want file path.');
-	my $param= $_[0] ? (ref($_[0]) ? $_[0]: {@_}): \%Global;
-	my $fh= FileHandle->new($file) || Egg::Error->throw("$! - $file");
-	binmode($fh);
-	my $value= join '', $fh->getlines;
-	$fh->close;
-	-T $file ? $self->conv($param, \$value, $file): \$value;
-}
-sub save_file {
-	my $self = shift;
-	my $param= shift || Egg::Error->throw('I want param.');
-	my $data = shift || Egg::Error->throw('I want data');
-	my $path= $self->conv($param, \$data->{filename})
-	  || Egg::Error->throw(q/I want data->{filename}/);
-	my $value= ($data->{filetype} && $data->{filetype}=~/^bin/i) ? do {
-		MIME::Base64->require;
-		MIME::Base64::decode_base64($data->{value});
-	  }: do {
-		$self->conv($param, \$data->{value}, $path) || return "";
-	  };
-	my $basedir= File::Basename::dirname($path);
-	if (! -e $basedir || ! -d _) {
-		$self->create_dir($basedir) || Egg::Error->throw($!);
-	}
-	my @path= split /[\\\/]+/, $path;
-	my $fh= FileHandle->new(">". File::Spec->catfile(@path))
-	  || Egg::Error->throw("File Open Error: $path - $!");
-	binmode($fh);
-	print $fh $value;
-	$fh->close;
-	print "+ create file: $path\n";
-	if ($data->{permission}) {
-		chmod $data->{permission}, $path;  ## no critic
-		print "+ chmod : $path\n";
-	}
-	return 1;
-}
-sub execute_make {
-	my($self)= @_;
-	if ($self->is_unix) {
-		eval{ $self->exec_perl_Makefile };
-		if (my $err= $@) {
-			warn $err;
-			eval{ $self->output_manifest };
-		}
-	} else {
-		$self->output_manifest;
-	}
-}
-sub distclean_execute_make {
-	my($self)= @_;
-	if ($self->is_unix) {
-#		unlink("$Global{project_root}/MANIFEST");
-		`make distclean`;
-		eval{ $self->exec_perl_Makefile };
-		if (my $err= $@) {
-			warn $err;
-			eval{ $self->output_manifest };
-		}
-	} else {
-		$self->output_manifest;
-	}
-}
-sub exec_perl_Makefile {
-	my($self)= @_;
-	system('perl Makefile.PL') and Egg::Error->throw($!);
-	system('make manifest') and Egg::Error->throw($!);
-	system('make') and Egg::Error->throw($!);
-	system('make test') and Egg::Error->throw($!);
-	`make distclean`;
-}
-sub conv {
-	my $self = shift;
-	my $param= shift || {};
-	my $text = shift || return "";
-	my $fname= shift || "";
-	return "" unless $$text;
-	$$text=~s{<\#\s+(.+?)\s+\#>} [
-	  $param->{$1} ? do {
-	    ref($param->{$1}) eq 'CODE'
-	      ? $param->{$1}->($self, $param, $fname): $param->{$1};
-	    }: "";
-	 ]sgeo;
-	$$text;
-}
-sub egg_context {
-	my $self= shift;
-	my $project= $self->project_name || return 0;
-	$project->require or Egg::Error->throw($@);
-	$project->new;
-}
-sub load_config {
-	my $self = shift;
-	my $pname= $self->project_name || return 0;
-	my $yaml = "$Global{project_root}/etc/$pname.yaml";
-	if (-e $yaml && -f _) {
-		return $self->yaml_load($yaml);
-	} else {
-		$pname.= '::config';
-		$pname->require or Egg::Error->throw($@);
-		return $pname->out;
-	}
-}
-sub check_module_name {
-	my $self= shift;
-	my $name= shift || Egg::Error->throw('I want module name');
-	my @part= $_[0] ? ($_[1] ? @_: @{$_[0]}): ();
-	for (split /[\-\:\/]+/, $name) {
-		if (/^[A-Za-z][A-Za-z0-9_]+$/) {
-			push @part, $_;
-		} else {
-			Egg::Error->throw(q/It is a package name of an illegal format./);
-		}
-	}
-	\@part;
-}
-sub get_testfile_new_number {
-	my $self   = shift;
-	my $testdir= shift || Egg::Error->throw('I want test dir.');
-	-e $testdir  || Egg::Error->throw('test dir is not found.');
-	my $number= 0;
-	for (grep /\.t$/, <$testdir/*>) {
-		my($num)= m{/(\d+)[^/]+$};
-		$number= $num if ($num && $num< 80 && $num> $number);
-	}
-	sprintf "%02d", ++$number;
-}
-sub setup_global_rc {
-	my $self= shift;
-	my $rc= Egg::Plugin::YAML->loadrc || {};
-	$rc->{author}     ||= $rc->{copywright} || "";
-	$rc->{copywright} ||= $rc->{author}     || "";
-	$rc->{headcopy}   ||= $rc->{copywright} || "";
-	$rc->{$_} ||= $ENV{LOGNAME} || $ENV{USER} || 'none.'
-	  for (qw/author copyright headcopy/);
-	$rc->{author}=~s{\'} [E<39>]go;
-	$rc->{license} ||= 'perl';
-	$rc->{version} ||= '0.01';
-	$rc->{uname} ||= $ENV{LOGNAME} || $ENV{USER} || $self->project_name
-	  || 'none.';
-	@Global{keys %$rc}= values %$rc;
-}
-sub parse_yaml {
-	my $self= shift;
-	my $yaml= $_[0] ? (ref($_[0]) ? $_[0]: \$_[0])
-	                : Egg::Error->throw('I want YAML text.');
-	YAML::Load($$yaml);
-}
-sub data_default {
-	my($self)= @_;
-	$self->{data_default} ||= $self->parse_yaml(join '', <DATA>);
-}
-sub pod_text {
-	my($self)= @_;
-	my $hash= $self->data_default;
-	$hash->{pod_text};
-}
-sub encode_bin_out {
-	my $self= shift;
-	my $path= shift || $self->global->{in} || die 'I want bin data.';
-	my $fh= FileHandle->new($path) || die "$! - $path";
-	binmode $fh;
-	my $data= join '', (<$fh>);
-	MIME::Base64->require;
-	MIME::Base64::encode_base64($data);
-}
-sub out {
-#
-# > perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/bin/egg_helper.pl
-#
-	my($class)= @_;
-	my $perl_path= $class->perl_path;
-	print <<SCRIPT;
-#!$perl_path
-use Egg::Helper;
-Egg::Helper->run( shift(\@ARGV) );
-SCRIPT
-}
-sub help_message {
-	my $class= shift;
-	my $mode = shift || Egg::Error->throw('I want mode.');
-	my $script_name= $mode=~m{^(?:A|Project)\:} ? 'egg_helper.pl': do {
-		my $pname= lc($class->project_name)
-		   || Egg::Error->throw('I want project name.');
-		lc($pname).'_helper.pl';
-	  };
-	<<END_OF_HELP;
-
-# usage: perl $script_name [MODE] [-o=OUTPUT_PATH] [-h] [-D]
-
-END_OF_HELP
-}
 
 1;
 
-=head1 NAME
+=head1 RESOURCE CODE VARIABLE
 
-Egg::Helper - Framework of helper script for Egg.
+When the method of '_setup_rc' is called, loading the rc file is tried by way
+of Egg::Plugin::rc.
+And, HASH that succeeds in loading is set in a global value.
 
-=head1 SYNOPSIS
+It is a key as follows set up without fail when the method of '_setup_rc'
+is called.
 
-  # The helper script is obtained.
-  perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/bin/egg_helper.pl
-  
-  # Project is generated.
-  perl /path/to/bin/egg_helper.pl Project:[PROJECT_NAME]
+=over 4
 
-=head1 DESCRIPTION
+=item * author, copyright, headcopy
 
-It is a module that offers the helper function for Egg.
+=back
 
-Please make the helper script first of all to use it as follows.
+  * The above-mentioned default is a value obtained with $ENV{LOGNAME} or
+    $ENV{USER}.
+  * It is escaped in the mail address and <> for pod.
 
-  perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/bin/egg_helper.pl
-  chmod 755 /path/to/bin/egg_helper.pl
+=head1 MODULE GENERATION VARIABLE
 
-* Putting on the place that PATH passed is convenient for egg_helper.pl.
+When the module file is generated, a special global value is set up when
+'_setup_module_maker' is called beforehand.
 
-Afterwards, please make the project as follows.
+This is a list of the key set up.
 
-  egg_helper.pl Project:MYPROJECT
+=head2 created
 
-The directory named MYPROJECT is made from this in the current directory.
-And, the skeleton for the project is generated in that.
+Name and version mark of helper script under operation.
 
-Passing at the output destination can be specified by '-o' option.
+=head2 revision
 
-  egg_helper.pl Project:MYPROJECT -o /path/to
+Character for CVS and SVN to substitute it as Ribijon.
 
-MYPROJECT is made for the subordinate of /path/to from this.
+* It is measures against the situation that the character for the Ribijon
+  mark replaces by committing of the helper script.
 
-Passing Perl cannot be acquired according to circumstances and there 
-might be doing the error end. For that case, please set PELR_PATH to 
-the environment variable.
+=head2 lib_dir
 
-  export PELR_PATH=/usr/bin/perl
+lib/$e-E<gt>project_name
 
-A is generated to bin of the made project.
-The helper only for the project can be used by using this script.
+=head2 lc_project_name
 
-  cd /path/to/MYPROJECT/bin
-  ./myproject_helper.pl D:Make NewDispatch
+Entire project name of small letter.
 
-Please see special each helper's document about special helper's use.
+=head2 uc_project_name
 
-=head1 METHODS
+Entire project name of capital letter.
 
-These are for the developer of the helper script.
-It is not information necessary for the application making.
+=head2 ucfirst_project_name
 
-=head2 global
+The first character is a project name of the capital letter.
 
-A global HASH reference is returned.
+=head2 module_version
 
-=head2 yaml_load   or parse_yaml  ([YAML_FILE])
+0.01
 
-After given YAML is regularized, it returns it.
+=head2 perl_version
 
-=head2 escape_html ([HTML_TEST])
+Version of Perl under operation.
 
-It escapes in the HTML tag in the text.
+=head2 egg_release_version
 
-=head2 escape_html ([PLAIN_TEXT])
+Version of Egg::Release.
 
-It returns it based on escape ending HTML tag in the text.
+=head2 gmtime_string
 
-=head2 escape_uri ([URI])
+Value of gmtime.
 
-It escapes in the character for which the escape in URI is necessary.
+=head2 year
 
-=head2 unescape_uri
+Christian era when starting.  (CODE reference)
 
-It returns it based on the escape character in URI. 
+=head2 document
 
-=head2 conv ([PARAM_HASH], [TEXT], [FILE_NAME])
+Pod document of default.  (CODE reference)
 
-The part of <# param_name #> in [TEXT] is replaced with the value of
-corresponding [PARAM_HASH].
+=head2 dist
 
-* The CODE reference can be defined in the value of [PARAM_HASH].
-
-=head2 fread  or  read_file ([FILE_PATH], [PARAM])
-
-The content of the given file is returned.
-
-When the read content is a text, the result of passing conv is returned.
-The content is returned by the SCALAR reference, except when the content is
-a text.
-
-When [PARAM] is omitted, global is used.
-
-=head2 fwrite  or save_file ([PARAM], [FILE_DATA])
-
-The file is made based on information given by [FILE_DATA].
-
-[FILE_DATA] becomes HASH reference with the following keys and the values.
-
-  filename : Generated file PATH.
-  value    : Content of generated file.
-  filetype : Only bin can be specified.
-             When making it to bin, the content given with value is a value of
-             the MIME::Base64 encode.
-  permission: After the file is generated, a specified permission is set.
-  
-  * The value of filename and value passes conv.
-
-[PARAM] is HASH reference passed to conv.
-
-=head2 is_unix
-
-When operating by system OS UNIX, true is restored.
-
-=head2 is_win32
-
-When operating by system OS Windows, true is restored.
-
-=head2 is_mac
-
-When operating by system OS MacOS, true is restored.
-
-=head2 perl_path
-
-Passing Perl is returned.
-When it is not possible to acquire it from environment variable PERL_PATH or
-File::Which, the exception is generated.
-
-=head2 project_name
-
-The object project name under execution is returned.
-
-=head2 setup_global
-
-A global value of default is set.
-Because this is called beforehand, it is not necessary to usually call it from
-the helper module.
-
-=head2 get_out_path
-
-Passing at the output destination is returned.
-
-The thing specified by environment variable EGG_OUT_PATH besides specifying it
-by '-o' option is possible. Anything returns a current passing when there is
-no specification.
-
-=head2 get_cwd
-
-A current now passing is returned.
-
-=head2 setup_document_code
-
-It sets it concerning the document of the default put on the module.
-
-=head2 chdir ([PATH])
-
-After chdir is done, it reports to a standard output.
-
-=head2 copy ([PATH1], [PATH2])
-
-After File::Copy::copy is done, it reports to a standard output.
-
-=head2 move ([PATH1], [PATH2])
-
-After File::Copy::move is done, it reports to a standard output.
-
-=head2 remove_dir ([PATH])
-
-After File::Path::rmtree is done, it reports to a standard output.
-
-=head2 execute_make
-
-If 'is_unix' is true, 'exec_perl_Makefile' is called and if it is false,
-'output_manifest' is called.
-
-* Please prepare 'output_manifest'.
-
-=head2 distclean_execute_make
-
-If 'is_unix' is true, 'exec_perl_Makefile' is called after make distclean 
-is done and if it is false, 'output_manifest' is called.
-
-* Please prepare 'output_manifest'.
-
-=head2 exec_perl_Makefile
-
-Perl Makefile.PL and a series of operation are done.
-
-It is necessary to have moved to the root directory etc. of the project before
-it calls it.
-
-=head2 egg_context
-
-The object of the object project is returned.
-
-* Prepare_component etc. have not gone.
-  Please call it if necessary after it receives it.
-
-=head2 load_config
-
-The setting of the object project is returned reading.
-
-It gives priority to that if there is YAML file at the output destination of
-Egg::Helper::P::YAML.
-
-=head2 check_module_name
-
-Whether it is accepted as a module name is checked.
-
-=head2 get_testfile_new_number
-
-The last number of the test file of the object project is returned most.
-
-=head2 setup_global_rc
-
-The value obtained from Egg::Plugin::YAML->loadrc is set in global.
-
-=head2 encode_bin_out ([FILE_PATH])
-
-The result of MIME::Base64::encode_base64 is returned reading the file of
-[FILE_PATH].
-
-It is convenient so that filetype passed to 'save_file' may make value of bin.
-
-=head2 help_message
-
-Help of default is output.
+The module name is decided from the file name of the generation module.
+  (CODE reference)
 
 =head1 SEE ALSO
 
+L<File::Path>,
+L<File::Which>,
+L<Getopt::Easy>,
+L<MIME::Base64>,
+L<YAML>,
+L<Egg::Base>,
+L<Egg::Exception>,
+L<Egg::Plugin::rc>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -676,24 +1030,23 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
-
 __DATA__
 pod_text: |
   # Below is stub documentation for your module. You'd better edit it!
   
   =head1 NAME
   
-  <# dist #> - Perl extension for ...
+  < $e.dist > - Perl extension for ...
   
   =head1 SYNOPSIS
   
-    use <# dist #>;
+    use < $e.dist >;
     
     ... tansu, ni, gon, gon.
   
   =head1 DESCRIPTION
   
-  Stub documentation for <# dist #>, created by <# created #>
+  Stub documentation for < $e.dist >, created by < $e.created >
   
   Blah blah blah.
   
@@ -703,14 +1056,14 @@ pod_text: |
   
   =head1 AUTHOR
   
-  <# author #>
+  < $e.author >
   
   =head1 COPYRIGHT
   
-  Copyright (C) <# year #> by <# copyright #>, All Rights Reserved.
+  Copyright (C) < $e.year > by < $e.copyright >, All Rights Reserved.
   
   This library is free software; you can redistribute it and/or modify
-  it under the same terms as Perl itself, either Perl version 5.8.6 or,
+  it under the same terms as Perl itself, either Perl version < $e.perl_version > or,
   at your option, any later version of Perl 5 you may have available.
   
   =cut

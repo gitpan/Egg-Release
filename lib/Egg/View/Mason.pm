@@ -1,164 +1,165 @@
 package Egg::View::Mason;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Mason.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Mason.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::View::Mason - HTML::Mason for Egg View.
+
+=head1 SYNOPSIS
+
+  __PACKAGE__->egg_startup(
+    ...
+    .....
+  
+  VIEW=> [
+    [ 'Mason' => {
+      comp_root=> [
+        [ main   => '/path/to/root' ],
+        [ private=> '/path/to/comp' ],
+        ],
+      data_dir=> '/path/to/temp',
+      ... other HTML::Mason option.
+      } ],
+    ],
+  
+   );
+
+  # The VIEW object is acquired.
+  my $view= $e->view('Mason');
+  
+  # It outputs it specifying the template.
+  my $content= $view->render('hoge.tt', \%option);
+
+=head1 DESCRIPTION
+
+It is VIEW to use HTML::Mason.
+
+Please add the setting of VIEW to the project to use it.
+
+  VIEW => [
+    [ Mason => { ... HTML::Mason option. (HASH) } ],
+    ],
+
+* Please refer to the document of L<HTML::Mason> for the option to set.
+
+It accesses the object and data by using following variable from the template.
+
+  $e ... Object of project.
+  $s ... $e->stash.
+  $p ... $e->view('Mason')->params.
+
+=cut
 use strict;
-use base qw/Egg::View/;
+use warnings;
 use HTML::Mason;
+use base qw/Egg::View/;
+use Carp qw/croak/;
 
-our $VERSION= '0.05';
+our $VERSION= '2.00';
 
-sub setup {
+=head1 METHODS
+
+=head2 new
+
+When $e-E<gt>view('Mason') is called, this constructor is called.
+
+Please set %Egg::View::PARAMS directly from the controller to the parameter
+that wants to be set globally.
+
+  %Egg::View::PARAMS= %NewPARAM;
+
+=head2 params, param
+
+The parameter that wants to be passed to HTML::Mason must use these methods.
+
+=head2 render ( [TEMPLATE], [OPTION] )
+
+TEMPLATE is evaluated and the output result (SCALAR reference) is returned.
+
+It is given priority more than set of default when OPTION is passed.
+
+  my $body= $view->render( 'foo.tt', [OPTION_HASH] );
+
+=cut
+
+sub _setup {
 	my($class, $e, $conf)= @_;
-	$conf->{comp_root} ||= do {
-		my $path= $e->config->{template_path};
-		my @options= ['main', $path->[0]];
-		push @options, ["private$_", $path->[$_]] for (1..$#{$$path});
-		\@options;
-	  };
-	$conf->{data_dir} ||= $e->config->{temp};
+	$conf->{comp_root} ||= [ 'main' => $e->config->{template_path}[0] ];
+	$conf->{data_dir}  ||= $e->config->{temp};
+	$class;
 }
-sub output {
-	my($view, $e)= splice @_, 0, 2;
-	my $template = shift || $view->template_file($e)
-	   || Egg::Error->throw('I want template.');
-	my $body= $view->render($template);
-	$e->response->body($body);
-}
+
+=head2 render ( [TEMPLATE], [OPTION] )
+
+TEMPLATE is evaluated and the output result (SCALAR reference) is returned.
+
+It is given priority more than set of default when OPTION is passed.
+
+  my $body= $view->render( 'foo.tt', [OPTION_HASH] );
+
+=cut
 sub render {
 	my $view= shift;
-	my $template= shift || return(undef);
+	my $tmpl= shift || return(undef);
+	   $tmpl=~m{^[^/]} and $tmpl= "/$tmpl";
 	my $args= $_[0] ? ($_[1] ? {@_}: $_[0]): {};
-	$template=~m{^[^/]} and $template= "/$template";
 	my $body;
-	my %conf= %{$view->config};
-	@conf{keys %$args}= values %$args;
 	my $mason= HTML::Mason::Interp->new(
-	  %conf,
-	  allow_globals=> [qw/$e $s $p/],
-	  out_method   => \$body,
+	  %{$view->config}, %$args,
+	  out_method    => \$body,
+	  allow_globals => [qw/$e $s $p/],
 	  );
 	$mason->set_global(@$_) for (
 	  [ '$e' => $view->{e} ],
 	  [ '$s' => $view->{e}->stash ],
 	  [ '$p' => $view->params ],
 	  );
-	$mason->exec($template);
-	return \$body;
+	$mason->exec($tmpl);
+	\$body;
 }
 
-1;
+=head2 output ( [TEMPLATE], [OPTION] )
 
-__END__
+The output result of the receipt from 'render' method is set in
+$e-E<gt>response-E<gt> body.
 
-=head1 NAME
+When TEMPLATE is omitted, acquisition is tried from $view->template.
+ see L<Egg::View>.
 
-Egg::View::Mason - HTML::Mason is used for View of Egg.
+If this VIEW operates as default_view, this method is called from
+'_dispatch_action' etc. by Egg.
 
-=head1 SYNOPSIS
+  $view->output;
 
-This is a setting example.
-
- VIEW=> [
-   [ 'Mason' => {
-     comp_root=> [
-       [ main   => '/path/to/root' ],
-       [ private=> '/path/to/comp' ],
-       ],
-     data_dir=> '/path/to/temp',
-     ... etc.
-     } ],
-   ],
-
-Example of code.
-
- $s->{param1}= "fooooo";
- 
- $e->view->param( 'param2'=> 'booooo' );
- 
- # Scalar reference is received.
- my $body= $e->view->render( 'template.tt' );
- 
-   or
- 
- # It outputs it later.
- $e->template( 'template.tt' );
-
-Example of template.
-
- <& /comp/html_header, a=> { page_title=> 'test-page' } &>
- <& /comp/banner_head, a=> { type => 1 } &>
- <& /comp/side_menu,   a=> { guest=> 1 } &>
- 
- <h1><% $s->{param1} %></h1>
- 
- <h2><% $p->{param2} %></h2>
- 
- <%init>
- my $array= [
-   { name=> 'foo', value=> 'foofoofoo' },
-   { name=> 'baa', value=> 'baabaabaa' },
-   { name=> 'baa', value=> 'baabaabaa' },
-   ];
- </%init>
- <div id="content">
- - Your request passing: <% $e->request->path |h %><hr>
- - Your IP address: <% $e->request->address |h %><hr>
- - Test Array:
- %
- % for my $hash (@$array) {
-  [ <% $hash->{name} |h %> = <% $hash->{value} |h %> ],
- % }
- %
- </div>
- <& /comp/html_footer &>
-
-!! It solves it by <% $e->escape_html($var) %> when garbling in <% $var |h %>.
-
-=head1 DESCRIPTION
-
-The following global variable can be used.
-
-=over 4
-
-=item * $e = Egg object.
-
-=item * $s = $e->stash.
-
-=item * $p = $e->view->params.
-
-=back
-
-=head1 METHODS
-
-=head2 output ([EGG_OBJECT], [TEMPLATE])
-
-The template is output, and it sets it in $e->response->body.
-
-=head2 render ([TEMPLATE])
-
-The template is output, and it returns it by the SCALAR reference.
+=cut
+sub output {
+	my $view= shift;
+	my $tmpl= shift || $view->template || croak q{ I want template. };
+	$view->e->response->body( $view->render($tmpl, @_) );
+}
 
 =head1 SEE ALSO
 
 L<HTML::Mason>,
 L<Egg::View>,
-L<Egg::Engine>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

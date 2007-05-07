@@ -1,45 +1,47 @@
 use inc::Module::Install;
 
 name         'Egg-Release';
-author       'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>';
 all_from     'lib/Egg/Release.pm';
 version_from 'lib/Egg/Release.pm';
+author       'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>';
 license      'perl';
 
-requires 'CGI';
-requires 'Class::Accessor';
-requires 'Class::Data::Inheritable';
-requires 'Class::C3';
-requires 'Devel::StackTrace';
-requires 'DBI';
-requires 'Data::Dump';
-requires 'File::Copy';
-requires 'File::Path';
-requires 'File::Spec';
-requires 'File::Temp';
-requires 'File::Which';
-requires 'FileHandle';
-requires 'Getopt::Easy';
-requires 'HTML::Entities';
-requires 'HTML::Prototype';
-requires 'HTML::Mason';
-requires 'HTML::Template';
-requires 'HTTP::Date';
-requires 'HTTP::Headers';
-requires 'HTML::FillInForm';
-requires 'IO::Scalar';
-requires 'Jcode';
-requires 'ModPerl::VersionUtil';
-requires 'Module::Install';
-requires 'Time::HiRes';
-requires 'UNIVERSAL::require';
-requires 'Tie::RefHash';
-requires 'URI';
-requires 'YAML';
+# requires 'DBI'                   => 1.54,
+# requires 'Ima::DBI'              => 0.34,
+# requires 'FCGI'                  => 0.67,
 
-build_requires 'Test::More';
+requires 'ModPerl::VersionUtil'  => 0.03;
+requires 'MIME::Base64'          => 3.07;
+requires 'CGI'                   => 3.28;
+requires 'Class::Accessor'       => 0.30;
+requires 'Class::C3'             => 0.14;
+requires 'Devel::StackTrace'     => 1.14;
+requires 'Digest::MD5'           => 2.36;
+requires 'File::Spec'            => 3.24;
+requires 'File::Temp'            => 0.18;
+requires 'File::Which'           => 0.05;
+requires 'FileHandle'            => 2.00;
+requires 'FormValidator::Simple' => 0.22;
+requires 'Getopt::Easy'          => 0.01;
+requires 'HTML::FillInForm'      => 1.06;
+requires 'HTML::Mason'           => 1.35;
+requires 'HTML::Parser'          => 3.56;
+requires 'HTML::Prototype'       => 1.48;
+requires 'HTML::Template'        => 2.9;
+requires 'Jcode'                 => 2.06;
+requires 'ModPerl::VersionUtil'  => 0.03;
+requires 'Tie::RefHash'          => 1.35;
+requires 'Time::HiRes'           => 0;
+requires 'UNIVERSAL::require'    => 0.11;
+requires 'URI'                   => 1.35;
+requires 'WWW::Mechanize::CGI'   => 0.03;
+requires 'YAML'                  => 0.62;
+
+build_requires 'Test::Simple';
 build_requires 'Test::Pod';
+build_requires 'Test::Perl::Critic';
+build_requires 'Test::Pod::Coverage';
 
 use_test_base;
-auto_install;
+auto_include;
 WriteAll;

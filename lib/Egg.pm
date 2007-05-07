@@ -1,840 +1,956 @@
 package Egg;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 61 2007-03-23 02:15:34Z lushe $
+# $Id: Egg.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-use Class::C3;
-use UNIVERSAL::require;
-use Egg::GlobalHash;
-use Egg::Exception;
-use base qw{ Class::Accessor::Fast };
-
-our $VERSION= '1.08';
-
-__PACKAGE__->mk_accessors
-  (qw{ namespace request response dispatch backup_action });
-
-*req  = \&request;
-*res  = \&response;
-*d    = \&dispatch;
-*flags= \&global;
-*is_engine  = \&engine_class;
-*is_dispatch= \&dispatch_calss;
-*is_request = \&request_class;
-*is_response= \&response_class;
-
-our $CRLF= "\015\012";
-our $MOD_PERL_VERSION= 0;
-
-local $SIG{__WARN__};
-
-sub import {
-	no strict 'refs';  ## no critic
-	my $Name= caller(0) || return 0;
-	return if ($Name eq 'main' || ++${"$Name\::IMPORT_OK"}> 1);
-	my($e, @args)= @_;
-	my(@requires, @plugins, %plugin_class, %config, %global);
-	${"$Name\::__EGG_CONFIG"} = \%config;
-	${"$Name\::__EGG_GLOBAL"} = \%global;
-	${"$Name\::__EGG_PLUGINS"}= \@plugins;
-	${"$Name\::__EGG_PLUGIN_CLASS"}= \%plugin_class;
-	my %flags= ( MOD_PERL_VERSION=> 0 );
-	for (@args) {
-		if (/^\-(.+)/) {
-			$flags{lc($1)}= 1;
-		} else {
-			my $plugin= /^\+([A-Z].+)/ ? do {
-				push @plugins, $1;
-				$plugin_class{$1}= $1;
-			  }: do {
-				push @plugins, $_;
-				$plugin_class{$_}= "Egg::Plugin::$_";
-			  };
-			push @requires, $plugin;
-			push @{"$Name\::ISA"}, $plugin;
-		}
-	}
-	push @{"$Name\::ISA"}, __PACKAGE__;
-	tie %global, 'Egg::GlobalHash', \%flags;
-	$_->require or die $@ for @requires;
-
-	*{"$Name\::debug_out"}= $flags{debug} ? sub {
-		Egg::Debug::Base->require or Egg::Error->throw($@);
-		Egg::Debug::Base->debug_out(@_);
-	  }: sub {
-	  };
-}
-sub __egg_setup {
-	my $class= shift;
-	$class= ref($class) if ref($class);
-	$class eq __PACKAGE__ and die q/Mistake of call method./;
-
-	local $SIG{__DIE__}= sub { Egg::Error->throw(@_) };
-
-	my $conf;
-	{
-		no strict 'refs';  ## no critic
-		no warnings 'redefine';
-		$conf= ${"$class\::__EGG_CONFIG"}= shift
-		   || Egg::Error->throw('I want configuration.');
-		my $accessors= $conf->{accessor_names} || [];
-		for my $accessor (qw{ template }, @$accessors) {
-			*{__PACKAGE__."::$accessor"}= sub {
-				my $egg= shift;
-				$egg->stash->{$accessor}= shift if @_> 0;
-				$egg->stash->{$accessor};
-			  };
-		}
-	  };
-
-	$conf->{root} || die "I want you to setup 'root'.";
-	(-e $conf->{root} && -d _) || die "Path 'root' is not found.";
-	$conf->{root}=~s{/+$} [];
-
-	for (
-	  [qw{ content_type }, 'text/html; charset=euc-jp'],
-	  [qw{ template_extention .tt }],  [qw{ template_default_name index }],
-	  [qw{ max_snip_deep 5 }],  [qw{ content_language ja }],
-	  [qw{ static htdocs }],    [qw{ static_uri / }],
-	  ) {
-		$conf->{$_->[0]} ||= $_->[1];
-	}
-	for (
-	  [qw{ etc etc }], [qw{ temp tmp }], [qw{ cache cache }],
-	  ['lib', "lib/$class"], [qw{ lib_root lib }],
-	  ) {
-		$conf->{$_->[0]}= "$conf->{root}/$_->[1]";
-	}
-	$conf->{static_uri}=~s{/+$} [];
-	$conf->{static_uri}=
-	  "/$conf->{static_uri}" unless $conf->{static_uri}=~m{^/};
-
-	$conf->{template_extention}= ".$conf->{template_extention}"
-	   unless $conf->{template_extention}=~/^\./;
-	$conf->{template_path}
-	  || Egg::Error->throw("I want you to setup 'template_path'");
-	$conf->{template_path}= [$conf->{template_path}]
-	   unless ref($conf->{template_path}) eq 'ARRAY';
-	for (@{$conf->{template_path}}) {
-		s{/+$} [];
-		$_= "$conf->{root}/$_" unless m{^/};
-	}
-
-	my $e= bless { namespace=> $class }, $class;
-	my $G= $e->global;
-	my $ucName = uc($class);
-
-	my $engine= $G->{ENGINE_CLASS}=
-	     $ENV{"$ucName\_ENGINE"}
-	  || $ENV{"$ucName\_ENGINE_CLASS"}
-	  || $conf->{engine_class}
-	  || 'Egg::Engine::V1';
-	{
-		no strict 'refs';  ## no critic
-		push @{"$class\::ISA"}, $engine;
-	  };
-	$engine->require or Egg::Error->throw($@);
-	$e->debug_out("# + Egg-$class Start!!");
-	$engine->startup($e);
-	$e->debug_out("# + engine-class : $engine-". $engine->VERSION);
-
-	my $unload;
-	my $dispath= $G->{DISPATCH_CLASS}=
-	    ($ENV{"$ucName\_DISPATCHER"}
-	      ? qq{Egg::Dispatch::$ENV{"$ucName\_DISPATCHER"}}: 0)
-	 || ($unload= $ENV{"$ucName\_UNLOAD_DISPATCHER"})
-	 || $ENV{"$ucName\_CUSTOM_DISPATCHER"}
-	 || ($e->config->{dispatch_class}
-	      ? qq{Egg::Dispatch::$e->config->{dispatch_class}}: 0)
-	 || 'Egg::Dispatch::Runmode';
-	$dispath->require or Egg::Error->throw($@) unless $unload;
-	$dispath->_setup($e);
-
-	my $request= $G->{REQUEST_CLASS}=
-	  $ENV{"$ucName\_REQUEST"} ? do { $ENV{"$ucName\_REQUEST"};
-	    }:
-	  $ENV{"$ucName\_REQUEST_CLASS"} ? do { $ENV{"$ucName\_REQUEST_CLASS"};
-	    }:
-	  $conf->{request_class} ? do {
-		$conf->{request_class};
-	    }:
-	  ($ENV{MOD_PERL} && ModPerl::VersionUtil->require) ? do {
-	  	$MOD_PERL_VERSION= ModPerl::VersionUtil->mp_version;
-		  ModPerl::VersionUtil->is_mp2  ? 'Egg::Request::Apache::MP20'
-		: ModPerl::VersionUtil->is_mp19 ? 'Egg::Request::Apache::MP19'
-		: ModPerl::VersionUtil->is_mp1  ? 'Egg::Request::Apache::MP13'
-		: $MOD_PERL_VERSION > 2         ? 'Egg::Request::Apache::MP20'
-		: do {
-			$e->debug_out("Unsupported mod_perl version:$MOD_PERL_VERSION");
-			$MOD_PERL_VERSION= 0;
-			'Egg::Request::CGI';
-		  };
-	    }: do {
-		'Egg::Request::CGI';
-	    };
-	$request->require or Egg::Error->throw($@);
-	$request->setup($e);
-
-	my $response= $G->{RESPONSE_CLASS}=
-	    $ENV{"$ucName\_RESPONSE"}
-	 || $ENV{"$ucName\_RESPONSE_CLASS"}
-	 || $conf->{response_class}
-	 || 'Egg::Response';
-	$response->require or Egg::Error->throw($@);
-	$response->setup($e);
-
-# They are the plugin other setups.
-	$e->setup;
-}
-my $count;
-sub __warning_setup {
-	my $class= shift;
-	$SIG{__WARN__}= shift || sub {
-		my $err= shift || 'warning.';
-		my @ca = caller(0);
-		   @ca = caller(1) if $ca[0]=~/^Egg\::Debug\::Log/;
-		   $ca[2] ||= '*';
-		print STDERR ++$count. ": $ca[0]: $ca[2] - $err";
-	  };
-}
-sub new {
-	my $class= shift;
-	my $r    = shift || undef;
-	my $e= bless {
-	  finished=> 0, namespace=> $class,
-	  snip => [], stash=> {}, model=> {}, view => {}, action=> [],
-	  }, $class;
-	my $request = $e->request_class
-	  || Egg::Error->throw('Request Class cannot be acquired.');
-	my $response= $e->response_class
-	  || Egg::Error->throw('Response Class cannot be acquired.');
-	$e->request( $request->new($e, $r) );
-	$e->response( $response->new($e) );
-	$e;
-}
-sub engine_class   { $_[0]->global->{ENGINE_CLASS}   }
-sub dispatch_calss { $_[0]->global->{DISPATCH_CLASS} }
-sub request_class  { $_[0]->global->{REQUEST_CLASS}  }
-sub response_class { $_[0]->global->{RESPONSE_CLASS} }
-sub debug { $_[0]->flag('debug') }
-
-{
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	sub config  { ${"$_[0]->{namespace}::__EGG_CONFIG"}  }
-	sub global  { ${"$_[0]->{namespace}::__EGG_GLOBAL"}  }
-	sub plugins { ${"$_[0]->{namespace}::__EGG_PLUGINS"} }
-	sub plugin_class { ${"$_[0]->{namespace}::__EGG_PLUGIN_CLASS"} }
-	sub flag {
-		my $e  = shift;
-		my $key= shift;
-		tied(%{${"$e->{namespace}::__EGG_GLOBAL"}})
-		  -> flag_set ($key, @_) if @_;
-		${"$e->{namespace}::__EGG_GLOBAL"}->{$key};
-	}
-  };
-
-sub snip {
-	my $e= shift;
-	return $e->{snip} unless @_;
-	my $array= ref($_[0]) ? $_[0]: do {
-		$_[1] ? [@_]: return($e->{snip}->[$_[0]] || "");
-	  };
-	$e->{snip}= $array;
-}
-sub path {
-	my $e= shift;
-	my $lavel= shift || Egg::Error->throw('I want the label.');
-	my $path = shift || return $e->config->{$lavel};
-	my $base= $e->config->{$lavel}
-	  || Egg::Error->throw('There is no value corresponding to the label.');
-	$path=~s{^/+} [];
-	"$base/$path";
-}
-sub action {
-	my $e= shift;
-	if (@_) { $e->{action}= ref($_[0]) eq 'ARRAY' ? $_[0]: [@_] }
-	$e->{action} || undef;
-}
-sub stash {
-	my $e= shift;
-	return $e->{stash} unless @_;
-	my $key= shift;
-	$e->{stash}{$key}= shift if @_;
-	$e->{stash}{$key};
-}
-#sub DESTROY {
-#	my($e)= @_;
-#	untie(%{$e->global}) if ($e->global && ref($e->global) eq 'HASH');
-#}
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg - WEB application framework.
+Egg - WEB Application Framework.
 
 =head1 SYNOPSIS
 
-First of all, the helper script is generated.
-
-  #> perl -MEgg::Helper::Script -e "Egg::Helper::Script->out" > /path/to/bin/egg_helper.pl
-
-And, the project is generated. 
-
-  #> cd /path/to/work_dir
-  #> /path/to/bin/egg_helper.pl project -p MYPROJECT
-
-It moves to the generated directory.
-
-  #> cd MYPROJECT
-  #> ls -la
-  drwxr-xr-x  ... bin
-  -rw-r--r--  ... Build.PL
-  drwxr-xr-x  ... cache
-  -rw-r--r--  ... Changes
-  ..
-  ....
-
-Trigger.cgi in bin is moved and it tests.
-
-  #> cd bin
-  #> ./trigger.cgi  or  perl trigger.cgi
+  # The helper script is generated.
+  perl -MEgg::Helper -e 'Egg::Helper->out' > egg_helper.pl
   
-  # << MYPROJECT v0.01 start. --------------
-  # + request-path : /
-  ..
-  ....
-  ......
-
-If trigger.cgi doesn't output the error, the installation of the project is a 
-success.
+  # The project is generated.
+  perl egg_helper.pl Project MyApp
+  
+  # Confirming the operation of project.
+  ./MyApp/bin/tirigger.cgi
+  
+  # The project object is acquired.
+  use lib './MyApp/lib';
+  require MyApp;
+  
+  my $e= MyApp->new;
 
 =head1 DESCRIPTION
 
-Egg imitated and developed Catalyst.
+Egg is WEB application framework.
 
-It is WEB application framework of a simple composition. 
+The composition of the module operates at comparatively simply and high speed.
 
-The plugin is compatible with Catalyst.
-However, it is complete and not interchangeable.
-Some should be likely to be corrected.
+It is MVC framework of model and view and controller composition.
 
-In addition, please see the document of L<Egg::Release> about detailed use.
-
-Please see the document of Egg::Dispatch::Runmode about the notation of dispatch.
-
-Egg::Release-1.00 reviewed at the time of beginning and rewrote the code.
-Therefore, the content has changed fairly with the version before. 
-In the plugin etc. , the up-grade might be needed.
-
-It is the main change point as follows. 
-
-=over 4
-
-=item * Treatment of root by configuration.
-
-The route of the project was shown.
-* It was a route of the template before.
-
-And, the treatment and the name changed to some items.
-
-Please look at the chapter of CONFIGURATION in detail.
-
-=item * Exclusion of encode.
-
-All the encode method systems were excluded and it made it to the plugin. 
-
-Please use Egg::Plugin::Encode.
-
-=item * Addition of standard plugin.
-
-  DBI::*
-  Dispatch::AnyCall
-  Encode
-  FillInForm
-  FormValidator::Simple
-  Pod::HTML
-  Redirect::Page
-  Upload
-
-The above was added to a standard plugin. 
-
-=item * Some Hook are excluded. 
-
-$e->action and $e->compress were excluded.
-
-* The function of $e->action has changed.
-
-=item * Making of engine subclass.
-
-It is also easy to build in the engine of original development.
-How to treat MODEL and VIEW can be customized.
-
-=item * The treatment of the global variable severely
-
-The superscription of the key that has been defined is observed.
-However, it also has the loophole.
-
-=item * Change in dispatch.
-
-It was made to dispatch like CGI::Application. 
-And, the function is enhanced by Tie::RefHash. 
-
-Please see L<Egg::Dispatch::Runmode> in detail. 
-
-=item * The helper rewriting.
-
-The helper script moves like the framework. 
-As a result, I think that it can easily make the supplementation functions of
- Model, View, and Plugin, etc.
-
-Egg::Helper::PerlModuleMaker is made a standard as Egg::Helper::O::MakeMaker.
-
-=item * VIEW corresponding to HTML::Mason was enclosed.
-
-HTML::Mason is a very high performance template engine.
-
-* Template ToolKit can be used by introducing Egg::View::TT.
-
-=back
-
-=head1 OPTIONS
-
-The start option is given to Egg and the plugin and the flag are set.
-
-  package MYPROJECT;
-  use strict;
-  use Egg qw{ -Debug Filter Upload };
-
-* The one that - adheres to the head is treated as a flag.
-The set value can be referred to with $e->flag('FLAG_NAME').
-
-  use Egg qw{ -hoge };
-  
-  if ($e->flag('hoge')) { "hoge flag is true." }
-
-* The continuing name is treated when + has adhered to the head and package
- name of the plugin is treated.
-
-  use Egg qw{ +Catalyst::Plugin::FormValidator };
-
-* It treats as a plugin of the package name modified by 'Egg::Plugin::' usually.
-
-  use Egg qw{ Filter::EUC_JP };
-
-  As for this, Egg::Plugin::Filter::EUC_JP is read.
+* It was a plug-in etc. and there were Catalyst and some interchangeability
+  in the version before.
+  Interchangeability was completely lost from the change of the method name
+  in this version.
+  However, there might not be transplant in the difficulty.
 
 =head1 CONFIGURATION
 
-The setting can be treated by the YAML form in using the YAML plugin. 
+The setting of the configuration of Egg is a method of passing HASH to the
+method of 'egg_startup' directly and the definition. There is a method to
+read to a semiautomatic target by it and 'Egg::Plugin::ConfigLoader'.
 
-  package MYPROJECT;
-  use strict;
-  use Egg qw{ YAML };
-  
-  my $config= __PACKAGE__->yaml_load('/path/to/MYPROJECT/etc/MYPROJECT.yaml');
-  __PACKAGE__->__egg_setup( $config );
-
-* The setting of the YAML form can be output by using the helper script.
-
-  #> /path/to/MYPROJECT/bin/yaml_generator.pl
+Please refer to the document of L<Egg::Plugin::ConfigLoader> for details.
 
 =head2 root
 
-Directory that becomes root of project.
+Route PATH of project.
 
-* How to treat is different from the version before '1.00'.
-
-Default is none. * Indispensability.
-
-=head2 static
-
-Directory that arranges static contents like image data etc.
-
-Please specify it by the relative path from 'root' or the absolute path.
-
-Default is 'htdocs'.
-
-=head2 static_uri
-
-URL passing when 'static' is seen with WEB. (Absolute path without fail)
-
-Default is '/'.
+  * It is not route PATH of the template.
+  * There is no default. Please set it.
 
 =head2 title
 
-Title name of project.
+Title of project.
 
-Default is '[MYPROJECT_NAME]'.
-
-=head2 template_default_name
-
-Name of template used in index.
-
-* The extension is not included.
-
-Default is 'index'.
-
-=head2 template_extention
-
-Extension of template.
-
-Default is '.tt'.
-
-=head2 accessor_names
-
-To make the accessor to $e->stash, the name is enumerated by the ARRAY reference.
-
-Default is 'template'.
-
-=head2 character_in
-
-Character code used by internal processing. 
-
-* When Egg::Plugin::Encode is used, it is necessary. 
-
-Default is 'euc'.
-
-=head2 content_language
-
-Contents languages.
-
-Default is 'jp'.
+Default is a class name of the project. 
 
 =head2 content_type
 
-Default of contents headers
+Contents type used by default.
 
 Default is 'text/html'.
 
-=head2 max_snip_deep
+=head2 content_language
 
-Maximum of depth of request URL PATH.
-* When this is exceeded, it is 403 FORBIDDEN is returned.
+Language used by default
 
-Default is '5'.
+There is no default.
 
-  OK  => http://domain/A/B/C/D/E/
-  NG  => http://domain/A/B/C/D/E/F/
+=head2 template_extention
 
-=head2 engine_class
+Extension of template used by default.
 
-When you want to use an original engine class.
+  * There is no '.' needing.
 
-Default is 'Egg::Engine::V1'.
+Default is 'tt'.
 
-=head2 request_class
+=head2 template_default_name
 
-When you want to use an original request class.
+Template name used by default.
 
-Default is 'Egg::Request::( CGI or Apache )'.
+Default is 'index'.
 
-=head2 response_class
+=head2 static_uri
 
-When you want to use an original response class. 
+Route URI for static contents.
 
-Default is 'Egg::Response'.
+  * Please end by '/'.
 
-=head2 dispatch_class
+Default is '/'.
 
-When you want to use original Dispatch. 
+=head2 template_path
 
-Default is 'Egg::Dispatch::Runmode'.
+Passing for template.
+
+  * The thing set by the ARRAY reference can be done.
+  * There is no default. Please set it.
+
+=head2 dir
+
+PATH setting of various folders.
+
+=over 4
+
+=item * lib
+
+Local PATH where library of project is put.
+
+Default is '< $e.root >/lib'.
+
+=item * static
+
+Local PATH where static contents are put.
+
+Default is '< $e.root >/htdocs'.
+
+=item * etc
+
+For preservation of configuration file etc.
+
+Default is '< $e.root >/etc'.
+
+=item * cache
+
+For preservation of cash data.
+
+Default is '< $e.root >/cache'.
+
+=item * template
+
+The main template depository.
+
+Default is '< $e.root >/root'.
+
+=item * comp
+
+Template depository for include.
+
+Default is '< $e.root >/comp'.
+
+=item * tmp
+
+Temporary work directory PATH.
+
+Default is '< $e.root >/tmp'.
+
+=item * lib_project
+
+Project directory PATH in dir->{lib}.
+
+Egg compulsorily sets it based on the value of dir->{lib}.
+
+=item * root
+
+Copy of root.
+
+=back
+
+=head2 accessor_names
+
+The accessor to stash is generated with the set name.
 
 =head2 MODEL
 
-It sets it by the ARRAY reference concerning the MODEL.
+It is a setting of MODEL. As for the content, the setting of each MODEL becomes
+ARRAY further by ARRAY, too.
+The setting of the first is treated as MODEL of default.
 
-* The first setting of ARRAY is treated most as a model of default.
-
-Setting example:
-
-  MODEL=> [
-    [ 'MODEL1_NAME' => {
-        config_param1=> '...',
-        config_param2=> '...',
-        ...
-        },
-      ],
-    [ 'MODEL2_NAME' => {
-        config_param1=> '...',
-        config_param2=> '...',
-        ...
-        },
-      ],
+  MODEL => [
+    [ DBI => {
+      dsn  => '.....',
+      user => '...',
+      ...
+      } ],
     ],
 
 =head2 VIEW
 
-The setting made a VIEW is done by the ARRAY reference.
+It is a setting of VIEW. As for the content, the setting of each VIEW becomes
+ARRAY further by ARRAY, too.
+The setting of the first is treated as VIEW of default.
 
-* The first setting of ARRAY is treated most as a model of default.
+  VIEW => [
+    [ Mason => {
+      comp_root => [ ... ],
+      data_dir  => '...',
+      } ],
+    ],
 
-* The setting becomes the same form as MODEL. 
+=head2 ... others.
 
-=head2 plugin_[PLUGIN_NAME]
+Please refer to the module document of each object for other settings.
 
-Setting read from plugin.
+=cut
+use strict;
+use warnings;
+use Egg::Request;
+use Egg::Response;
+use base qw/Egg::Base/;
+use Carp qw/croak confess/;
 
-* The naming convention is not compelling it.
-According to circumstances, it might be a quite different name. 
-
-* Please see the document of the plugin used in detail.
+our $VERSION= '2.00';
 
 =head1 METHODS
 
-=head2 new
-
-After the request and the response object are made, the Egg object is returned.
-
-Nothing is done excluding this.
-This is convenient to operate with the trigger excluding WEB such as cron.
-
-  my $e= MYPROJECT->new;
-  
-  # Some components might not function if prepare is not called.
-  $e->prepare_component;
-  
-  ... Freely now ...
-
-=head2 __egg_setup ([CONFIGURATION])
-
-Egg is set, and when starting, it sets it up.
-
-Please call it from the control file of the project.
-
-  use MYPROJECT;
-  use MYPROJECT::Config;
-  __PACKAGE__->__egg_setup( MYPROJECT::Config->out );
-
-=head2 __warning_setup ([CODE_REFERENCE])
-
-The output format etc. of warn can be customized.
-
-  __PACKAGE__->__warning_setup;
-
 =head2 namespace
 
-The class name of the started project is returned.
-
-=head2 snip ([NUM])
-
-The value in which the request passing is delimited by / is returned
- by the ARRAY reference. 
-
-  Request URL => http://domain/A/B/C/
-
-  print $e->snip->[0];  => A
-  print $e->snip->[1];  => B
-  print $e->snip->[2];  => C
-
-The dead letter character is returned when a specified value is undefined
- when [NUM] is given.
-
-  $e->snip(1) eq 'B' ? 'OK': 'NG';
-
-* Because it is not necessary to check a specified value whether is 11 
-undefinitions and exists, it is convenient.
-
-=head2 stash
-
-The value to share between components of Egg can be put.
-
-  $e->stash->{hoge}= 'foo';
-
-=head2 dispatch  or  d
-
-The dispatch object is returned.
-
-When setting it up, the dispatch of specification is read. 
-
-* The dispatch used by 'Dispatch_class' of environment variable
- '[PROJECT_NAME]_DISPATCHER' or the setting can be specified.
- The class name is modified by 'Egg::Dispatch'. 
-
-* The dispatch used by environment variable '[PROJECT_NAME]_CUSTOM_DISPATCHER'
- can be specified. As for the class name, the specified name is used as it is.
-
-* Dispatch to which require is not done by environment variable 
- '[PROJECT_NAME]_UNLOAD_DISPATCHER' can be specified. 
- As for the class name, the specified name is used as it is.
-
-Default is 'Egg::Dispatch::Runmode'.
-
-=head2 request  or  req
-
-The request object is returned. 
-
-When setting it up, an appropriate request class has been decided.
-
-An original class can be set in 'Request_class' of the setting or environment
- variable '[PROJECT_NAME]_REQUEST'.
-
-  package MYPROJECT;
-  ...
-  $ENV{MYPROJECT_REQUEST}= 'ORIGN::CUSTOM::Request';
-
-Default is 'Egg::Request::CGI'.
-
-=head2 response  or  res
-
-The response object is returned.
-
-An original class can be set in 'Response_class' of the setting or environment
- variable '[PROJECT_NAME]_RESPONSE'.
-
-Default is 'Egg::Response'.
-
-=head2 dispatch
-
-After the object is generated with Egg::Engine::* it, the Dipatti object is
- returned. 
-
-=head2 debug
-
-The value of the debugging flag is returned.
- It is the same as $e->flag->('debug').
-
-  if ($e->debug) { 'debug mode !!' }
-
-=head2 dispatch_class
-
-The read dispatch class name is returned.
-
-=head2 request_class
-
-The read request class name is returned. 
-
-=head2 response_class
-
-The read response class name is returned. 
+The project name under operation is returned.
 
 =head2 config
 
-The setting is returned.
+Configuration is returned by the HASH reference.
 
-The content is a global value.
-It doesn't return to former value until the server is reactivated when the
- content is changed in mod_perl etc.
+=head2 request
 
-  $e->config->{config_name};
+The request object is returned.
 
-=head2 global
+=over 4
 
-The HASH reference where a global value is preserved is returned.
+=item * Alias: req
 
-Because the I/O of this HASH is observed by Egg::GlobalHash,
- the overwrited thing cannot be done the key that already exists.
-However, it is only a key to one hierarchy that is observed.
-It is possible to input and output freely concerning the second key.
+=back
 
-Moreover, the key is always a capital letter of the alphabet.
+=head2 response
 
-In addition, please see the document of L<Egg::GlobalHash> in detail.
+The response object is returned.
 
-  # It enters without trouble if FUU_VALUE is undefined.
-  $e->global->{FUU_VALUE}= 'boo';
-  
-  # The error has already occurred in this because FUU_VALUE has defined it.
-  $e->global->{FUU_VALUE}= 'zuu';
+=over 4
 
-=head2 flag ([FLAG_NAME])
+=item * Alias: res
 
-The value of the flag given to the start option of Egg can be referred to.
+=back
 
-* The key is sure to become an alphabetic small letter. Moreover, the value
- is not put.
+=cut
+__PACKAGE__->mk_accessors(qw/ namespace request response /);
 
-head2 path ([CONFIG_KEY], [PATH])
+*req= \&request;
+*res= \&response;
 
-Passing that combines a set value and the given passing is returned.
+=head2 dispatch
 
-  print $e->path(qw{ temp hoo/zuu });  => /path/to/MYPROJECT/tmp/hoo/zuu
+The dispatch object is returned.
+
+* It is necessary to load the plug-in with the dispatch method.
+  Egg::Plugin::Dispatch::Standard and Egg::Plugin::Dispatch::Fast are prepared
+  by the standard.
+
+=head2 log
+
+The log object is returned.
+
+* When the plugin with the log method is not loaded, Egg::DummyLog is used.
+  - new, notes, debug, error
+
+=cut
+sub log { $_[0]->{Log} ||= Egg::DummyLog->new }
+
+sub import {
+	my $project= caller(0) || return 0;
+
+	no strict 'refs';  ## no critic
+	return if ($project eq 'main' or $project eq __PACKAGE__);
+
+	my %g= ( egg_plugins => [] ); shift;
+	for (@_) {
+		if (/^\-(.+)/) {
+			$g{'-'. lc($1)}= 1;
+		} else {
+			my $p_class= /^\+([A-Z].+)/ ? $1: "Egg::Plugin::$_";
+			push @{$g{egg_plugins}}, $p_class;
+			push @{"${project}::ISA"}, $p_class;
+		}
+	}
+	push @{"${project}::ISA"}, __PACKAGE__;
+
+	$_->require or confess($@) for @{$g{egg_plugins}};
+	@{$project->global}{keys %g}= values %g;
+}
+
+=head2 egg_startup ( [CONFIG_HASH] )
+
+Necessary for operating the project prior is prepared.
+
+CONFIG_HASH is set to 'config' method.
+If L<Egg::Plugin::ConfigLoader> is loaded, it is CONFIG_HASH omissible.
+However, it is a thing that the configuration file is arranged in an 
+appropriate place in this case.
+
+  __PACKAGE__->egg_startup;
+
+=cut
+sub egg_startup {
+	my $project= shift;
+	   $project= ref($project) if ref($project);
+	   $project eq __PACKAGE__ and die q/Mistake of call method./;
+	   $project->mk_classdata('config');
+
+	my $conf= $project->config( $project->_load_config(@_) );
+	my $g   = $project->global;
+	my $e   = bless { namespace=> $project }, $project;
+
+	if ($e->debug) {
+		print STDERR <<END_INFO;
+#----------------------------------------
+# >> Egg - $project : startup !!
+# + $project - load plugins :
+END_INFO
+		print STDERR "#   ". join("\n#   ", map{ "- $_ v". $_->VERSION }
+		                         @{$g->{egg_plugins}}) || "..... none.";
+		print STDERR "\n";
+		no strict 'refs';  ## no critic
+		no warnings 'redefine';
+		*{"${project}::debug_out"}= sub { shift->debugging->notes(@_) };
+	}
+	for my $method (qw/ dispatch debugging /) {
+		$e->can($method) and next;
+		warn qq{ '$method' method is not found. };
+	}
+
+	# Check on base configuration.
+	$conf->{title} ||= $project;
+	$conf->{content_type} ||= 'text/html';
+	$conf->{template_extention} ||= 'tt';
+	$conf->{template_extention}=~s{^\.+} [];
+	$conf->{template_default_name} ||= 'index';
+	$conf->{static_uri} ||= "/";
+	$conf->{static_uri}.= '/' unless $conf->{static_uri}=~m{/$};
+
+	# Check on directory configuration.
+	$conf->{root} || die q{ I want 'root' configuration. };
+	$conf->{root}=~s{[\\\/]+$} [];
+	{
+		my $path= $conf->{template_path}
+		   || die q{ I want 'template_path' configuration. };
+		my @path;
+		for (ref($path) eq 'ARRAY' ? @$path: $path) {
+			s{[\\\/]+$} [];  push @path, $_;
+		}
+		$conf->{template_path}= \@path;
+
+		my $dir= $conf->{dir} || die q{ I want 'dir' configuration. };
+		for (qw{ lib static etc cache tmp template comp }) {
+			$dir->{$_} || die qq{ I want 'dir -> $_' configuration. };
+			$dir->{$_}=~s{[\\\/]+$} [];
+		}
+		$dir->{lib_project}= "$dir->{lib}/$project";
+		$dir->{root}= $conf->{root};
+		$dir->{temp}= $dir->{tmp};
+	  };
+
+	{
+		no strict 'refs';  ## no critic
+		no warnings 'redefine';
+
+		# Constructor for project.
+		*{"${project}::new"}= sub {
+			my $pr= shift;
+			my $r = shift || undef;
+			my $egg= bless {
+			  finished  => 0,
+			  namespace => $pr,
+			  config    => $conf,
+			  snip  => [],  stash => {},
+			  model => {},  view  => {},
+			  }, $pr;
+			$egg->request( $g->{REQUEST_PACKAGE}->new($r, $egg) );
+			$egg->response( Egg::Response->new($egg) );
+			$egg;
+		  };
+
+		# Create Stash Accessor.
+		my $accessors= $conf->{accessor_names} || [];
+		for my $accessor ('template', @$accessors) {
+			*{__PACKAGE__."::$accessor"}= sub {
+				my $egg= shift;
+				return $egg->stash->{$accessor} || "" unless @_;
+				$egg->stash->{$accessor}= shift || "";
+			  };
+		}
+
+		# Model and View setup.
+		for my $c_name (qw{ model view }) {
+			my($uc_name, $lc_name, $uf_name)=
+			  (uc($c_name), lc($c_name), ucfirst($c_name));
+			my(@class, %class, %config);
+			$conf->{$c_name}= \%config;
+
+=head2 is_model ( [MODEL_NAME] )
+
+If specified MODEL is loaded, the package name is returned.
+
+=head2 is_view ( [VIEW_NAME] )
+
+If specified VIEW is loaded, the package name is returned.
+
+=cut
+			*{__PACKAGE__."::is_${c_name}"}= sub {
+				my $egg = shift;
+				my $name= shift || return 0;
+				$class{$name} || 0;
+			  };
+
+=head2 models
+
+The loaded MODEL name list is returned by the ARRAY reference.
+
+=head2 views
+
+The loaded VIEW name list is returned by the ARRAY reference.
+
+=cut
+			*{__PACKAGE__."::${c_name}s"}= sub { \@class };
+
+=head2 model_class
+
+The loaded MODEL management data is returned by the HASH reference.
+
+=head2 view_class
+
+The loaded VIEW management data is returned by the HASH reference.
+
+=cut
+			*{__PACKAGE__."::${c_name}_class"}= sub { \%class };
+
+			## '_prepare_model' and '_prepare_view' Method.
+			*{__PACKAGE__."::_prepare_${c_name}"}= sub {
+				my($egg)= @_;
+				for (@class) {
+					my $pkg= $class{$_} || next;
+					my $pre= $pkg->can('_prepare') || next;
+					$egg->{$c_name}{$_}= $pre->($pkg, $egg) || next;
+				} 1;
+			  };
+
+=head2 regist_model ( [MODEL_NAME], [PACKAGE_NAME], [INCLUDE_FLAG] )
+
+The use of specified MODEL is enabled.
+
+* MODEL_NAME is not omissible.
+
+* PACKAGE_NAME is an actual package name of object MODEL.
+  Egg::Model::[MODEL_NAME] is used when omitting it.
+
+* If INCLUDE_FLAG is true, require is done at the same time.
+
+  $e->regist_model('MyModel', 'MyApp::Model::MyModel', 1);
+
+=head2 regist_view ( [VIEW_NAME], [PACKAGE_NAME], [INCLUDE_FLAG] )
+
+The use of specified VIEW is enabled.
+
+* VIEW_NAME is not omissible.
+
+* PACKAGE_NAME is an actual package name of object VIEW.
+  Egg::View::[VIEW_NAME] is used when omitting it.
+
+* If INCLUDE_FLAG is true, require is done at the same time.
+
+  $e->regist_view('MyView', 'MyApp::View::MyView', 1);
+
+=cut
+			*{__PACKAGE__."::regist_${lc_name}"}= sub {
+				my $egg = shift;
+				my $name= shift || croak qq{ I want regist_$c_name 'name'.};
+				my $pkg = shift || "Egg::${uf_name}::$name";
+				$pkg->require or croak $@ if $_[0];
+				($class{$name} || $class{lc($name)})
+				   and croak qq{ Tried to redefine $uc_name name. };
+				push @class, $name;
+				$class{$name}= $pkg;
+			  };
+
+=head2 default_model ( [MODEL_NAME] )
+
+The MODEL name of default is returned.
+* A high setting of the priority level defaults most and it is treated.
+
+When MODEL_NAME is specified, default is temporarily replaced.
+
+=head2 default_view ( [VIEW_NAME] )
+
+The VIEW name of default is returned.
+* A high setting of the priority level defaults most and it is treated.
+
+When VIEW_NAME is specified, default is temporarily replaced.
+
+=cut
+			my $default= "default_${c_name}";
+			*{__PACKAGE__."::$default"}= sub {
+				my $egg= shift;
+				return do { $egg->{$default} ||= $class[0] || 0 } unless @_;
+				my $name= $class{lc($_[0])}  || return 0;
+				$_[0]->{$default}= $name;
+			  };
+
+=head2 model ( [MODEL_NAME] )
+
+The object of specified MODEL is returned.
+
+When MODEL_NAME is omitted, the MODEL object of default is returned.
+
+=head2 view ( [VIEW_NAME] )
+
+The object of specified VIEW is returned.
+
+When VIEW_NAME is omitted, the VIEW object of default is returned.
+
+=cut
+			*{__PACKAGE__."::${c_name}"}= sub {
+				my $egg= shift;
+				if (my $key= lc($_[0])) {
+					$egg->{$c_name}{$key} || do {
+						my $obj= $egg->_create_comps($c_name, @_);
+						$egg->{$c_name}{$key}= $obj;
+					  };
+				} else {
+					$egg->{$c_name}{lc($egg->$default)}
+					  ||= $egg->_create_comps($c_name, $egg->$default);
+				}
+			  };
+
+			## MODEL and VIEW setup.
+			if (my $list= $conf->{$uc_name}) {
+				my $regist= "regist_${lc_name}";
+				for (@$list) {
+					$e->$regist($_->[0], 0, 1);
+					$config{$_->[0]}= $_->[1];
+				}
+			}
+
+			for my $name (@class) {
+				my $pkg= $class{$name} || next;
+				my $set= $pkg->can('_setup') || next;
+				$set->($pkg, $e, $config{$name});
+			}
+			if ($e->debug and @class) {
+				$e->debug_out( "# + $project - load $c_name : "
+				. join(", ", map{"$_ v". ${"$class{$_}::VERSION"}}@class));
+			}
+
+		}
+	  };
+
+	Egg::Request->_startup($e);
+	Egg::Response->_startup($e);
+
+	# They are the plugin other startup and setups.
+	$e->_setup;
+}
+sub _setup {
+	my($e)= @_;
+
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
+	*{"$e->{namespace}::_start_engine"}=
+	   $e->debug ? \&_start_engine_debug: \&_start_engine_real;
+
+	$e;
+}
+
+=head2 run
+
+The project is completely operated, and the result code is returned at the end. 
+
+* Do not call this method from the code inside of the project.
+
+=cut
+sub run {
+	my $class= shift;
+	my $e= $class->new(@_);
+	eval { $e->_start_engine };
+	if ($@) {
+		$e->error($@);
+		$e->_finalize_error;
+	}
+	$e->_finalize_result;
+}
+
+=head2 stash ( [KEY_NAME] )
+
+The value of the common data specified with KEY_NAME is returned.
+
+When KEY_NAME is omitted, the common data is returned by the HASH reference. 
+
+=cut
+sub stash {
+	my $e= shift;
+	return $e->{stash} unless @_;
+	my $key= shift;
+	@_ ? $e->{stash}{$key}= shift : $e->{stash}{$key};
+}
+
+=head2 flag ( [FLAG_NAME] )
+
+The value of the flag specified with FLAG_NAME is returned.
+
+=cut
+sub flag {
+	my $e  = shift;
+	my $key= lc(shift) || return (undef);
+	   $key= "-$key" unless $key=~/^-/;
+	$e->global->{$key} || (undef);
+}
+
+=head2 path ( [CONF_KEY], [PATH] )
+
+The result of combining the value of $e-E<gt>config-E<gt>{dir} specified with
+CONF_KEY with PATH is returned.
+
+  $e->path('static', 'images/any.png'); => /path/to/myapp/htdocs/images/any.png
+
+=cut
+sub path {
+	my $e= shift;
+	my $lavel= shift || croak q{ I want the label. };
+	my $path = shift || return $e->config->{dir}{$lavel};
+	my $base= $e->config->{dir}{$lavel}
+	  || croak q{ There is no value corresponding to the label. };
+	$path=~s{^/+} [];
+	"$base/$path";
+}
+
+=head2 uri_to ( [URI], [ARGS_HASH] )
+
+The URI object generated based on [URI] is returned.
+
+The URI object of the query_form setting when ARGS_HASH is passed is returned.
+
+=cut
+sub uri_to {
+	my $e  = shift;
+	my $uri= shift || croak q{ I want base URI };
+	my $result= URI->new($uri);
+	return $result unless @_;
+	my %arg= ref($_[0]) eq 'HASH' ? %{$_[0]}: @_;
+	$result->query_form(%arg);
+	$result;
+}
+
+=head2 page_title ( [TITLE_STRING] )
+
+The value set to $e-E<gt>dispatch-E<gt>page_title is returned.
+$e-E<gt>config-E<gt>{title} is returned if there is no setting.
+
+The title can be set by passing TITLE_STRING.
+
+=cut
+sub page_title {
+	my $e= shift;
+	if (my $title= $e->dispatch->page_title(@_)) {
+		return $title;
+	} else {
+		return $e->config->{title} || "";
+	}
+}
+
+=head2 finished ( [RESPONSE_STATUS], [ERROR_MSG] )
+
+$e-E<gt>reqonse-E<gt>status is set when RESPONSE_STATUS is passed and finished
+is made effective.
+
+RESPONSE_STATUS is 500 or $e-E<gt>log-E<gt>error is done any more.
+At this time, if ERROR_MSG has been passed, it is included in the argument.
+
+0 It is $e-E<gt>reqonse-E<gt>status(0) when is passed, and finished is
+invalidated.
+
+=cut
+sub finished {
+	my $e= shift;
+	return $e->{finished} || undef unless @_;
+	if (my $status= shift) {
+		$e->response->status($status);
+		if (@_) {
+			if    ($status>= 500) { $e->log->error($status, @_) }
+##			elsif ($status>= 400) { $e->log->debug($status, @_) }
+		}
+		return $e->{finished}= 1;
+	} else {
+		$e->response->status(0);
+		return $e->{finished}= 0;
+	}
+}
+
+=head2 snip
+
+$e-E<gt>request-E<gt>snip is returned. 
+
+=cut
+sub snip { shift->request->snip(@_) }
 
 =head2 action
 
-Passing information on the place in the request place actually processed
- returns by the ARRAY reference.
+$e-E<gt>dispatch-E<gt>action is returned.
 
-* The value of this method expects the thing set by dispatch.
-  When dispatch doesn't set the value, undef is returned.
+=cut
+sub action { shift->dispatch->action(@_) }
 
-For instance, each request starts in Egg::Dispatch::Runmode as follows.
+=head2 debug
 
-* If it is .. run_modes( home=> { _default=> sub { ... } } )
+The state of the debugging flag is returned.
 
-  http://domain/home/  => [ 'home', 'index' ]
+=cut
+sub debug  { $_[0]->global->{'-debug'} || 0 }
 
-The part of 'Index' is supplemented with the value of 'Template_default_name' 
-of the setting. 
+=head2 mp_version
 
-* run_modes( home=> { qr/ABC\d+/=> sub { ... } } )
+$Egg::Request::MP_VERSION is returned.
 
-  http://domain/home/ABC123/ => [ 'home', 'ABC123' ]
+=cut
+sub mp_version { $Egg::Request::MP_VERSION  }
 
-* Perhaps, this cannot specify the template. 
+=head2 debug_out ( [MESSAGE] )
 
-=head2 plugins
+If the debugging flag is effective, MESSAGE is output to STDERR.
 
-The list of the name of the read plugin is returned.
+Nothing is done usually.
 
-=head2 plugin_class
+=cut
+sub debug_out { }
 
-The name of the read plug-in is returned and the key and the package name
- return HASH of the value.
+=head1 OPERATION METHODS
 
-=head1 BUGS
+When the project module is read, Egg generates the handler method.
+And, dynamic contents are output from the handler method via the following
+method calls and processing is completed.
 
-The error occurs when Class::Accessor::Fast is succeeded to by the plugin module.
-Measures against this are not made yet. 
+=head2 _start_engine
 
-This can be evaded by the thing assumed the $e->mk_accessors(...) with setup.
+If $e-E<gt>debug is effective, it replaces with _ start_engine_debug.
+After the call of each method, '_start_engine_debug' measures the execution time.
+This measurement result is reported to STDERR at the end of processing.
 
-However, it is not a complete solution because there might be a demand from another plug-in 
-that was previously called. 
-There is a hand that substitutes Class::Data::Inheritable to deal with this.
+=cut
+sub _start_engine_real {
+	my($e)= @_;
+	$e->_prepare_model;
+	$e->_prepare_view;
+	$e->_prepare;
+	$e->_dispatch_start;
+	$e->_dispatch_action;
+	$e->_dispatch_finish;
+	$e->_finalize;
+	$e->_finalize_output;
+	$e;
+}
+sub _start_engine_debug {
+	my($e)= @_;
+	$e->debugging->report;
+	my $bench= $e->{bench}= $e->debugging->simple_bench;
+	   $bench->_settime;
+	$e->_prepare_model;    $bench->stock('prepare_model');
+	$e->_prepare_view;     $bench->stock('prepare_view');
+	$e->_prepare;          $bench->stock('prepare');
+	$e->_dispatch_start;   $bench->stock('dispatch_start');
+	if (my $target= $e->dispatch->target_action) {
+		$e->debug_out("# + dispatch action  : $target");
+	}
+	$e->_dispatch_action;  $bench->stock('dispatch_action');
+	$e->_dispatch_finish;  $bench->stock('dispatch_finish');
+	$e->_finalize;         $bench->stock('finalize');
+	$e->_finalize_output;  $bench->stock('finalize_output');
+	                       $bench->finish;
+	$e;
+}
 
-  package MY_PLUGIN;
-  sub setup {
-    my($e)= @_;
-    $e->mk_accessors(...);
-  }
+=over 4
 
-or
+=item * _prepare_model
 
-  package MY_PLUGIN;
-  use base qw{ Class::Data::Inheritable };
-  __PACKAGE__->mk_classdata($_) for qw{ .... };
+Prior because MODEL is operated is prepared.
+
+=item * _prepare_view
+
+Prior because VIEW is operated is prepared.
+
+=item * _prepare
+
+It is a prior hook for the plugin.
+
+=cut
+sub _prepare { $_[0] }
+
+=item * _dispatch_start
+
+It is a prior hook for dispatch.
+
+If it is effective, $e-E<gt>finished has not already done anything.
+
+=cut
+sub _dispatch_start {
+	$_[0]->{finished} || $_[0]->dispatch->_start;
+	$_[0];
+}
+
+=item * _dispatch_action
+
+It is a hook for correspondence action of dispatch.
+
+If it is effective, $e-E<gt>finished has not already done anything.
+
+If an appropriate template has been decided, and $e-E<gt>response-E<gt>body
+is undefined, $e-E<gt>view-E<gt>output is done.
+
+=cut
+sub _dispatch_action {
+	return $_[0] if $_[0]->{finished};
+	$_[0]->dispatch->_action unless $_[0]->response->body;
+	$_[0]->view->output if (! $_[0]->{finished} and ! $_[0]->response->body);
+	$_[0];
+}
+
+=item * _dispatch_finish
+
+It is a hook after the fact for dispatch.
+
+If it is effective, $e-E<gt>finished has not already done anything.
+
+=cut
+sub _dispatch_finish {
+	$_[0]->{finished} || $_[0]->dispatch->_finish;
+	$_[0];
+}
+
+=item * _finalize
+
+It is a hook after the fact for the plugin.
+
+=cut
+sub _finalize { $_[0] }
+
+=item * _finalize_output
+
+If it seems to complete the output of contents that are effective $e-E<gt>finished
+and have defined $e-E<gt>response-E<gt>{header}, nothing is done.
+
+Contents are output, and $e-E<gt>finished is set.
+
+=back
+
+=cut
+sub _finalize_output {
+	return $_[0]->debug_out("# + output_content: finished absolute already.")
+	    if ($_[0]->{finished} and $_[0]->response->{header});
+	my($e)   = @_;
+	my $res  = $e->response;
+	my $body = $res->body || \"";
+	my $head = $res->header($body);
+	$res->output($head, $body);
+	$e->debug_out("# + Response headers :\n$$head");
+	$e->finished( $res->status || 200 );
+	$e;
+}
+
+=head2 _finalize_error
+
+When some errors occur by '_start_engine', it is called.
+
+The plug-in for which the processing when the error occurs is necessary 
+prepares this method.
+
+This method finally writes the log, and outputs contents for debugging.
+
+=cut
+sub _finalize_error  {
+	my($e)= @_;
+	$e->log->error
+	   (($e->response->status || 500), ($e->errstr || 'Internal Error.'));
+	$e->debugging->output;
+	$e;
+}
+
+=head2 _finalize_result
+
+They are the last processing most.
+
+$e-E<gt>response-E<gt>result is called and the Result code is returned.
+
+=cut
+sub _finalize_result {
+	my $result= $_[0]->response->result;
+	return $result;
+}
+
+sub _create_comps {
+	my $e   = shift;
+	my $type= shift || return 0;
+	my $name= shift || return 0;
+	my $cmethod= "${type}_class";
+	my $pkg = $e->$cmethod->{$name}
+	       || $e->$cmethod->{lc($name)}
+	       || confess "'$name' $type is not set up.";
+	my $conf= $e->config->{$type}{$name}
+	       || $e->config->{$type}{lc($name)}
+	       || {};
+	$pkg->can('ACCEPT_CONTEXT')
+	   ? $pkg->ACCEPT_CONTEXT($e, $conf): $pkg->new($e, $conf);
+}
+sub _load_config {
+	my $class= shift;
+	my $conf = $_[0] ? (ref($_[0]) eq 'HASH' ? $_[0]: {@_})
+	                 : croak q{ I want config };
+	$class->replace_deep($conf, $conf->{dir});
+	$class->replace_deep($conf, $conf);
+	$conf;
+}
+sub _example_code { 'unknown.' }
+
+package Egg::DummyLog;
+use strict;
+sub new { bless {}, shift }
+sub notes { }
+sub debug { }
+sub error { }
+
+
+=head1 SUPPORT
+
+Distribution site.
+
+  L<http://egg.bomcity.com/>.
+
+sourcefoge project.
+
+  L<http://sourceforge.jp/projects/egg/>.
 
 =head1 SEE ALSO
 
-L<Egg::Release>,
-L<Egg::Engine>,
-L<Egg::Engine::V1>,
-L<Egg::Model>,
-L<Egg::View>,
+L<Egg::Base>,
 L<Egg::Request>,
 L<Egg::Response>,
-L<Egg::Dispatch::Runmode>,
-L<Egg::Exception>,
+L<Egg::Model>,
+L<Egg::View>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

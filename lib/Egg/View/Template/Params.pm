@@ -1,103 +1,150 @@
 package Egg::View::Template::Params;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
-# Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Params.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Params.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-
-our $VERSION= '0.03';
-
-sub in {
-	my($class, $view, $e)= @_;
-	my($req, $cf)= ($e->request, $e->config);
-	my %params= (
-	  title          => sub { $cf->{title} || '' },
-	  content_charset=> sub { $cf->{content_charset} || '' },
-	  script_name    => sub { $req->script_name },
-	  is_secure      => sub { $req->secure },
-	  remote_addr    => sub { $req->remote_addr },
-	  server_name    => sub { $req->server_name },
-	  server_port    => sub { $req->port },
-	  http_referer   => sub { $req->referer },
-	  http_agent     => sub { $req->agent },
-	  request_uri    => sub { $req->uri },
-	  copy_label     => sub { $e->namespace. " Ver:". $e->VERSION },
-	  );
-	@{$view->params}{keys %params}= values %params;
-}
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg::View::Template::Params - Default parameter set for template driver that evaluates param.
+Egg::View::Template::Params - Some parameters are set in Egg::View.
 
 =head1 SYNOPSIS
 
- $e->view->params( Egg::View::Template::Params->setup_params );
+  use Egg::View::Template::Params;
+  
+  # The call to E::V::Template::Params is added to '_prepare' call of Egg.
+  sub _prepare {
+    my($e)= @_;
+    Egg::View::Template::Params->prepare($e);
+    $e->next::method;
+  }
 
-=head1 PARAMETERS
+=head1 DESCRIPTION
 
-=head2 title
+Some parameters are set to %PARAMS of Egg::View as a default value.
 
-It is a set value of $e->config->{title}.
+%PARAMS can be referred by the params method of received view and be set again.
 
-=head2 content_charset
+=cut
+use strict;
+use warnings;
+use Egg::View;
 
-It is a set value of $cf->{content_charset}.
+our $VERSION= '2.00';
 
-=head2 is_secure
+=head1 METHODS
 
-$e->request->secure is returned.
+=head2 prepare ( [PROJECT_OBJ] )
 
-=head2 script_name
+Some parameters are set to %PARAMS of Egg::View.
 
-$e->request->script_name is returned.
+When L<Egg::View::Template> is used, it is not necessary to set it separately
+because this module is used by default.
 
-=head2 remote_addr
+Please it doesn't operate normally if you do not give PROJECT_OBJ.
 
-$e->request->remote_addr is returned.
+When this method is called, the following parameters are set.
 
-=head2 server_name
+=over 4
 
-$e->request->server_name is returned.
+=item * title
 
-=head2 http_referer
+Title name of project on configuration
 
-$e->request->referer is returned.
+=item * page_title
 
-=head2 http_agent
+Reference to $e-E<gt>page_title.
 
-$e->request->agent is returned.
+=item * script_name
 
-=head2 http_agent
+Reference to $e-E<gt>request-E<gt>script_name.
 
-$e->request->uri is returned.
+=item * path
 
-=head2 http_agent
+Reference to $e-E<gt>request-E<gt>path. 
 
-'[PROJECT_NAME] Ver $e->VERSION' is returned.
+=item * path_info
+
+Reference to $e-E<gt>request-E<gt>path_info. 
+
+=item * is_secure
+
+Reference to $e-E<gt>request-E<gt>secure.
+
+=item * remote_addr
+
+Reference to $e-E<gt>request-E<gt>remote_addr.
+
+=item * host_name
+
+Reference to $e-E<gt>request-E<gt>host_name.
+
+=item * server_port
+
+Reference to $e-E<gt>request-E<gt>port.
+
+=item * http_referer
+
+Reference to $e-E<gt>request-E<gt>referer.
+
+=item * http_agent
+
+Reference to $e-E<gt>request-E<gt>agent.
+
+=item * request_uri
+
+Reference to $e-E<gt>request-E<gt>uri.
+
+=item * copyright
+
+'[PROJECT_NAME] Ver:[PROJECT_VERSION]'
+
+=back
+
+=cut
+sub prepare {
+	my($class, $e)= @_;
+	my($conf, $req)= ($e->config, $e->request);
+
+	my $params= {
+	  title        => sub { $conf->{title} || '' },
+	  page_title   => sub { $e->page_title },
+	  script_name  => sub { $req->script_name },
+	  path         => sub { $req->path },
+	  path_info    => sub { $req->path_info },
+	  is_secure    => sub { $req->secure },
+	  remote_addr  => sub { $req->remote_addr },
+	  host_name    => sub { $req->host_name },
+	  server_port  => sub { $req->port },
+	  http_referer => sub { $req->referer },
+	  http_agent   => sub { $req->agent },
+	  request_uri  => sub { $req->uri },
+	  copyright    => sub { $e->namespace. " Ver:". $e->VERSION },
+	  };
+
+	%Egg::View::PARAMS= ( %$params, %Egg::View::PARAMS );
+	@_;
+}
 
 =head1 SEE ALSO
 
-L<Egg::Response>,
-L<Egg::Template>,
+L<Egg::View>,
+L<Egg::View::Template>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>mizunoE<64>bomcity.comE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

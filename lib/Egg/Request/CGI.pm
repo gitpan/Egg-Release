@@ -1,108 +1,93 @@
 package Egg::Request::CGI;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: CGI.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: CGI.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Request::CGI - CGI.pm for Egg request.
+
+=head1 DESCRIPTION
+
+The request processing is done based on CGI.pm.
+
+The following items of $e-E<gt>config-E<gt>{request} are evaluated.
+
+=over 4
+
+=item * POST_MAX
+
+Maximum size of standard input when request method is POST.
+
+=item * DISABLE_UPLOADS
+
+Upload is not accepted when keeping effective.
+
+=item * TEMP_DIR
+
+Temporary preservation directory PATH of upload file.
+
+=back
+
+=cut
 use strict;
 use warnings;
+use CGI;
+use Carp 'croak';
 use base qw/Egg::Request/;
-no warnings 'redefine';
 
-our $VERSION= '0.09';
+our $VERSION= '2.00';
 
-sub setup {
+sub _setup_output {
 	my($class, $e)= @_;
-	$class->setup_config($e->config->{request});
-	$class->SUPER::setup($e);
+	my $conf= $e->config->{request} || {};
+	if (my $max= $conf->{POST_MAX}) { $CGI::POST_MAX= $max }
+	if (my $dup= $conf->{DISABLE_UPLOADS}) { $CGI::DISABLE_UPLOADS= $dup }
+	if (my $tmp= $conf->{TEMP_DIR}) { $CGITempFile::TMPDIRECTORY= $tmp }
+	$class->SUPER::_setup_output($e);
 }
-sub setup_config {
-	my $class= shift;
-	my $conf = shift || {};
 
-	$CGI::POST_MAX= $conf->{POST_MAX}
-	  if $conf->{POST_MAX};
-	$CGI::DISABLE_UPLOADS= $conf->{DISABLE_UPLOADS}
-	  if $conf->{DISABLE_UPLOADS};
-	$CGITempFile::TMPDIRECTORY= $conf->{TEMP_DIR}
-	  if $conf->{TEMP_DIR};
-	$Egg::CRLF= $CGI::CRLF;
+=head1 METHODS
 
-	@_;
-}
+=head2 new
+
+CGI object is set in 'r' method.
+
+=cut
 sub new {
-	my($class, $e, $r)= @_;
-	my $req= $class->SUPER::new($e, $r);
-	$req->r( Egg::Request::CGI::base->new($r) );
+	my($class, $r, $e)= @_;
+	my $req= $class->SUPER::new($r, $e);
+	$req->r( Egg::Request::CGI::handler->new($r) );
 	$req;
 }
-sub prepare_params {
-	my($req)= @_;
-	$req->{parameters}= $req->r->Vars;
-}
-sub output {
-	my $req   = shift;
-	my $header= shift || return 0;
-	my $body  = ref($_[0]) ? $_[0]: \"";
-	CORE::print STDOUT $$header, $$body;
-	$req->{e}->debug_out($$header);
-}
+sub _prepare_params { $_[0]->r->Vars }
 
-package Egg::Request::CGI::base;
+package Egg::Request::CGI::handler;
 use strict;
 use CGI qw/:cgi/;
 
 our @ISA= 'CGI';
 
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Request::CGI - CGI module is used and the request is processed.
-
-=head1 SYNOPSIS
-
-The setting that decides the behavior of CGI.pm can be written.
-
- request=> {
-   POST_MAX       => 1024,
-   DISABLE_UPLOADS=>    1,
-   TEMP_DIR       => '/path/to/temp',
-   },
-
-When Egg::Plugin::Upload is used, this will become useful.
-
-=head1 DESCRIPTION
-
-Please use $e->request->r to call CGI object.
-
-=head1 BUGS
-
-All the outputs of the log of debug mode are treated as an error.
-
-The cause seems the purpose is to send STDERR the message.
-Place current improvement of this matter is not scheduled.
-I am sorry.
-
 =head1 SEE ALSO
 
-L<Egg::Release>,
+L<CGI>,
 L<Egg::Request>,
-CGI,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

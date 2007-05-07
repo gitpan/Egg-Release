@@ -1,77 +1,68 @@
 package Egg::Request::Apache::MP20;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: MP20.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: MP20.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Request::Apache::MP20 - mod_perl2.0 for Egg request.
+
+=head1 DESCRIPTION
+
+It is a request class for mod_perl2.0.
+
+This module is read by the automatic operation if L<Egg::Request> investigates
+the environment and it is necessary. Therefore, it is not necessary to read
+specifying it.
+
+=cut
 use strict;
 use warnings;
 use Apache2::Request     ();
-use Apache2::RequestIO   ();
 use Apache2::RequestRec  ();
 use Apache2::RequestUtil ();
-use Apache2::Response    ();
-use Apache2::Connection  ();
-use Apache2::Const -compile => qw/:common/;
-use APR::Table ();
+use Apache2::RequestIO   ();
+use APR::Pool;
 use base qw/Egg::Request::Apache/;
 
-our $VERSION= '0.01';
+our $VERSION= '2.00';
 
+=head1 METHODS
+
+=head2 new
+
+The object is received from the constructor of the succession class, 
+and L<Apache2::Request> object is defined in 'r' method.
+
+=cut
 sub new {
 	my $req = shift->SUPER::new(@_);
 	my $conf= $req->e->config->{request} ||= {};
 	$req->r( Apache2::Request->new($req->r, %$conf) );
 	$req;
 }
-sub result_status {
-	my $req   = shift;
-	my $status= shift || return &Apache2::Const::SERVER_ERROR;
-	eval { $req->r->status($status) };
-	return
-	   $status== 200 ? &Apache2::Const::OK
-	 : $status=~/30[1237]/ ? &Apache2::Const::REDIRECT
-	 : $status== 401 ? &Apache2::Const::AUTH_REQUIRED
-	 : $status== 403 ? &Apache2::Const::FORBIDDEN
-	 : $status== 404 ? &Apache2::Const::NOT_FOUND
-	 :                 &Apache2::Const::SERVER_ERROR;
-}
-
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Request::Apache::MP20 - The request is processed by Apache2::Request.
-
-=head1 DESCRIPTION
-
-Apache2::Request seems not to be included in the mod_perl package of Fedora Core4.
-It was possible to solve it in that case as follows.
-
- perl -MCPAN -e 'install Apache2::Request'
-
-However, there might be a more straight method. I'm sorry.
 
 =head1 SEE ALSO
 
-L<Egg::Release>,
+L<Apache2::Request>,
 L<Egg::Request>,
 L<Egg::Request::Apache>,
-L<Apache2::Request>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

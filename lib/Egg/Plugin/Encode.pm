@@ -1,146 +1,153 @@
 package Egg::Plugin::Encode;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Encode.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-use UNIVERSAL::require;
-
-our $VERSION= '0.03';
-{
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	sub setup {
-		my($e)= @_;
-		$e->config->{character_in} ||= 'euc';
-		my $name= $e->namespace;
-		${"$name\::__EGG_ENCODE"}= $e->create_encode;
-		unless ($e->config->{disable_encode_query}) {
-			if (my $pkg=
-			    $e->request_class=~m{^Egg\:\:Request\:\:Apache\:\:.+}
-			      ? __PACKAGE__.'::Apache'
-			  : $e->request_class=~m{^Egg\:\:Request\:\:(?:Fast)?CGI}
-			      ? __PACKAGE__.'::CGI'
-			  : 0 ) {
-				$pkg->require or Egg::Error->throw($@);
-				$pkg->setup;
-				$e->debug_out("# + plugin_encode : $name - $pkg");
-			}
-		}
-		$e->next::method;
-	}
-	sub encode { ${$_[0]->namespace.'::__EGG_ENCODE'} }
-  };
-
-sub create_encode {
-	Jcode->require or Egg::Error->throw($@);
-	Jcode->new('jcode object.');
-}
-sub euc_conv  { shift->encode->set(@_)->euc  }
-sub sjis_conv { shift->encode->set(@_)->sjis }
-sub utf8_conv { shift->encode->set(@_)->utf8 }
-
-sub is_utf8 { utf8::is_utf8($_[1]) }
-sub utf8enc { utf8::encode($_[1])  }
-sub utf8dec { utf8::decode($_[1])  }
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg::Plugin::Encode - The encode of the character is supported for Egg.
+Egg::Plugin::Encode - Plugin to treat character code.
 
 =head1 SYNOPSIS
 
-  package MYPROJECT;
-  use stirct;
-  use Egg qw/Encode/;
+  use Egg qw/ Encode /;
 
-Example of code.
-
-  $e->encode->set(\$string)->utf8;
+  $e->encode->set(\$text)->utf8;
   
-  my $euc_str = $e->euc_conv(\$any_code_string);
-  my $utf8_str= $e->utf8_conv(\$any_code_string);
-  my $sjis_str= $e->sjis_conv(\$any_code_string);
+  $e->utf8_conv(\$text);
+  $e->euc_conv (\$text);
+  $e->sjis_conv(\$text);
 
 =head1 DESCRIPTION
 
-This module adds the method for the treatment of the character-code.
-And, the operation united by the character-code set to 'character_in' when
- acquisition and the cookie of Ricestoceri are set is done.
+This plug-in adds some methods to treat the character code conveniently.
 
-The default of 'character_in' is euc.
+If $e-E<gt>config-E<gt>{character_in} is set, it sets it up so that
+Egg::Request::parameters may unite character-codes of the request query.
 
-Jcode is used for the conversion of the character-code.
-It is possible to change by adding the following codes to the controller.
+It is "[in_code]_conv" as for the character-code set in $e-E<gt>config-E<gt>{character_in}. 
+Specifying it becomes either of 'utf8' and 'euc' and 'sjis' because it develops
+with the method name.
 
-  package MYPROJECT;
-  use Unicode::Japanese;
-  ....
-  
-  sub create_encode {
-  	Unicode::Japanese->new('character');
-  }
+If it wants to make the code excluding this treated, the method is made for the 
+controller from the name of "[in_code]_conv", and the code name is set to
+$e-E<gt>config-E<gt>{character_in}.
 
-Euc_conv, sjis_conv, and utf8_conv can be used in default.
+=cut
+use strict;
+use warnings;
 
-Please give to the operation of the module that Orbaraids these methods and
- uses it additionally if there is a problem.
+our $VERSION = '2.00';
 
-Moreover, please add the method newly to treat the code that this module 
-doesn't assume.
+sub _setup {
+	my($e)= @_;
 
-  sub ucs2_conv {
-  	my($e, $str)= @_;
-  	$e->encode->set($str)->ucs2;
-  }
-  sub anycode_conv {
-  	my($e, $str)= @_;
-  	$e->encode->set($str)->anycode;
-  }
+	if (my $icode= $e->config->{character_in}) {
+		my $enc_method= "${icode}_conv";
+		my $r_class= $e->global->{REQUEST_PACKAGE};
+		my $get_param;
+		if (my $code= $r_class->can('_prepare_params')) {
+			$get_param= sub {
+				my $egg  = $_[0]->e;
+				my $param= $code->($_[0]);
+				while (my($key, $value)= each %$param) {
+					if (ref($value) eq 'ARRAY') {
+						for (@$value) { $egg->$enc_method(\$_) }
+						$param->{$key}= $value;
+					} else {
+						$param->{$key}= $egg->$enc_method(\$value);
+					}
+				}
+				$param;
+			  };
+		} else {
+			$get_param= sub {
+				my($req)= @_; my $egg= $req->e;
+				my %param;
+				for ($req->r->param) {
+					my $value= $req->r->param($_);
+					if (ref($value) eq 'ARRAY') {
+						for (@$value) { $egg->$enc_method(\$_) }
+						$param{$_}= $value;
+					} else {
+						$param{$_}= $egg->$enc_method(\$value);
+					}
+				}
+				\%param;
+			  };
+		}
+		no warnings 'redefine';
+		*Egg::Request::parameters=
+		   sub { $_[0]->{parameters} ||= $get_param->($_[0]) };
 
-And, please set the code to 'character_in' if you want to do to the code for
- internal processing of default.
-
-  character_in=> 'ucs2',
-  
-  or
-  
-  character_in=> 'anycode',
-
-* It seems to fail in the encode of the request query in utf8 'character_in'.
-  The encode of the request query is turned off in setting 'B<disable_encode_query>'
-  as an emergency measure.
+	}
 
 =head1 METHODS
 
 =head2 encode
 
-The object received with create_encode is returned.
+The object for the character-code conversion acquired with $e->create_encode
+is returned.
 
-Default is 'Jcode'.
+* Does the problem occur according to the module used because it is Closure
+  No be known.
 
-=head2 euc_conv , utf8_conv , sjis_conv
+=cut
+	{
+		no warnings 'redefine';
+		my $encode= $e->create_encode;
+		*encode= sub { $encode };
+	  };
 
-It is an accessor for the character-code conversion.
+	$e->next::method;
+}
 
-=head2 is_utf8
+=head2 create_encode
 
-utf8::is_utf8 is done.
+The object for the character-code conversion is returned.
 
-=head2 utf8enc
+It is possible to make the object of the favor Orbaraid this method as a 
+controller, and returned.
 
-utf8::encode is done.
+Default is Jcode.
 
-=head2 utf8dec
+=cut
+sub create_encode {
+	require Jcode;
+	Jcode->new('jcode object.');
+}
 
-utf8::decode is done.
+=head2 utf8_conv ( [TEXT], [ARGS] )
+
+Shift-E<gt>encode-E<gt>set(@_)-E<gt>utf8 is done.
+
+* When create_encode is Orbaraided, necessary to Orbaraid this method.
+  It might be.
+
+=cut
+sub utf8_conv { shift->encode->set(@_)->utf8 }
+
+=head2 euc_conv ( [TEXT], [ARGS] )
+
+Shift-E<gt>encode-E<gt>set(@_)-E<gt>euc is done.
+
+* When create_encode is Orbaraided, necessary to Orbaraid this method.
+  It might be.
+
+=cut
+sub euc_conv  { shift->encode->set(@_)->euc }
+
+=head2 sjis_conv ( [TEXT], [ARGS] )
+
+Shift-E<gt>encode-E<gt>set(@_)-E<gt>sjis is done.
+
+* When create_encode is Orbaraided, necessary to Orbaraid this method.
+  It might be.
+
+=cut
+sub sjis_conv { shift->encode->set(@_)->sjis }
+
 
 =head1 SEE ALSO
 
@@ -151,12 +158,14 @@ L<Egg::Release>,
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 by Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

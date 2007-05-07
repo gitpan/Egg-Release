@@ -1,112 +1,491 @@
 package Egg::Request;
 #
-# Copyright 2006 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Request.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Request.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Request - HTTP request processing for Egg.
+
+=head1 SYNOPSIS
+
+  # The request object is obtained.
+  my $req= $e->request;
+  
+  # The query data is acquired.
+  my $foo= $req->param('foo');
+    or
+  my $foo= $req->params->{foo};
+  
+  # Cookie is acquired.
+  my $baa= $req->cookie('baa')->value;
+    or
+  my $baa= $req->cookie_value('baa');
+  
+  # The request passing is acquired.
+  my $path= $req->path;
+  
+  # ...etc.
+
+=head1 DESCRIPTION
+
+This module offers processing and the function that relates to the HTTP request.
+
+=head1 CONFIGURATION
+
+=head2 max_snip_deep
+
+Depth of directory that can be requested.
+
+  # If it is 'max_snip_deep = 3', the following request becomes Forbidden.
+  
+  http://foo.tld/baa/zuu/hoge/bad_content
+
+=head2 request
+
+Option to set or to pass to main body for request.
+
+=over 4
+
+=item * DISABLE_UPLOADS
+
+The file upload is invalidated.
+
+* Please refer to 'Egg::Plugin::Upload' for the file upload.
+
+=item * TEMP_DIR
+
+Work folder for file upload chiefly
+
+=item * POST_MAX
+
+Maximum of standard input accepted when request method is POST.
+
+=back
+
+=cut
 use strict;
 use warnings;
-use UNIVERSAL::require;
-use base qw/Egg::Component/;
 use CGI::Cookie;
-no warnings 'redefine';
+use base qw/Class::Accessor::Fast/;
+use Carp qw/croak/;
 
-__PACKAGE__->mk_accessors( qw/r debug path/ );
+our $VERSION = '2.00';
 
-our $VERSION= '0.12';
+__PACKAGE__->mk_accessors(qw/ e r path is_get is_post is_head /);
 
-*address= \&remote_addr;
-*port   = \&server_port;
-*agent  = \&user_agent;
+=head1 METHODS
 
+=head2 r
+
+The object that actually does the request processing is returned.
+
+For instance, if it is Apache::Request, and usual CGI if it is operating
+by mod_perl, the object of CGI is restored.
+
+  $request-E<gt>r->param;
+
+* The method that can be used depends on the module of the object because
+  it is a direct call.
+
+=head2 path
+
+The request passing is returned.
+
+* There is a thing different from 'PATH_INFO' of the environment variable
+  because returned information is processed to process it with Egg.
+
+=head2 is_get
+
+When the request method is GET, ture is restored.
+
+=head2 is_post
+
+When the request method is POST, true is restored.
+
+=head2 is_head
+
+When the request method is HEAD, true is restored.
+
+=head2 http_user_agent
+
+Refer to 'HTTP_USER_AGENT' of the environment variable.
+
+=over 4
+
+=item * Alias: agent, user_agent
+
+=back
+
+=head2 server_protocol
+
+Refer to 'SERVER_PROTOCOL' of the environment variable.
+
+=over 4
+
+=item * Alias: protocol
+
+=back
+
+=head2 remote_user
+
+Refer to 'REMOTE_USER' of the environment variable.
+
+=over 4
+
+=item * Alias: user
+
+=back
+
+=head2 script_name
+
+Refer to 'SCRIPT_NAME' of the environment variable.
+
+=head2 request_uri
+
+Refer to 'REQUEST_URI' of the environment variable.
+
+* A value different from the uri method might return.
+
+=head2 path_info
+
+Refer to 'PATH_INFO' of the environment variable.
+
+=head2 http_referer
+
+Refer to 'HTTP_REFERER' of the environment variable.
+
+=over 4
+
+=item * Alias: referer
+
+=back
+
+=head2 http_accept_encoding
+
+Refer to 'HTTP_ACCEPT_ENCODING' of the environment variable.
+
+=over 4
+
+=item * Alias: accept_encoding
+
+=back
+
+=head2 remote_addr
+
+Refer to 'REMOTE_ADDR' of the environment variable.
+
+=over 4
+
+=item * Alias: addr, address
+
+=back
+
+Default is '127.0.0.1'.
+
+=head2 request_method
+
+Refer to 'REQUEST_METHOD' of the environment variable.
+
+=over 4
+
+=item * Alias: method
+
+=back
+
+Default is 'GET'.
+
+=head2 server_name
+
+Refer to 'SERVER_NAME' of the environment variable.
+
+Default is 'localhost'.
+
+=head2 server_software
+
+Refer to 'SERVER_SOFTWARE' of the environment variable.
+
+Default is 'cmdline'.
+
+=head2 server_port
+
+Refer to 'SERVER_PORT' of the environment variable.
+
+=over 4
+
+=item * Alias: port
+
+=back
+
+Default is '80'.
+
+=cut
 {
 	no strict 'refs';  ## no critic
-	for my $method (qw/post get/) {
-		*{__PACKAGE__."::is_$method"}= sub {
-			$_[0]->{"is_$method"} ||= $_[0]->method=~/^$method/i ? 1: 0;
-		  };
+	no warnings 'redefine';
+	for ( qw{ HTTP_USER_AGENT SERVER_PROTOCOL REMOTE_USER
+	  SCRIPT_NAME REQUEST_URI PATH_INFO HTTP_REFERER HTTP_ACCEPT_ENCODING },
+	  [qw{ REMOTE_ADDR 127.0.0.1 }], [qw{ REQUEST_METHOD GET }],
+	  [qw{ SERVER_NAME localhost }], [qw{ SERVER_SOFTWARE cmdline }],
+	  [qw{ SERVER_PORT 80 }] ) {
+		my($key, $accessor, $default)=
+		   ref($_) ? ($_->[0], lc($_->[0]), $_->[1]): ($_, lc($_), "");
+		*{__PACKAGE__."::$accessor"}= sub { $ENV{$key} || $default };
 	}
   };
 
-sub setup {
+*agent    = \&http_user_agent;  *user_agent = \&http_user_agent;
+*protocol = \&server_protocol;  *user       = \&remote_user;
+*method   = \&request_method;   *port       = \&server_port;
+*addr     = \&remote_addr;      *address    = \&remote_addr;
+*referer  = \&http_referer;     *url        = \&uri;
+*params   = \&parameters;       *accept_encoding = \&http_accept_encoding;
+
+=head2 mp_version
+
+The version of the mod_perl is returned if it operates by mod_perl.
+
+=cut
+my $MP_VERSION= 0;
+sub mp_version { $MP_VERSION }
+
+sub _startup {
 	my($class, $e)= @_;
-	$e->config->{request} ||= {};
-	my $base= $e->namespace;
-	no strict 'refs';  ## no critic
-	*{"Egg::handler"}= sub { shift; $base->run(@_) };
+	my $mp_util= 'ModPerl::VersionUtil';
+
+	my $r_class= $e->global->{REQUEST_PACKAGE}=
+	     $ENV{ $e->uc_namespace. '_REQUEST_CLASS'}
+	  || $e->config->{request_class}
+	  || do {
+		($ENV{MOD_PERL} and $mp_util->require) ? do {
+			$MP_VERSION= $mp_util->mp_version;
+			  $MP_VERSION > 2   ? 'Egg::Request::Apache::MP20'
+			: $mp_util->is_mp2  ? 'Egg::Request::Apache::MP20'
+			: $mp_util->is_mp19 ? 'Egg::Request::Apache::MP19'
+			: $mp_util->is_mp1  ? 'Egg::Request::Apache::MP13'
+			: do {
+				$MP_VERSION= 0;
+				warn qq{ Unsupported mod_perl v$MP_VERSION };
+				'Egg::Request::CGI';
+			  };
+		  }: do {
+			'Egg::Request::CGI';
+		  };
+	  };
+
+	$r_class->require or die $@;
+	my $get_params;
+	if (my $code= $r_class->can('_prepare_params')) {
+		$get_params= $code;
+	} else {
+		$get_params= sub {
+			my %params;
+			$params{$_}= $_[0]->r->param($_) for $_[0]->r->param;
+			\%params;
+		  };
+	}
+	no warnings 'redefine';
+	*parameters= sub { $_[0]->{parameters} ||= $get_params->(@_) };
+
+	$r_class->_setup_output($e);
+	$r_class->_setup_handler($e);
+
+	$e->debug_out("# + $e->{namespace} - Request Class : $r_class");
+	$r_class;
+}
+sub _setup_output {
+	my($class, $e)= @_;
+	no warnings 'redefine';
+	*Egg::Response::output= sub {
+		my $res = shift;
+		my $head= shift || croak q{ I want response header. };
+		my $body= shift || croak q{ I want response body.   };
+		CORE::print STDOUT $$head, ($$body || "");
+	  };
 	@_;
 }
+sub _setup_handler {
+	my($class, $e)= @_;
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
+	*{"$e->{namespace}::handler"}=
+	   $e->can('run') || die q{ $e->run is not found. };
+	@_;
+}
+
+=head2 new
+
+Constructor. When the project is usually started, this is called.
+It is not necessary to call it specifying it.
+
+=cut
 sub new {
-	my $class= shift;
-	my $e= shift || Egg::Error->throw('I want Egg object.');
-	my $r= shift || undef;
-	my $req= $class->SUPER::new($e);
-	$req->{r} = $r;
-	$req->{args}= {};
-	$req->{debug}= $e->debug;
+	my($class, $r, $e)= @_;
+	my $req= bless { e=> $e, r=> $r }, $class;
+
+	@{$req}{qw{ is_get is_post is_head }}=
+	    $req->method=~/^GET/  ? (1, 0, 0)
+	  : $req->method=~/^POST/ ? (0, 1, 0)
+	  : $req->method=~/^HEAD/ ? (0, 0, 1)
+	  :                         (1, 0, 0);
+
+	my $path;
+	if ($ENV{REDIRECT_URI}) {
+		$path= $ENV{PATH_INFO} || $ENV{REDIRECT_URI} || '/';
+	} else {
+		$path = $ENV{SCRIPT_NAME} || "";
+		$path =~s{/+$} [];
+		$path.= $ENV{PATH_INFO} if $ENV{PATH_INFO};
+	}
+	$req->path( $path=~m{^/} ? $path: "/$path" );
+
+	# Request parts are generated.
+	my $max;
+	$path=~s#\s+##g; $path=~s#^/+##; $path=~s#/+$##;
+	my @snip= split /\/+/, $path;
+	$max= $e->config->{max_snip_deep}
+	    and scalar(@snip)> $max and $e->finished(403) and return $req;
+
+	$req->{snip}= \@snip;
 	$req;
 }
+
+=head2 snip ( [PARTS_NUMBER] )
+
+The ARRAY reference for which $request-E<gt>path is resolved by '/' delimitation
+is returned.
+
+* The depth of passing that can be requested by 'max_snip_deep' of configuration
+  can be setup.  Default is undefined.
+
+=cut
+sub snip {
+	my $req= shift;
+	@_ ? ($req->{snip}[$_[0]] || ""): $req->{snip};
+}
+
+=head2 parameters
+
+The request query is returned by the HASH reference.
+
+=over 4
+
+=item * Alias: params
+
+=back
+
+  while (my($key, $value)= each %{$request->params}) {
+    print "$key = $value \n";
+  }
+
+=head2 param ( [KEY], [VALUE] )
+
+When the argument is omitted, the key list of the request query is returned
+with ARRAY.
+
+When KEY is specified, the value of the corresponding request query is returned.
+
+When both KEY and VALUE are given, the value is set.
+
+  my $value= $request->param('param_name');
+  
+  $request->param( in_param => 'in_value' );
+
+=cut
+sub param {
+	my $req= shift;
+	return keys %{$req->parameters} unless @_;
+	my $key= shift;
+	@_ ? $req->parameters->{$key}= shift : $req->parameters->{$key};
+}
+
+=head2 cookie ( [KEY] )
+
+Cookie corresponding to KEY is returned.
+
+Because it is an object that is returned that CGI::Cookie returns, it is
+necessary to use the value method to refer to the value in addition.
+see L<CGI::Cookie>,
+
+  my $cookie= $request->cookie('get_param');
+  
+  my $value = $cookie->value;
+
+=cut
 sub cookie {
 	my $req= shift;
 	my $cookie= $req->cookies;
 	return keys %$cookie if @_== 0;
 	($_[0] && exists($cookie->{$_[0]})) ? $cookie->{$_[0]}: undef;
 }
+
+=head2 cookies
+
+Fetch of L<CGI::Cookie > is returned. * It is HASH reference that returns.
+
+  my $cookies = $request->cookies;
+  
+  while (my($key, $cookie)= each %$cookies) {
+  	print "$key = ". $cookie->value ."\n";
+  }
+
+=cut
 sub cookies {
 	my($req)= @_;
 	$req->{cookies} ||= do { fetch CGI::Cookie || {} };
 }
+
+=head2 cookie_value ( [KEY] )
+
+Caene of the value method of Cookie corresponding to KEY is returned.
+$request-E<gt>cookie([KEY])->value is done in a word at a time.
+
+  my $value= $request->cookie_value('cookie_name');
+
+=cut
 sub cookie_value {
 	my $req= shift;
-	my $key= shift || return(undef);
-	my $cookie= $req->cookies->{$key} || return(undef);
+	my $key= shift || return "";
+	my $cookie= $req->cookies->{$key} || return "";
 	$cookie->value || "";
 }
-sub prepare_params {
-	my($req)= @_;
-	$req->{params}{$_}= $req->r->param($_) for $req->r->param;
-}
-sub prepare {
-	my($req)= @_;
-	my $config= $req->e->config;
 
-	my $path= $ENV{REDIRECT_URI} ? do {
-		$ENV{PATH_INFO} || $ENV{REDIRECT_URI} || '/';
-	  }: do {
-		my $tmp= $ENV{SCRIPT_NAME} || '/';
-		$ENV{PATH_INFO} ? "$tmp$ENV{PATH_INFO}": $tmp;
-	  };
-	$req->path( $path=~m{^/} ? $path: "/$path" );
+=head2 secure
 
-	$req->create_snip($path, $config->{max_snip_deep}) || return 0;
-	$req->prepare_params;
-	1;
-}
-sub create_snip {
-	my $req = shift;
-	my $path= shift || "";
-	my $max = shift || return 0;
-	$path=~s#\s+##g; $path=~s#^/+##; $path=~s#/+$##; $path=~s#//+#/#g;
-	my @snip= split /\//, $path;
-	scalar(@snip)> $max ? 0: $req->e->snip(\@snip);
-}
-sub header {
-	my $req = shift;
-	my $name= lc(shift) || return "";
-	$name=~s/\-/_/g;
-	eval { return $req->$name };
-}
+True is returned concluding that the SSL communication is done when HTTPS
+of the environment variable is effective or 'SERVER_PORT' is 443.
+
+=cut
 sub secure {
-	my($req)= @_;
-	$req->{secure}
-	 ||= (($ENV{HTTPS} && lc($ENV{HTTPS}) eq 'on')
-	   || ($ENV{SERVER_PORT} && $ENV{SERVER_PORT}== 443)) ? 1: 0;
+	$_[0]->{secure} ||= (
+	     ($ENV{HTTPS} && lc($ENV{HTTPS}) eq 'on')
+	  || ($ENV{SERVER_PORT} && $ENV{SERVER_PORT}== 443)
+	  ) ? 1: 0;
 }
+
+=head2 scheme
+
+If $request-E<gt>secure is true,
+'Https' is returned though 'Http' returns usually.
+
+=cut
 sub scheme {
-	my($req)= @_;
-	$req->{scheme} ||= $req->secure ? 'https': 'http';
+	$_[0]->{scheme} ||= $_[0]->secure ? 'https': 'http';
 }
+
+=head2 uri
+
+The result of assembling URI based on $request-E<gt>path is returned.
+
+=over 4
+
+=item * Alias: url
+
+=back
+
+=cut
 sub uri {
 	my($req)= @_;
 	$req->{uri} ||= do {
@@ -121,29 +500,14 @@ sub uri {
 		$uri->canonical;
 	 };
 }
-sub remote_addr { $ENV{REMOTE_ADDR} || '127.0.0.1' }
-sub args        { $ENV{QUERY_STRING} || $ENV{REDIRECT_QUERY_STRING} || "" }
-sub user_agent  { $ENV{HTTP_USER_AGENT} || "" }
-sub protocol    { $ENV{SERVER_PROTOCOL} }
-sub user        { $ENV{REMOTE_USER} || "" }
-sub method      { $ENV{REQUEST_METHOD} || 'GET' }
-sub server_port { $ENV{SERVER_PORT} || 80 }
-sub server_name { $ENV{SERVER_NAME} }
-sub script_name { $ENV{SCRIPT_NAME} || "" }
-sub request_uri { $ENV{REQUEST_URI} || "" }
-sub path_info   { $ENV{PATH_INFO} || "" }
-sub https       { $ENV{HTTPS} || "" }
-sub referer     { $ENV{HTTP_REFERER} || "" }
-sub accept_encoding { $ENV{HTTP_ACCEPT_ENCODING} || "" }
-sub host { $ENV{HTTP_HOST} || $ENV{SERVER_NAME} || '127.0.0.1' }
-sub host_name {
-	my($req)= @_;
-	$req->{host_name} ||= do {
-		my $host= $req->host;
-		$host=~s{\:\d+$} [];
-		$host;
-	  };
-}
+
+=head2 remote_host
+
+If environment variable 'REMOTE_HOST' is obtained, the value is returned.
+If it is not good, gethostbyaddr is called and acquisition is tried.
+Finally, $request-E<gt>remote_addr is returned.
+
+=cut
 sub remote_host {
 	my($req)= @_;
 	$req->{remote_host} ||= do {
@@ -152,202 +516,67 @@ sub remote_host {
 		 || $req->remote_addr;
 	 };
 }
-sub result_status { $_[1] || 403 }
 
-1;
+=head2 host_name
 
-__END__
+As for the value that $request-E<gt>host returns, the port number is sometimes
+included.  This method returns the host name that doesn't contain the port
+number without fail.
 
-=head1 NAME
+=cut
+sub host_name {
+	my($req)= @_;
+	$req->{host_name} ||= do {
+		my $host= $req->host;
+		$host=~s{\:\d+$} [];
+		$host;
+	  };
+}
 
-Egg::Request - Exclusive module of WEB request processing.
+=head2 host
 
-=head1 SYNOPSIS
+'HTTP_HOST' of the environment variable or 'SERVER_NAME' is returned.
 
- # Access from Egg to this object.
- $e->request  or $e->res;
- 
- # get query.
- my $param= $request->params;
- my $foo= $param->{foo};
-   or
- my $foo= $request->param('foo');
- 
- # get cookie string.
- my $cookie= $request->cookie([COOKIE NAME]);
-   or
- my $cookie= $request->cookies->{[COOKIE NAME]};
-   and
- my $foge= $cookie->value;
- 
- # get request path
- # * / enters the head without fail.
- my $path= $request->path;
- 
- etc..
+Default is 'localhost',
 
-=head1 DESCRIPTION
+=cut
+sub host { $ENV{HTTP_HOST}    || $ENV{SERVER_NAME} || 'localhost' }
 
-Query parameters are united by the character-code set with $e->config->{character_in}.
+=head2 args
 
-If $e->config->{character_in} is undefined, it treats as 'euc'.
+The value of 'QUERY_STRING' of the environment variable or 'REDIRECT_QUERY_STRING'
+is returned.
 
-=head1 METHODS
+=cut
+sub args { $ENV{QUERY_STRING} || $ENV{REDIRECT_QUERY_STRING} || "" }
 
-=head2 $request->r;
+=head2 response
 
-Accessor to object for Request processing.
+It is an accessor to the Egg::Response object.
 
-=head2 $request->parameters  or $request->params;
-
-Request query is returned by the HAHS reference.
-
-=head2 $request->param([PARAM NAME]);
-
-Request query is returned. does general operation.
-
-=head2 $request->create_snip([PATH]);
-
-It tries to make $e->snip.
-
-example of dispatch.
-
- $e->request->create_snip( $e->request->param('path') );
- 
- my $dir= $e->snip->[0] || return qw{ Root };
- 
- ... ban, ban, ban.
-
-=head2 $request->secure;
-
-It becomes true at the request to SSL or Port 443.
-
-=head2 $request->scheme;
-
-Scheme of URL is returned.  http or https
-
-=head2 $request->path;
-
-request path is returned. '/' enters the head without fail.
-
-=head2 $request->cookie([COOKIE NAME]);
-
-scalar object of cookie is restored.
-
-In addition, when the value is taken out, value is used.
-
-=head2 $request->cookies;
-
-HASH reference of Cookie is returned.
-
-=head2 $request->cookie_value ([COOKIE NAME])
-
-The cookie is received, and the content of the specified key is returned.
-
-  if (my $value= $request->cookie_value('foo')) {
-    ... It succeeded in the receipt.
-  }
-
-=head2 $request->header([NAME]);
-
-It moves like wrapper to the methods such as $request->uri and $request->user_agent.
-
-It is scheduled to change to HTTP::Headers->header here.
-
-=head2 $request->uri;
-
-Request uri assembled by the URI module is returned.
-
-=head2 $request->remote_addr  or $request->address;
-
-$ENV{REMOTE_ADDR} is returned.
-
-=head2 $request->args;
-
-$ENV{QUERY_STRING} is returned.
-
-=head2 $request->user_agent  or $request->agent;
-
-$ENV{HTTP_USER_AGENT} is returned.
-
-=head2 $request->protocol;
-
-$ENV{SERVER_PROTOCOL} is returned.
-
-=head2 $request->user;
-
-$ENV{REMOTE_USER} is returned.
-
-=head2 $request->method;
-
-$ENV{REQUEST_METHOD} is returned.
-
-=head2 $request->is_post
-
-When $request->method is POST, it becomes ture.
-
-=head2 $request->is_get
-
-When $request->method is GET, it becomes ture.
-
-=head2 $request->server_port  or $request->port;
-
-$ENV{SERVER_PORT} is returned.
-
-=head2 $request->server_name;
-
-$ENV{SERVER_NAME} is returned.
-
-=head2 $request->request_uri;
-
-$ENV{REQUEST_URI} is returned.
-
-=head2 $request->path_info;
-
-$ENV{PATH_INFO} is returned.
-
-=head2 $request->https
-
-$ENV{HTTPS} is returned.
-
-=head2 $request->referer;
-
-$ENV{HTTP_REFERER} is returned.
-
-=head2 $request->accept_encoding;
-
-$ENV{HTTP_ACCEPT_ENCODING} is returned.
-
-=head2 $request->host;
-
-$ENV{HTTP_HOST} or $ENV{SERVER_NAME} is returned.
-
-=head2 $request->host_name;
-
-Host name of the WEB server is returned.
-
-=head2 $request->remote_host;
-
-$ENV{REMOTE_HOST} is returned.
-
-When hostname_lookup is off, acquisition is tried by gethostbyaddr().
+=cut
+sub response { $_[0]->{response} ||= $_[0]->e->response }
 
 =head1 SEE ALSO
 
 L<CGI::Cookie>,
-L<Egg::Response>
-L<Egg::Release>
+L<Egg::Request::CGI>
+L<Egg::Request::FastCGI>
+L<Egg::Response>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

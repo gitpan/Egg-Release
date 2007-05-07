@@ -1,78 +1,53 @@
 package Egg::Plugin::Charset;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Charset.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Charset.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-
-our $VERSION = '0.01';
-
-sub output_content {
-	my($e)= @_;
-	return $e->next::method unless $e->_charset_convert_type;
-	my $body= $e->response->body || return $e->next::method;
-	$e->response->body( $e->_output_convert_charset($body) );
-	$e->next::method;
-}
-sub _charset_convert_type {
-	Egg::Error->throw
-	  (q{ Method of '_charset_convert_type' is not prepared. });
-}
-sub _charset_convert_type {
-	Egg::Error->throw
-	  (q{ Method of '_charset_convert_type' is not prepared. });
-}
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg::Plugin::Charset - Base class for module related to Charset for Egg.
-
-=head1 SYNOPSIS
-
-  package MYPROJECT;
-  use strict;
-  use Egg qw/Charset::UTF8/;
-
-my $config= __PACKAGE__->load('/path/to/config.yaml');
+Egg::Plugin::Charset - Base class for Charset plugin.
 
 =head1 DESCRIPTION
 
-This module is a base class for Egg::Plugin::Charset::*.
+It is a base class for the Charset plugin.
 
-Please use it by way of the subclass. Anything cannot be done in the unit.
+When '_convert_body' method is not prepared in the Charset plugin, the exception
+is generated.
 
-'Content-Type' and 'Content-Language' are setup when outputting it, and the
-character-code of contents is adjusted.
+=cut
+use strict;
+use warnings;
 
-An original subclass can be made by handling the helper.
+our $VERSION = '2.00';
 
-* Please see L<Egg::Helper::P::Charset> in detail.
+sub _finalize_output {
+	my($e)= @_;
+	$e->_convert_body( $e->response->body );
+	$e->next::method;
+}
+sub _convert_body { die q{ Absolute method is not found. } }
 
 =head1 SEE ALSO
 
-L<Egg::Helper::P:Charset>,
-L<Egg::Plugin::Charset::EUT8>,
+L<Egg::Plugin::Charset::UTF8>,
 L<Egg::Plugin::Charset::EUC_JP>,
 L<Egg::Plugin::Charset::Shift_JIS>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 Bee Flag, Corp. <L<http://egg.bomcity.com/>>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

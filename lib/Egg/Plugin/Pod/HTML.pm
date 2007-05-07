@@ -1,62 +1,174 @@
 package Egg::Plugin::Pod::HTML;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: HTML.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: HTML.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Plugin::Pod::HTML - pod2html for Egg Plugin.
+
+=head1 SYNOPSIS
+
+  use Egg qw/ Pod::HTML /;
+  
+  __PACKAGE__->egg_startup(
+    ...
+    .....
+  
+    plugin_pod2html => {
+      pod_libs    => [qw{ /path/to/lib /path/to/perl-lib }],
+      output_code => 'utf8',
+      },
+  
+    );
+  
+  __PACKAGE__->run_modes(
+    ...
+    .....
+  
+  #
+  # The request named/pod/[MODULE_NAME] is caught.
+  # Refer to [MODULE_NAME] by $e->snip(1).
+  #
+    pod => sub {
+      my($d, $e)= @_;
+      my $pod_body= $e->pod2html( $e->snip(1) );
+      
+      # If $e->finished(NOT_FOUND) etc. are not done, body is set.
+      $e->response->body($pod_body) unless $e->finished;
+      },
+  
+    );
+
+=head1 DESCRIPTION
+
+It is a plugin to output the pod document as contents. 
+
+=head1 CONFIGURATION
+
+The item name of the setting is 'plugin_pod2html'.
+
+=head2 cmd_path => [COMAND_PATH],
+
+PATH to pod2html command.
+
+Acquisition is tried by L<File::Which> when omitted.
+Default when failing in acquisition is '/usr/bin/pod2html'.
+
+  cmd_path => '/usr/local/bin/pod2html',
+
+=head2 pod_libs => [LIN_DIR_ARRAY],
+
+PATH list of place in which it looks for Pod document.
+
+  pod_libs => [qw{ /usr/lib/perl5/5.8.0 /home/perl-lib }],
+
+=head2 extension => [FILE_EXTENSION],
+
+Extension of Pod document file of object.
+
+Default is 'pm'.
+
+  extension => 'pod',
+
+=head2 output_code => [ENCODE_CODE],
+
+When L<Egg::Plugin::Encode> is loaded, it is possible to set it.
+
+It is invalid when there is no $e-E<gt> "[ENCODE_CODE]_conv" method.
+
+  output_code => 'utf8',
+
+* When this setting is undefined, Pod is output as it is.
+
+=cut
 use strict;
+use warnings;
 use Egg::Const;
+use File::Temp;
 
-our $VERSION = '0.01';
+our $VERSION = '2.00';
 
-sub setup {
+sub _setup {
 	my($e)= @_;
-	my $config= $e->config->{plugin_pod2html} ||= {};
-	unless ($config->{bin_path}) {
-		File::Which->require
-		  and $config->{bin_path}= &File::Which::which('pod2html');
-		$config->{bin_path} ||= '/usr/bin/pod2html';
+	my $conf= $e->config->{plugin_pod2html} ||= {};
+	unless ($conf->{cmd_path}) {
+		require File::Which;
+		$conf->{cmd_path}= &File::Which::which('pod2html')
+		                || '/usr/bin/pod2html';
 	}
-	$config->{lib_path}
-	  || Egg::Error->throw(q/I want plugin_pod2html->{lib_path}/);
-	$config->{extension} ||= '.pm';
+	$conf->{pod_libs}  || die q{ I want plugin_pod2html->{pod_libs} };
+	$conf->{extension} ||= 'pm';
+
+	my $ocode;
+	if ($ocode= $conf->{output_code}
+	   and $e->isa('Egg::Plugin::Encode')
+	   and $e->can("${ocode}_conv")
+	   ) {
+		my $conv= "${ocode}_conv";
+		no warnings 'redefine';
+		*_podout_conv= sub {
+			my($egg, $str)= @_;
+			$$str= $egg->$conv($str);
+			$str;
+		  };
+		$e->debug_out("# + pod2html output code setup : ${ocode}");
+	}
+
 	$e->next::method;
 }
+
+=head1 METHODS
+
+=head2 pod2html ( [MODULE_NAME], [OPTION_HASH] )
+
+If MODULE_NAME is found in pod_libs, the HTML source is returned by the
+SCALAR reference.
+
+If MODULE_NAME cannot be recognized as a module name, $e->finished(FORBIDDEN)
+is returned.
+Another and '-' of usual ':' are allowed in the delimiter of MODULE_NAME.
+
+When MODULE_NAME is not found, $e->finished(NOT_FOUND) is returned.
+
+Can it pass to the pod2html command in OPTION_HASH, and following option be
+specified.
+
+  backlink, css, header, hiddendirs, index, quiet, recurse, verbose,
+
+  pod => sub {
+     my($d, $e)= @_;
+     my $body= $e->pod2html('Egg::Plugin::Pod::HTML');
+     $e->response->body($body) unless $e->finished;
+   },
+
+=cut
 sub pod2html {
 	my $e = shift;
 	my $pm= shift || return $e->finished( NOT_FOUND );
 	return $e->finished( FORBIDDEN ) if $pm!~/^[A-Za-z_][A-Za-z0-9_\-\:]+$/;
 
-	File::Temp->require;
 	my $arg = shift || {};
-	my $cf  = $e->config->{plugin_pod2html};
-	my $base= $arg->{lib_path} || $cf->{lib_path};
-	my $ext = $arg->{extension} || $cf->{extension};
+	my $conf= $e->config->{plugin_pod2html};
+	my $base= $arg->{pod_libs}  || $conf->{pod_libs};
+	my $ext = $arg->{extension} || $conf->{extension};
+	   $ext =~s{^\.} [];
 	my $file= $pm; $file=~s{[\:\-]+} [/]g;
 	my $temp= &File::Temp::tempdir( CLEANUP=> 1 );
-	my $result_func;
-	if ($cf->{output_code}) {  # 'euc' or 'sjis' or 'utf8'.
-		my $code= "$cf->{output_code}_conv";
-		$result_func= sub {
-			${$_[0]}= $e->$code($_[0]);
-			return $_[0];
-		  };
-	} else {
-		$result_func= sub { $_[0] };
-	}
 	my $infile;
 	my @inc= @INC;
 	ref($base) ? splice @inc, 0, 0, @$base
 	           : unshift @inc, $base;
 	for (@inc) {
-		next unless -f "$_/$file$ext";
-		$infile= "$_/$file$ext";
+		next unless -f "$_/$file.$ext";
+		$infile= "$_/$file.$ext";
 		last;
 	}
 	$infile || return $e->finished( NOT_FOUND );
 
-	my $opt= Egg::Plugin::Pod::HTML::options->new($arg, $cf);
+	my $opt= Egg::Plugin::Pod::HTML::options->new($arg, $conf);
 
 	for (qw/backlink/) { $opt->set($_, 1) }
 	for (qw/css/) { $opt->set($_) }
@@ -69,18 +181,53 @@ sub pod2html {
 
 	my $result= $opt->output($e) || return $e->finished( FORBIDDEN );
 
-	return $result_func->($result);
+	$e->_podout_conv($result);
 }
+
+=head2 pod2html_body ( [MODULE_NAME], [OPTION_HASH] )
+
+It deletes from HTML received from 'pod2html' method excluding
+E<lt>bodyE<gt> ... E<lt>/bodyE<gt> part and it returns it.
+
+When the Pod document is built into arbitrary contents, this is convenient.
+
+  pod => sub {
+     my $body= $e->pod2html_body('Egg::Plugin::Pod::HTML');
+     $e->view->param( pod_body => sub { $$body || "" } ) unless $e->finished;
+   },
+  
+  #
+  # And, it builds it in the pod.tt template.
+  #
+
+=cut
 sub pod2html_body {
 	my $result= shift->pod2html(@_);
-	$$result=~s{^.+?<body.*?>} []is;
+	$$result=~s{^.+?<body.*?>}  []is;
 	$$result=~s{</body.*?>.*?$} []is;
-	return $result;
+	$result;
 }
+
+sub _podout_conv { $_[1] }
+
 
 package Egg::Plugin::Pod::HTML::options;
 use strict;
 use base qw/Class::Accessor::Fast/;
+
+=head1 OPTIONS METHODS
+
+It is a method for the construction of the option of pod2html.
+This is not the one preparing it to call it from the outside by the one that
+this module uses.
+
+=over 4
+
+=item * new, set, set_flag, push_option, output,
+
+=back
+
+=cut
 
 __PACKAGE__->mk_accessors( qw/arg conf/ );
 
@@ -116,7 +263,7 @@ sub push_option {
 }
 sub output {
 	my($self, $e)= @_;
-	my $bin= $self->conf->{bin_path};
+	my $bin= $self->conf->{cmd_path};
 	my $option= join ' ', @{$self->{options}};
 	$e->debug_out("# + pod2html cmd line: $bin $option");
 	open OUT, "$bin $option |" || return 0;  ## no critic
@@ -125,60 +272,12 @@ sub output {
 	return \$result;
 }
 
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Plugin::Pod::HTML - pod2html for Egg.
-
-=head1 SYNOPSIS
-
-Contoller.
-
-  package MYPROJECT;
-  use strict;
-  use Egg qw/Pod::HTML/;
-
-Configuration.
-
-  plugin_pod2html => {
-    lib_path=> [qw{ /home/lib /home/perl-lib }],
-    },
-
-Dispatch.
-
-  __PACKAGE__->run_modes(
-  
-    pod => sub {
-      my($dispat, $e)= @_;
-      my $body= $e->pod2html( $e->snip(1) ) || return $e->finished( 404 );
-      $e->response->body( $body );
-      },
-  
-    );
-
-Request url.
-
-  http://domain.name/pod/HTML::Mason
-
-=head1 METHODS
-
-=head2 pod2html ([MODULE_NAME], [ARGS])
-
-The result of the return of 'pod2html' command is returned by the SCALAR reference.
-
-  my $html= $e->pod2html('CGI::Cookie');
-
-=head2 pod2html_body ([MODULE_NAME], [ARGS])
-
-The part of '<body> ... </body>' is returned from the result of pod2html.
-
-  my $body= $e->pod2html_body('CGI::Cookie');
-
 =head1 SEE ALSO
 
+L<File::Temp>,
+L<File::Which>,
+L<Egg::Plugin::Encode>,
+L<Egg::Const>,
 L<Egg::Release>,
 
 =head1 AUTHOR
@@ -194,3 +293,5 @@ it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

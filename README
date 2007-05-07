@@ -1,4 +1,4 @@
-Egg::Release - WEB application framework.
+Egg::Release.
 =================================================
 
 The README is used to introduce the module and provide instructions on
@@ -18,51 +18,54 @@ INSTALLATION
 
   perl -MCPAN -e 'install Module::Install'
 
-1. To install this module type the following:
+1. To install this module type the following.
 
-   perl Makefile.PL
-   make
-   make test
-   make install
+  perl Makefile.PL
+  make
+  make test
+  make install
 
-   or
+  or
 
-   perl Build.PL
-   ./Build
-   ./Build test
-   ./Build install
+  perl Build.PL
+  ./Build
+  ./Build test
+  ./Build install
 
-2. Create your project files.
+2. Helper script is generated.
 
+  perl -MEgg::Helper -e "Egg::Helper->out" > /path_to/bin/egg_helper.pl
+  
+  chmod 755 /path_to/bin/egg_helper.pl
 
-   ## Helper script is generated.
-   
-   perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/egg_helper.pl
-   
-   chmod 755 /path/to/egg_helper.pl
-   
-   * We will recommend environment variable PERL_PATH to be set before
-     the above is executed.
+  * We will recommend environment variable PERL_PATH to be set before
+    the above is executed.
 
-   # export PERL_PATH=/usr/bin/perl
+  # export PERL_PATH=/usr/bin/perl
 
+3. Project is generated.
 
-   ## Project is generated.
-   
-   /path/to/egg_helper.pl Project:[PROJECT_NAME] -o [/path/to/output]
-   
-   * -o When the option is omitted, it outputs it to current dir.
+  /path_to/bin/egg_helper.pl Project:[NEW_PROJECT_NAME] -o [/home/project]
+
+  * -o When the option is omitted, it outputs it to current dir.
+
+  * Please confirm the operation of the project.
+
+  cd /home/project/[NEW_PROJECT_NAME]/bin
+
+  perl trigger.cgi
 
 
 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2006 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Put the correct copyright and licence information here.
+
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
-Put the correct copyright and licence information here.

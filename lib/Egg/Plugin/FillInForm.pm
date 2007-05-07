@@ -1,127 +1,110 @@
 package Egg::Plugin::FillInForm;
 #
-# Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: FillInForm.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: FillInForm.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-use HTML::FillInForm;
-
-our $VERSION = '0.03';
-
-sub setup {
-	my($e)= @_;
-	$e->mk_accessors('fillin_ok');
-	my $conf= $e->config->{plugin_fillinform} ||= {};
-	if ( $e->isa('Egg::Plugin::FormValidator')
-	  || $e->isa('Egg::Plugin::FormValidator::Simple')
-	  || $e->isa('Catalyst::Plugin::FormValidator')
-	  ) {
-		$e->flags->{EGG_FILLINFORM_CODE}= sub {
-			my($egg)= @_;
-			$egg->fillform()
-			  if $egg->form->has_missing
-			  || $egg->form->has_invalid
-			  || $egg->stash->{error};
-		  };
-	}
-	$e->next::method;
-}
-sub fillform {
-	my $e= shift;
-	my $body= shift || $e->response->body || return 0;
-	my $fdat= @_ ? ($_[1] ? {@_}: $_[0]): $e->request->params;
-
-	$body= \$body unless ref($body);
-	$e->response->body(
-	  HTML::FillInForm->new->fill(
-	    scalarref=> $body,
-	    fdat=> $fdat,
-	    %{$e->config->{plugin_fillinform}},
-	    )
-	  );
-}
-sub finalize {
-	my($e)= @_;
-	if ($e->fillin_ok) {
-		$e->fillform();
-	} elsif (my $code= $e->flags->{EGG_FILLINFORM_CODE}) {
-		$code->($e);
-	}
-	$e->next::method;
-}
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg::Plugin::FillInForm - FillInForm for Egg.
+Egg::Plugin::FillInForm - HTML::FillInForm for Egg.
 
 =head1 SYNOPSIS
 
-  package MYPROJECT;
-  use strict;
-  use Egg qw{ FillInForm };
-
-Example of code.
-
-  $e->fillform(\$body, { name=> 'value' });
+  use Egg qw/ FillInForm /;
   
+  __PACKAGE__->egg_startup(
+  
+    plugin_fillinform => {
+      fill_password => 0,
+      ignore_fields => [qw{ param1 param2 }],
+      ...
+      },
+  
+  );
+
+  # When outputting it, HTML::FillInForm is processed.
   $e->fillin_ok(1);
 
 =head1 DESCRIPTION
 
-This module buries the value under the form by using L<HTML::FillInForm>.
+It is a plugin to use L<HTML::FillInForm>.
 
-When this code was made, L<Catalyst::Plugin::FillInForm> was imitated.
+The setting is defined in 'Plugin_fillinform' with HASH.
 
-* Please see the document of L<HTML::FillInForm> about a detailed explanation.
+All set values extend to L<HTML::FillInForm>.
 
-=head1 CONFIGURATION
+Please refer to the document of L<HTML::FillInForm> for details.
 
-If the option of HTML::FillInForm is written in 'plugin_fillinform', it is passed as it is. 
+=cut
+use strict;
+use warnings;
+use HTML::FillInForm;
+use base qw/Class::Accessor::Fast/;
 
-  plugin_fillinform=> {
-    fill_password=> 0,
-    ignore_fields=> [qw{ param1 param2 }],
-    ...
-    },
+our $VERSION = '2.00';
 
 =head1 METHODS
 
-=head2 $e->fillform([BODY], [HASH_REF]);
+=head2 fillin_ok ( [BOOL] )
 
-The burial in the form is processed.
+$e-E<gt>fillform is called immediately before the output of contents when an 
+effective value is set.
 
-When [BODY] is omitted, $e->response->body is used.
-In addition, if $e->response->body is undefined, 0 is returned and it ends.
+* The call of $e-E<gt>fillform becomes effective at the Validate error if
+  L<Egg::Plugin::FormValidator::Simple > is read at the same time.
 
-When [HASH_REF] is omitted, $e->request->params is used. 
+  $e->fillin_ok(1);
 
-=head2 $e->fillin_ok([BOOLEAN]);
+=cut
+__PACKAGE__->mk_accessors(qw/ fillin_ok /);
 
-When it is called that the processing of Egg ends ,in a word, finalize,
- $e->fillform is executed if this is true.
+sub _setup {
+	my($e)= @_;
+	if ($e->isa('Egg::Plugin::FormValidator::Simple')) {
+		no warnings 'redefine';
+		*_valid_error= sub {
+			my($egg)= @_;
+			return ( $egg->stash->{error}
+			      || $egg->form->has_missing
+			      || $egg->form->has_invalid ) ? 1: 0;
+		  };
+	}
+	$e->next::method;
+}
 
-=head2 finalize
+=head2 fillform ( [CONTENT_REF], [PARAM_HASH] )
 
-This method is called from Egg. There is no thing that the user calls.
+L<HTML::FillInForm > is processed for CONTENT_REF.
 
-If $e->form->has_missing or $e->form->has_invalid or $e->stash->{error} is true when
- L<Egg::Plugin::FormValidator>, L<Egg::Plugin::FormValidator::Simple>,
- L<Catalyst::Plugin::FormValidator> are read, $e->fillform is executed.
+CONTENT_REF is SCALAR always reference. 
+
+When PARAM_HASH is omitted, $e-E<gt>request-E<gt>params is used.
+
+  $e->fillform( \$content, \%param );
+
+=cut
+sub fillform {
+	my $e   = shift;
+	my $body= shift || $e->response->body || return 0;
+	my $fdat= @_ ? ($_[1] ? {@_}: $_[0]): $e->request->params;
+	return 0 unless %$fdat;
+	$e->response->body( HTML::FillInForm->new->fill(
+	  scalarref => $body, fdat => $fdat,
+	  %{$e->config->{plugin_fillinform}},
+	  ) );
+}
+sub _finalize {
+	my($e)= @_;
+	$e->fillform if ( $e->fillin_ok or $e->_valid_error );
+	$e->next::method;
+}
+sub _valid_error { 0 }
 
 =head1 SEE ALSO
 
 L<HTML::FillInForm>,
 L<Catalyst::Plugin::FillInForm>,
-L<Catalyst::Plugin::FormValidator>,
-L<Catalyst::Plugin::FormValidator::Simple>,
-L<Egg::Plugin::FormValidator>,
 L<Egg::Plugin::FormValidator::Simple>,
 L<Egg::Release>,
 
@@ -139,3 +122,4 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
+1;

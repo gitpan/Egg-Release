@@ -1,166 +1,152 @@
 package Egg::Plugin::Upload;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Upload.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Upload.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Plugin::Upload - Plugin to support file upload.
+
+=head1 DESCRIPTION
+
+This is a base class for the file upload plugin.
+
+However, it is good only to describe Upload in Egg.
+The subclass judges the environment and reads by the automatic operation.
+
+=cut
 use strict;
 use warnings;
+use UNIVERSAL::require;
+use Egg::View;
 
-our $VERSION= '0.03';
+our $VERSION= '2.00';
 
-sub setup {
+sub _setup {
 	my($e)= @_;
-	Egg::Plugin::Upload::base->__setup($e);
+
+	my $version;
+	my $handler= ($version= $e->mp_version)
+	   ? 'Egg::Plugin::Upload::ModPerl': 'Egg::Plugin::Upload::CGI';
+	$handler->require or die $@;
+
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
+	push @{"$handler\::ISA"}, 'Egg::Plugin::Upload::handler';
+	*Egg::Request::upload= sub { $handler->new(@_) || 0 };
+
+	$handler->_startup($version);
+
+	$Egg::View::PARAMS{upload_enctype}= q{ enctype="multipart/form-data"};
+
 	$e->next::method;
 }
 
-package Egg::Plugin::Upload::base;
+
+package Egg::Plugin::Upload::handler;
 use strict;
-use UNIVERSAL::require;
+use warnings;
+use Carp qw/croak/;
 use base qw/Class::Accessor::Fast/;
 
 __PACKAGE__->mk_accessors( qw/name handle/ );
 
-*fh= \&handle;
+=head1 UPLOAD METHODS
 
-sub __setup {
-	my($class, $e)= @_;
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	my $request= $e->global->{REQUEST_CLASS}
-	  || Egg::Error->throw('The request class cannot acquire it.');
+$e-E<gt>request-E<gt>upload で受け取った オブジェクトで使用できるメソッドです。
 
-	*{"$request\::upload"}= sub {
-		my $req= shift;
-		__PACKAGE__->new($req, @_) || 0;
-	  };
+=head2 new
 
-	my $base;
-	if (my $version= $Egg::MOD_PERL_VERSION) {
-		$base= $version>= 1.99922
-		  ? 'Egg::Plugin::Upload::MP20': 'Egg::Plugin::Upload::MP13';
-	} else {
-		$base= 'Egg::Plugin::Upload::CGI';
-	}
-	$base->require or Egg::Error->throw($@);
-	unshift @{__PACKAGE__."::ISA"}, $base;
+Constructor who returns up-loading object.
 
-	if (Egg::View->require) {
-		$Egg::View::PARAMS{enctype}= q{ enctype="multipart/form-data"};
-	}
-}
+=cut
 sub new {
-	my($class, $req, $name)= @_;
-	$req->{uploads} ||= [];
-	$name || Egg::Error->throw(__PACKAGE__. q/ : I want a form name./);
-	my $handle= $req->r->upload($name) || return;
+	my($class, $req)= splice @_, 0, 2;
+	my $name  = shift || croak q{ I want upload param name. };
+	my $handle= $req->r->upload($name) || return 0;
 	bless { name=> $name, r=> $req->r, handle=> $handle }, $class;
 }
+
+=head2 name
+
+パラメータ名を返します。
+
+=over 4
+
+=item * Alias: key
+
+=back
+
+=cut
+*key = \&name;
+
+=head2 handle
+
+The file steering wheel of the preservation file is temporarily returned.
+
+=over 4
+
+=item * Alias: fh
+
+=back
+
+=cut
+*fh = \&handle;
+
+=head2 catfilename
+
+Only the file name that doesn't contain PATH is returned.
+
+=cut
 sub catfilename {
 	my($up)= @_;
 	my $filename= $up->filename || return;
 	$filename=~m{([^\\\/]+)$} ? $1: undef;
 }
+
+=head2 copy_to ( [COPY_PATH] )
+
+The preservation file is temporarily copied onto COPY_PATH.
+
+=cut
 sub copy_to {
 	my $up= shift;
 	File::Copy->require;
 	File::Copy::copy($up->tempname, @_);
 }
+
+=head2 link_to ( [LINK_PATH] )
+
+The hard link of the preservation file is temporarily made.
+
+=cut
 sub link_to {
 	my $up= shift;
 	link($up->tempname, @_);
 }
 
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Plugin::Upload - The file uploading is supported. 
-
-=head1 SYNOPSIS
-
- package [MYPROJECT];
- use strict;
- use Egg qw/-Debug Upload/;
-
- if ( my $upload= $e->request->upload('field_name') ) {
- 
- 	my $filename= $upload->catfilename;
- 
- 	# It copies it to an arbitrary place. 
- 	$upload->copy_to( "/path/to/save/$filename" );
- }
-
-=head1 DESCRIPTION
-
-Request driver behavior can be adjusted by setting TEMP_DIR, POST_MAX etc.
-
-=head1 METHODS
-
-upload and uploads are added as a method of Egg::Request.
-
-=head2 my $upload= $e->request->upload([FIELD_NAME]);
-
-The upload object specified by [FIELD_NAME] is returned. 
-
-Undefined returns if there is no specified upload.
-
- my $upload= $e->request->upload( 'upload_name' );
-
-=head2 $upload->filename
-
-The upload file name is returned.
-
-=head2 $upload->tempname
-
-Path where the file has been temporarily preserved is returned.
-
-=head2 $upload->size
-
-The size of the upload file is returned.
-
-=head2 $upload->type
-
-The contents type of the upload file is returned.
-
-=head2 $upload->info
-
-The HASH reference of various information concerning the up-loading file returns.
-
-=head2 $upload->catfilename
-
-$upload->filename seems to return in shape that local PATH of the client is included
- in case of mod_perl.
-Then, after only the file name is extracted, this method is returned.
-
-=head2 $upload->copy_to
-
-The file is temporarily copied to the specified place.
-
-=head2 $upload->link_to
-
-The hard link of files is temporarily made for the specified place.
+sub _startup { }
 
 =head1 SEE ALSO
 
-L<Egg::Request::Apache>,
-L<Egg::Request::CGI>,
+L<Egg::Plugin::Upload::CGI>,
+L<Egg::Plugin::Upload::ModPerl>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 by Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

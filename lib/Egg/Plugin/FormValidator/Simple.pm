@@ -1,16 +1,79 @@
 package Egg::Plugin::FormValidator::Simple;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Simple.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: Simple.pm 96 2007-05-07 21:31:53Z lushe $
 #
+
+=head1 NAME
+
+Egg::Plugin::FormValidator::Simple - Validator for Egg with FormValidator::Simple
+
+=head1 SYNOPSIS
+
+  use Catalyst qw/ FormValidator::Simple FillInForm /;
+  
+  __PACKAGE__->egg_startup(
+  
+  plugin_validator => {
+    plugins => ['CreditCard', 'Japanese'],
+    options => { charset => 'euc'},
+    },
+  
+  );
+
+  $e->form(
+    param1 => [qw/NOT_BLANK ASCII/, [qw/LENGTH 4 10/]],
+    param2 => [qw/NOT_BLANK/, [qw/JLENGTH 4 10/]],
+    mail1  => [qw/NOT_BLANK EMAIL_LOOSE/],
+    mail2  => [qw/NOT_BLANK EMAIL_LOOSE/],
+    { mail => [qw/mail1 mail2/] } => ['DUPLICATION'],
+    );
+  
+  print $e->form->valid('param1');
+  
+  if ( some condition... ) {
+     $e->form( other_param => [qw/NOT_INT/] );
+  }
+  
+  if ( some condition... ) {
+     # set your original invalid type.
+     $e->set_invalid_form( param3 => 'MY_ERROR' );
+  }
+  
+  if ( $e->form->has_error ) {
+  
+     if ( $e->form->missing('param1') ) {
+        ...
+     }
+  
+     if ( $e->form->invalid( param1 => 'ASCII' ) ) {
+        ...
+     }
+  
+     if ( $e->form->invalid( param3 => 'MY_ERROR' ) ) {
+        ...
+     }
+  
+  }
+
+=head1 DESCRIPTION
+
+This plugin allows you to validate request parameters with FormValidator::Simple.
+See L<FormValidator::Simple> for more information.
+
+This behaves like as L<Catalyst::Plugin::FormValidator>.
+
+=head2 METHODS
+
+=cut
 use strict;
+use warnings;
 use FormValidator::Simple;
 
-our $VERSION = '0.04';
+our $VERSION = '2.00';
 
-sub setup {
+sub _setup {
 	my($e)= @_;
 	my $conf= $e->config->{plugin_validator} ||= {};
 	if (my $plugins= $conf->{plugins}) {
@@ -27,6 +90,10 @@ sub setup {
 	}
 	$e->next::method;
 }
+
+=head2 form
+
+=cut
 sub form {
 	my $e= shift;
 	$e->{form} ||= FormValidator::Simple->new;
@@ -37,6 +104,10 @@ sub form {
 	}
 	$e->{form}->results;
 }
+
+=head2 set_invalid_form
+
+=cut
 sub set_invalid_form {
 	my $e= shift;
 	$e->{form} ||= FormValidator::Simple->new;
@@ -44,101 +115,290 @@ sub set_invalid_form {
 	$e->{form}->results;
 }
 
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Plugin::FormValidator::Simple - FormValidator::Simple for Egg.
-
-=head1 SYNOPSIS
-
-  package MYPROJECT;
-  use strict;
-  use Egg qw/FormValidator::Simple/;
-
-Example of configuration.
-
-  plugin_validator=> {
-    plugins=> [qw/Japanise/],
-    messages=> {
-      origin_lavel=> {
-        nickname=> {
-          DEFAULT=> 'Please input nickname.',
-          LENGTH => 'nickname input is long.',
-          ...
-          },
-        email=> {
-          DEFAULT=> 'Please input email.',
-          EMAIL  => 'Format of email is mistaken.',
-          ...
-          },
-        ...
-        },
-      },
-    message_format=> .... message format hear.
-    },
-
-Example of code.
-
-  $e->form(
-    nickname=> [qw/NOT_BLANK .../, [qw/LENGTH 3 30/]],
-    email   => [qw/NOT_BLANK EMAIL/],
-    );
-  
-  if ($e->has_error) {
-    for my $message (@{$e->form->messages('origin_lavel')}) {
-      print $message;
-    }
-  } else {
-    ... success code.
-  }
-
-* Please see L<FormValidator::Simple> of use about more detailed information.
-
-=head1 DESCRIPTION
-
-This is a module to do the input check on the form by using L<FormValidator::Simple>.
-
-Please install FormValidator::Simple before using.
-
-  perl -MCPAN -e 'install FormValidator::Simple'
-
-* The installation was effective well for B<Windows> by doing nmake after it had
-  obtained it why. ?
-
-  # The package is obtained.
-  http://search.cpan.org/dist/FormValidator-Simple/
-  
-  # It defrosts and 'nmake' is done when downloading it.
-
-
-When this code was made, L<Catalyst::Plugin::FormValidator::Simple> was imitated.
-
 =head1 CONFIGURATION
 
-=head2 plugins
+set config with 'plugin_validator' key.
 
-The plugin for FormValidator::Simple is enumerated by the ARRAY reference.
+  __PACKAGE__->egg_startup( plugin_validator => { ... } );
 
-=head2 options
+or MyApp::config.pm is edited.
 
-The option of FormValidator::Simple is defined. 
+=head2 PLUGINS
 
-=head2 messages
+If you want to use some plugins for FormValidator::Simple, you can set like following.
 
-The alias of the error message can be defined.
+  plugin_validator => {
+    plugins => [qw/Japanese CreditCard DBIC::Unique/],
+    },
 
-=head2 message_format
+In this example, FormValidator::Simple::Plugin::Japanese, FormValidator::Simple::Plugin::CreditCard,
+and FormValidator::Simple::Plugin::DBIC::Unique are loaded.
 
-The output format of the error message can be defined.
+=head2 OPTIONS
 
-=head1 METHODS
+When you set some options needed by specific validations, do like this.
 
-=head2 $e->form([PARAMETER])
+  plugin_validator => {
+     plugins => [qw/Japanese CreditCard DBIC::Unique/],
+     options => {
+        charset => 'euc',
+        },
+     },
 
-The check on form data is executed.
+=head1 VALIDATION
+
+use 'form' method, see L<FormValidator::Simple> in detail.
+
+  # execute validation.
+  $e->form(
+     name  => [qw/NOT_BLANK ASCII/,       [qw/LENGTH 0 20/] ],
+     email => [qw/NOT_BLANK EMAIL_LOOSE/, [qw/LENGTH 0 20/] ],
+     { unique => [qw/name email/] } => [qw/DBIC_UNIQUE User name email/],
+    );
+  
+  if ( ... ) {
+  
+     # execute validation one more time in specific condition.
+     $e->form( ... );
+  
+  }
+  
+  # check result.
+  # you can pick up result-object with 'form' method
+  
+  my $result = $e->form;
+  
+  if ( $result->has_error ) {
+  
+    # this is same as
+    # if ( $result->has_missing or $result->has_invalid )
+  
+    $e->detach('add');
+  
+  }
+
+=head1 HANDLING SUCCESSFUL RESULT
+
+After it passes all validations, you may wanna put input-data into database.
+It's a elegant way to use [ L<Class::DBI> and L<Class::DBI::FromForm> ] or [ L<DBIx::Class> and L<DBIx::Class::WebForm> ].
+
+  $c->form(
+     name  => [qw/NOT_BLANK/],
+     email => [qw/NOT_BLANK/],
+    );
+  
+  my $result = $c->form;
+  if ( $result->has_error ) {
+     ... error.
+  }
+  
+  my $user = MyProj::Model::DBIC::User->create_from_form($result);
+  
+  # this behaves like this...
+  # MyProj::Model::DBIC::User->create({
+  #    name  => $result->valid('name'),
+  #    email => $result->valid('email'),
+  # });
+  #
+  # if the key exists as the table's column, set the value with 'valid'
+
+Here, I explain about 'valid' method. If the value indicated with key-name passes validations,
+You can get the data with 'valid',
+
+  my $result = $c->form(
+     name  => [qw/NOT_BLANK/],
+     email => [qw/NOT_BLANK/],
+    ); 
+  
+  print $result->valid('name');
+  
+  print $result->valid('email');
+  
+But, this is for only single key validation normally.
+
+  my $result = $c->form(
+     name => [qw/NOT_BLANK/], # single key validation
+     { mail_dup => [qw/email email2/] } => ['DUPLICATION'] # multiple keys one
+    );
+  
+  print $result->valid('name'); # print out the value of 'name'
+  
+  print $result->valid('mail_dup'); # no value.
+
+There are exceptions. These are 'DATETIME', 'DATE'.
+
+  my $result = $c->form(
+     { created_on => [qw/created_year created_month created_day/] }
+     =>
+     [qw/DATETIME/],
+    );
+  
+  print $result->valid('created_on'); #print out datetime string like "2005-11-23 00:00:00".
+
+If you set some class around datetime in configuration. It returns object of the class you indicate.
+You can choose from L<Time::Piece> and L<DateTime>. For example...
+
+   plugin_validator => {
+      validator => {
+        plugins => [...],
+        options => {
+           datetime_class => 'Time::Piece',
+           },
+        },
+     );
+
+or
+
+   plugin_validator => {
+      validator => {
+        plugins => [...],
+        options => {
+           datetime_class => 'DateTime',
+           time_zone      => 'Asia/Tokyo',
+           },
+        },
+     );
+
+then
+
+  my $result = $c->form(
+     { created_on => [qw/created_year created_month created_day/] }
+     =>
+     [qw/DATETIME/],
+    );
+
+  my $dt = $result->valid('created_on');
+  
+  print $dt->ymd;
+  
+  MyProj::Model::CDBI::User->create_from_form($result);
+
+This may be useful when you define 'has_a' relation for datetime columns.
+For example, in your table class inherits 'Class::DBI'
+
+  __PACKAGE__->has_a( created_on => 'DateTime',
+     inflate => ...,
+     deflate => ...,
+    );
+
+And see also L<Class::DBI::Plugin::TimePiece>, L<Class::DBI::Plugin::DateTime>.
+
+=head1 MESSAGE HANDLING
+
+in template file, you can handle it in detail.
+
+    [% IF c.form.has_error %]
+    <p>Input Error</p>
+    <ul>
+    [% IF c.form.missing('name') %]
+    <li>input name!</li>
+    [% END %]
+    [% IF c.form.invalid('name') %]
+    <li>name is wrong</li>
+    [% END %]
+    [% IF c.form.invalid('name', 'ASCII') %]
+    <li>input name with ascii code.</li>
+    [% END %]
+    [% IF c.form.invalid('name', 'LENGTH') %]
+    <li>wrong length for name.</li>
+    [% END %]
+    </ul>
+    [% END %]
+
+or, make it more easy.
+
+    [% IF c.form.has_error %]
+    <p>Input Error</p>
+    <ul>
+    [% FOREACH key IN c.form.error %]
+        [% FOREACH type IN c.form.error(key) %]
+        <li>Invalid: [% key %] - [% type %]</li>
+        [% END %]
+    [% END %]
+    </li>
+    [% END %]
+
+And you can also use messages configuration as hash reference.
+
+  plugin_validator => {
+     plugins  => [...],
+     messages => {
+        user => {
+           name => {
+              NOT_BLANK => 'Input name!',
+              ASCII     => 'Input name with ascii code!',
+              },
+           email => {
+              DEFAULT   => 'email is wrong.!',
+              NOT_BLANK => 'input email.!'
+              },
+           },
+        company => {
+           name => {
+              NOT_BLANK => 'Input name!',
+              },
+           },
+        },
+     },
+
+or YAML file. set file name
+
+  plugin_validator => {
+     plugins  => [...],
+     messages => 'conf/messages.yml',
+     },
+
+and prepare yaml file like following,
+
+    DEFAULT:
+        name:
+            DEFAULT: name is invalid
+    user:
+        name:
+            NOT_BLANK: Input name!
+            ASCII: Input name with ascii code!
+        email:
+            DEFAULT: Email is wrong!
+            NOT_BLANK: Input email!
+    company:
+        name:
+            NOT_BLANK: Input name!
+
+the format is...
+
+    Action1_Name:
+        Key1_Name:
+            Validation1_Name: Message
+            Validation2_Name: Message
+        Key2_Name:
+            Validation1_Name: Message
+    Action2_Name:
+        Key1_Name:
+            ...
+        
+After messages configuration, call messages() method from result-object.
+and set action-name as argument.
+
+    [% IF c.form.has_error %]
+    <ul>
+        [% FOREACH message IN c.form.messages('user') %]
+        <li>[% message %]</li>
+        [% END %]
+    </ul>
+    [% END %]
+
+you can set each message format
+
+    MyApp->config(
+        validator => {
+            messages => 'messages.yml',  
+            message_format => '<p>%s</p>'
+        },
+    );
+
+    [% IF c.form.has_error %]
+        [% c.form.messages('user').join("\n") %]
+    [% END %]
 
 =head1 SEE ALSO
 
@@ -148,14 +408,19 @@ L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
+This code is a transplant of 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
+ of the code of 'L<Catalyst::Plugin::FormValidator::Simple>'.
 
-=head1 COPYRIGHT
+Therefore, the copyright of this code is assumed to be the one that belongs
+ to 'Lyo Kato E<lt>lyo.kato@gmail.comE<gt>'.
 
-Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+=head1 COPYRIGHT AND LICENSE
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.6 or,
-at your option, any later version of Perl 5 you may have available.
+Copyright(C) 2005 by Lyo Kato
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
+
+1;

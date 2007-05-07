@@ -1,118 +1,90 @@
 package Egg::View;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: View.pm 48 2007-03-21 02:23:43Z lushe $
+# $Id: View.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-use base qw/Egg::Component/;
-
-our $VERSION= '0.08';
-
-our %PARAMS= (
-  no_cache_header=>
-      qq{<meta http-equiv="Pragma" content="no-cache">\n}
-    . qq{<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n}
-    . qq{<meta http-equiv="expires" content="0">},
-  );
-
-sub new {
-	my $view = shift->SUPER::new(@_);
-	my %param= %PARAMS;
-	$view->params( \%param );
-	$view;
-}
-sub template_file {
-	my($view, $e)= @_;
-	my $template= $e->template || do {
-		my $path= join('/', @{$e->action}) || do {
-			$e->log->debug( q/I want you to define $e->template./ );
-			$e->finished(404);
-			return(undef);
-		  };
-		$path. $e->config->{template_extention};
-	  };
-	$e->debug_out("# + template file: $template");
-	$template;
-}
-
-1;
-
-__END__
 
 =head1 NAME
 
-Egg::View - Common package for VIEW module.
+Egg::View - Base class only for VIEW.
 
 =head1 SYNOPSIS
 
- package Egg::View::[FOO_TEMPLATE];
- use strict;
- use base qw/Egg::View/;
- use [FOO_TEMPLATE_MODULE];
- 
- sub new {
-   my $view= shift->SUPER::new(@_);
-   ...
-   ... ban, ban.
- }
- sub output {
-   my($view, $e)= @_;
-   my $config  = $e->flag('VIEW_CONFIG_[FOO_TEMPLATE]') || {};
-   my $template= $view->template_file($e) || return;
- 
-   my $body= [FOO_TEMPLATE_MODULE]->output(
-     template=> $template,
-     option  => $config,
-     );
- 
-   $e->response->body( \$body );
- 
-   return 1;
- }
+  use Egg::View;
+  
+  # The parameter that wants to be used by default is set.
+  %Egg::View::PARAMS= (
+    hoge => '......',
+    ....
+    ..
+    );
 
 =head1 DESCRIPTION
 
-When the View module uses this, happiness can be tasted only just a little.
+This is a base class only for VIEW.
 
-The parameter can be set up beforehand.
+* VIEW only for the project must use 'Egg::Base'.
 
- package [MYPROJECT];
- use strict;
- use Egg::View;
- 
- $Egg::View::PARAMS{param1}= 'value1';
+The parameter that wants to be used by default in setting the value in global
+HASH can be setup.
 
- # The set value is acquired.
- $e->view->param( 'param1' );
+=cut
+use strict;
+use warnings;
+use base qw/Egg::Model/;
+
+our $VERSION = '2.00';
+our %PARAMS;
 
 =head1 METHODS
 
-This module has succeeded to L<Egg::Component>.
+=head2 new
 
-=head2 $view->template_file([Egg Object]);
+Constructor.
 
-The set template is received.
-If Egg is debug mode, the report is sent to STDERR.
-When the template is not set, $e->finished(404) is returned.
+=cut
+sub new {
+	my($class, $e, $conf)= @_;
+	$class->SUPER::new($e, $conf, \%PARAMS);
+}
+
+=head2 template
+
+It returns it guessing the template from the template set to $e-E<gt>template
+or $e-E<gt>action.
+
+=cut
+sub template {
+	my($view)= @_;  my $e= $view->e;
+	my $template= $e->template || do {
+		my $path= join('/', @{$e->action}) || do {
+			$e->log->debug( q/I want you to define $e->template./ );
+			return do { $e->finished(404); 0 };
+		  };
+		"$path.". $e->config->{template_extention};
+	  };
+	$e->debug_out("# + template file : $template");
+	$template;
+}
 
 =head1 SEE ALSO
 
-L<Egg::Component>,
+L<Egg::Model>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;

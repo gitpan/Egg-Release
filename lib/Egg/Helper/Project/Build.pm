@@ -1,129 +1,106 @@
 package Egg::Helper::Project::Build;
 #
-# Copyright 2007 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 60 2007-03-23 01:12:30Z lushe $
+# $Id: Build.pm 96 2007-05-07 21:31:53Z lushe $
 #
-use strict;
-use warnings;
-use UNIVERSAL::require;
-use base qw/Egg::Component/;
-
-our $VERSION= '0.10';
-
-sub new {
-	my $class= shift;
-	my $pname= shift || die 'I want project name.';
-	$pname=~s/^Project\:+//;
-	$class->project_name($pname) || die 'Bat project name.';
-	$class->setup_global_rc;
-	my $self= $class->SUPER::new;
-	my $g= $self->global;
-	$g->{project_root}= "$g->{out_path}/". $self->project_name;
-	-e $g->{project_root} and
-		die "Project that already exists: ". $self->project_name;
-
-	$g->{created}= __PACKAGE__. " v$VERSION";
-	$g->{lib_dir}= "lib/". $self->project_name;
-	$g->{lc_name}= lc($self->project_name);
-	$g->{tmpl_path1}= 'root';
-	$g->{tmpl_path2}= 'comp';
-	$self->setup_document_code;
-
-	$self->chdir($g->{project_root}, 1);
-	eval{
-		{
-			my @list= $self->parse_yaml(join '', <DATA>);
-			$self->save_file($g, $_) for @list;
-		  };
-		$self->create_dir("$g->{project_root}/$_")
-		    for qw/root cache tmp comp/;
-		print "# + file generate is completed.\n";
-		$self->execute_make;
-	  };
-	$self->chdir($g->{start_dir});
-
-	if (my $err= $@) {
-		$self->remove_dir($g->{project_root});
-		die $err;
-	} else {
-		print "\n... completed.\n";
-	}
-}
-sub output_manifest {
-	my($self)= @_;
-
-	my $manifest= <<MANIFEST_OF_END;
-Build.PL
-Changes
-MANIFEST			This list of files
-META.yml
-Makefile.PL
-README
-htdocs/favicon.ico
-htdocs/images/egg125x125.gif
-htdocs/images/egg224x33.gif
-htdocs/images/egg468x60.gif
-htdocs/images/egg88x31.jpg
-htdocs/images/egg80x15.gif
-htdocs/images/egg_logo.gif
-htdocs/images/egg_logo.jpg
-htdocs/images/egg_logo.png
-lib/<# project #>.pm
-lib/<# project #>/D.pm
-lib/<# project #>/config.pm
-t/01_<# project #>.t
-t/02_<# project #>-config.t
-t/03_<# project #>-D.t
-t/89_pod.t
-MANIFEST_OF_END
-
-	$self->save_file
-	  ( $self->global, { filename=> 'MANIFEST', value=> $manifest } );
-}
-
-1;
 
 =head1 NAME
 
-Egg::Helper::Project::Build - Project builder for Egg.
+Egg::Helper::Project::Build - Helper for Project generation.
 
 =head1 SYNOPSIS
 
-Generation of helper script.
-
-  perl -MEgg::Helper -e "Egg::Helper->out" > /path/to/egg_helper.pl
-
-Bild of project.
-
-  perl /path/to/egg_helper.pl P:[PROJECT_NAME] -o [OUTPUT_PATH]
-
-* When '-o' is omitted, it is an output to current DIR.
-
-  # cd [OUTPUT_PATH]
-  # ./bin/trigger.cgi   or  perl ./bin/trigger.cgi
-
-If the HTML source is output, it is normal and Bild completion.
+  % perl egg_helper.pl Project MyApp -o /path/to/home
 
 =head1 DESCRIPTION
 
-If trigger.cgi doesn't output the error after making the project, it operates
- normally.
+It is a helper to generate the configuration file complete set of the project.
 
-Perhaps, there is a problem in the setting of the server though it is 
-normally output if the error is displayed in a browser.
+First of all, please obtain the helper script by L<Egg::Helper> to start.
 
-Please edit the project file and construct your application now.
-I am expecting the thing that a wonderful application can be done.
+  % perl -MEgg::Helper -e 'Egg::Helper->out' > /usr/bin/egg_helper.pl
+
+And, please give the name of the project newly generated following 'Project'
+option.
+
+  % perl /usr/bin/egg_helper.pl Project NewProject
+
+* It should be in the name permitted as Perl module name because the name of
+  the project is used as a name of the Perl module.
+
+* Because hierarchizing the project module is not Sarported, the project name
+  including ':' cannot be specified.
+
+* It is possible to output it to an arbitrary directory by specifying '-o' option.
+  It is output to the current directory when omitted.
+
+* There might be a thing that fails in acquisition though PATH of Perl buried
+  under the header of the script for the generated project is acquired by L<File::Which>.
+  For this case, please set 'PERL_PATH' in the environment variable.
+
+=cut
+use strict;
+use warnings;
+use YAML;
+
+our $VERSION= '2.00';
+
+sub _execute {
+	my($self)= @_;
+	my $g= $self->global;
+
+	return $self->_output_help if $g->{help};
+
+	$g->{project_root}= "$g->{output_path}/$g->{project_name}";
+	-e $g->{project_root} and die qq{ '$g->{project_root}' already exists. };
+
+	$self->_common_check;
+	$self->_setup_module_maker( __PACKAGE__ );
+	my @files= YAML::Load( join '', <DATA> );
+	my @dirs = [ map{"$g->{project_root}/$_"}(qw{ root cache tmp comp }) ];
+	$self->generate(
+	  chdir        => [$self->project_root, 1],
+	  create_files => \@files,
+	  create_dirs  => \@dirs,
+	  complete_msg => "# + file generate is completed.\n",
+	  makemaker_ok => 1,
+	  errors       => { rmdir=> [$self->project_root] },
+	  ) || return 0;
+
+	print <<END_EXEC;
+
+... completed.
+
+project_path : $g->{project_root}
+
+END_EXEC
+}
+sub _output_help {
+	my $self= shift;
+	print <<END_HELP;
+
+# usage: perl egg_helper.pl Project [NEW_PROJECT_NAME] [OPTION]
+
+  OPTION: -o [OUTPUT_PATH]
+
+END_HELP
+	exit;
+}
+
+=head1 SEE ALSO
+
+L<File::Which>,
+L<Egg::Helper>,
+L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2007 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -131,151 +108,100 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
+1;
+
 __DATA__
 ---
-filename: Makefile.PL
+filename: lib/< $e.project_name >.pm
+filetype: module
 value: |
-  use inc::Module::Install;
+  package < $e.project_name >;
+  use strict;
+  use warnings;< $e.egg_inc >
+  use Egg qw/ -Debug
+    ConfigLoader
+    Dispatch::Standard
+    Debugging
+    Log
+    /;
   
-  name         '<# project #>';
-  all_from     'lib/<# project #>.pm';
-  version_from 'lib/<# project #>.pm';
-  author       '<# author #>';
-  license      '<# license #>';
+  our $VERSION= '< $e.module_version >';
   
-  requires 'Egg::Release' => 1.10;
+  __PACKAGE__->egg_startup;
   
-  build_requires 'Test::More';
-  build_requires 'Test::Pod';
-  # build_requires 'Test::Perl::Critic';
-  # build_requires 'Test::Pod::Coverage';
+  # Dispatch. ------------------------------------------------
+  __PACKAGE__->run_modes(
   
-  use_test_base;
-  auto_include;
-  WriteAll;
----
-filename: Build.PL
-value: |
-  use Module::Build;
-  
-  my $builder = Module::Build->new(
-  
-    module_name       => '<# project #>',
-    dist_version_from => 'lib/<# project #>.pm',
-    dist_author       => '<# author #>',
-    license           => '<# license #>',
-  
-    requires => {
-      'Egg::Release' => 1.10,
-      'Test::More'   => 0,
-      'Test::Pod'    => 0,
-  #    'Test::Perl::Critic'  => 0,
-  #    'Test::Pod::Coverage' => 0,
+    _default => sub {
+      my($dispatch, $e)= @_;
+      require Egg::Helper::BlankPage;
+      $e->response->body( Egg::Helper::BlankPage->out($e) );
       },
   
     );
-  
-  $builder->create_build_script();
----
-filename: bin/trigger.cgi
-permission: 0755
-value: |
-  #!<# perl_path #>
-  package <# project #>::trigger;
-  use lib qw( <# project_root #>/lib );
-  use <# project #>;
-  
-  <# project #>->handler(@_);
-  
----
-filename: bin/<# lc_name #>_helper.pl
-permission: 0755
-value: |
-  #!<# perl_path #>
-  use lib qw(<# project_root #>/lib);
-  use Egg::Helper;
-  
-  Egg::Helper->run(
-    shift(@ARGV),
-    '<# project #>',
-    { project_root=> '<# project_root #>' },
-    );
----
-filename: etc/mod_perl_<# lc_name #>.conf
-value: |
-  LoadModule perl_module modules/mod_perl.so
-  
-  <VirtualHost *:80>
-    ServerName  hostname.example.com
-    DocumentRoot <# project_root #>/htdocs
-  
-  #  PerlSwitches -w
-  #  PerlInitHandler Apache2::Reload
-    PerlOptions  +Parent
-    PerlSwitches -I<# project_root #>/lib
-    PerlModule   mod_perl2
-    PerlModule   <# project #>
-    <LocationMatch "^/([^\.]+)?(\.html)?$">
-     SetHandler          perl-script
-     PerlResponseHandler <# project #>
-    </LocationMatch>
-  
-  </VirtualHost>
-  #
-  # When proxy such as Pound is put on frontend, it is likely to need it.
-  #
-  # * The reference ahead. -> http://stderr.net/apache/rpaf/ 
-  #
-  # LoadModule rpaf_module modules/mod_rpaf-X.X.so
-  # RPAFenable On
-  # RPAFsethostname Off
-  # RPAFproxy_ips 255.255.255.255
----
-filename: lib/<# project #>.pm
-filetype: module
-value: |
-  package <# project #>;
-  #
-  # Copyright (C) <# headcopy #>, All Rights Reserved.
-  # <# author #>
-  #
-  # <# revision #>
-  #
-  use strict;
-  use warnings;<# debug_libs #>
-  use Egg qw/-Debug/;
-  use <# project #>::config;
-  
-  our $VERSION= '<# version #>';
-  
-  # __PACKAGE__->__warning_setup();
-  __PACKAGE__->__egg_setup( <# project #>::config->out );
+  # ----------------------------------------------------------
   
   1;
   
   __END__
-  <# document #>
+  
+  # * Example
+  #
+  # use < $e.project_name >::Dispatch::Members;
+  #
+  # __PACKAGE__->run_modes( refhash( # <= Importance.
+  #
+  #   { ANY=> '_default', label=> 'HOME' }=> sub {},  ## template => index.tt
+  #
+  #   { ANY=> 'members',  label=> 'Members page.' }=> refhash( # <= Importance.
+  #
+  #      _begin=> \&< $e.project_name >::Dispatch::Members::session_start,
+  #
+  #      _default=> sub {
+  #        my($d, $e)= @_;
+  #        $e->finished( FORBIDDEN );  ## see Egg::Plugin::ErrorDocument.
+  #        },
+  #
+  #     { ANY=> 'profile', label=> 'Profile View.' }=> sub {},  ## template => members/profile.tt
+  #
+  #     _end=> \&< $e.project_name >::Dispatch::Members::session_end,
+  #
+  #     ),
+  #
+  #   ));
+  #
+  
+  < $e.document >
 ---
-filename: lib/<# project #>/config.pm
+filename: lib/< $e.project_name >/config.pm
 filetype: module
 value: |
-  package <# project #>::config;
+  package < $e.project_name >::config;
   #
-  # <# revision #>
+  # < $e.revision >
   #
   use strict;
+  use warnings;
   
   my $C= {
   
   # Project Title.
-  title=> '<# project #>',
+  title=> '< $e.project_name >',
   
   # Project root directory. (Absolutely path only)
-  root => '<# project_root #>',
+  root => '< $e.project_root >',
   
   # Directory configuration.
-  #  static    => 'htdocs',
-  #  static_uri=> '/',
+  static_uri=> '/',
+  dir => {
+    lib      => '\< $e.root >/lib',
+    static   => '\< $e.root >/htdocs',
+    etc      => '\< $e.root >/etc',
+    cache    => '\< $e.root >/cache',
+    tmp      => '\< $e.root >/tmp',
+    template => '\< $e.root >/root',
+    comp     => '\< $e.root >/comp',
+    },
   
   # Character code for processing.
   #  character_in         => 'euc',  # euc or sjis or utf8
@@ -284,7 +210,7 @@ value: |
   # Template.
   #  template_default_name=> 'index',
   #  template_extension=> '.tt',
-  template_path=> [qw( <# project_root #>/<# tmpl_path1 #> <# project_root #>/<# tmpl_path2 #> )],
+  template_path=> ['\< $e.dir.template >', '\< $e.dir.comp >'],
   
   # Default content type and language.
   #  content_type    => 'text/html; charset=euc-jp',
@@ -307,10 +233,10 @@ value: |
   # Model configuration.
   #  MODEL=> [
   #    [ DBI => {
-  #          dsn=> 'dbi:[DBD]:dbname=[DB];host=localhost;port=5432',
-  #          user    => '[USERNAME]',
-  #          password=> '[PASSWORD]',
-  #          options => { AutoCommit=> 1, RaiseError=> 0 },
+  #        dsn=> 'dbi:[DBD]:dbname=[DB];host=localhost;port=5432',
+  #        user    => '[USERNAME]',
+  #        password=> '[PASSWORD]',
+  #        options => { AutoCommit=> 1, RaiseError=> 0 },
   #        },
   #      ],
   #    ],
@@ -322,10 +248,7 @@ value: |
   #   * Please refer to document of HTML::Template
   #   http://search.cpan.org/dist/HTML-Template/
   #
-          path=> [
-            '<# project_root #>/<# tmpl_path1 #>',
-            '<# project_root #>/<# tmpl_path2 #>',
-            ],
+          path=> ['\< $e.dir.template >', '\< $e.dir.comp >'],
           global_vars=> 1,
           die_on_bad_params=> 0,
         # cache=> 1,
@@ -338,69 +261,202 @@ value: |
   #   http://www.masonhq.com/
   #
   #       comp_root=> [
-  #         [ main   => '<# project_root #>/<# tmpl_path1 #>' ],
-  #         [ private=> '<# project_root #>/<# tmpl_path2 #>' ],
+  #         [ main   => '\< $e.dir.template >' ],
+  #         [ private=> '\< $e.dir.comp >' ],
   #         ],
-  #        data_dir=> '<# project_root #>/tmp',
+  #        data_dir=> '\< $e.root >/tmp',
   #       },
   #     ],
       ],
   
-  #  * For ErrorDocument plugin.
-  #  plugin_error_document=> {
-  #    template_name=> 'error/document.tt',
-  #    },
+  # request => {
+  #   DISABLE_UPLOADS => 0,
+  #   TEMP_DIR => '\< $e.dir.tmp >',
+  #   POST_MAX => 10240,
+  #   },
   
+  # * For ErrorDocument plugin.
+  # plugin_error_document=> {
+  #   view_name => 'Mason',
+  #   template  => 'error/document.tt',
+  #   },
+  
+  # * For FillInForm plugin.
+  # plugin_fillinform=> {
+  #   ignore_fields => [qw{ ticket }],
+  #   fill_password => 0,
+  #   },
+
+  # * For Pod::HTML plugin.
+  # plugin_pod2html=> {
+  #   lib_path  => [qw{ /path/to/lib }],
+  #   extension => '.pm',
+  #   },
+
     };
+  
   sub out { $C }
   
   1;
 ---
-filename: lib/<# project #>/D.pm
-filetype: module
+filename: Makefile.PL
+filetype: script
 value: |
-  package <# project #>::D;
-  #
-  # Copyright (C) <# headcopy #>, All Rights Reserved.
-  # <# author #>
-  #
-  # <# revision #>
-  #
-  use strict;
-  use warnings;<# debug_libs #>
-  use Egg::Const;
+  use inc::Module::Install;
   
-  __PACKAGE__->run_modes( refhash(
+  name         '< $e.project_name >';
+  all_from     'lib/< $e.project_name >.pm';
+  version_from 'lib/< $e.project_name >.pm';
+  author       '< $e.author >';
+  license      '< $e.license >';
   
-    { label=> '<# project_name #>', ANY=> '_default' }=> sub {
-      my($dispatch, $e)= @_;
-      require Egg::Helper::Project::BlankPage;
-      $e->response->body( Egg::Helper::Project::BlankPage->out($e) );
+  requires 'Egg::Release' => < $e.egg_release_version >;
+  
+  build_requires 'Test::More';
+  build_requires 'Test::Pod';
+  # build_requires 'Test::Perl::Critic';
+  # build_requires 'Test::Pod::Coverage';
+  
+  use_test_base;
+  auto_include;
+  WriteAll;
+---
+filename: Build.PL
+filetype: script
+value: |
+  use Module::Build;
+  
+  my $builder = Module::Build->new(
+  
+    module_name       => '< $e.project_name >',
+    dist_version_from => 'lib/< $e.project_name >.pm',
+    dist_author       => '< $e.author >',
+    license           => '< $e.license >',
+  
+    requires => {
+      'Egg::Release' => < $e.egg_release_version >,
+      'Test::More'   => 0,
+      'Test::Pod'    => 0,
+  #    'Test::Perl::Critic'  => 0,
+  #    'Test::Pod::Coverage' => 0,
       },
   
-    ));
+    );
   
-  1;
-  
-  # * Example
-  # use <# project #>::D::Members;
-  # __PACKAGE__->run_modes( refhash(
-  #   { ANY=> '_default', label=> 'HOME' }=> sub {},  ## template => index.tt
-  #   { ANY=> 'members',  label=> 'Members page.' }=> refhash(
-  #     _begin=> \&<# project #>::D::Members::session_start,
-  #     _default=> sub {
-  #       my($d, $e)= @_;
-  #       $e->finished( FORBIDDEN );  ## see Egg::Plugin::ErrorDocument.
-  #       },
-  #     { ANY=> 'profile', label=> 'Profile View.' }=> sub {},  ## template => members/profile.tt
-  #     _end=> \&<# project #>::D::Members::session_end,
-  #     ),
-  #   ));
-  
-  __END__
-  <# document #>
+  $builder->create_build_script();
 ---
-filename: t/01_<# project #>.t
+filename: bin/trigger.cgi
+filetype: script
+value: |
+  #!< $e.perl_path >
+  package < $e.project_name >::trigger;
+  # use FindBin;
+  # use lib "$FindBin::Bin/../lib";
+  use lib qw{ < $e.project_root >/lib };
+  use < $e.project_name >;
+  
+  < $e.project_name >->handler;
+  
+---
+filename: bin/dispatch.fcgi
+filetype: script
+value: |
+  #!< $e.perl_path >
+  package EggRelease::trigger;
+  use FindBin;
+  use lib "$FindBin::Bin/../lib";
+  
+  BEGIN {
+    $ENV{< $e.uc_project_name >_REQUEST_CLASS} ||= 'Egg::Request::FastCGI';
+  };
+  use < $e.project_name >;
+  
+  < $e.project_name >->handler;
+  
+---
+filename: bin/< $e.lc_project_name >_helper.pl
+filetype: script
+value: |
+  #!< $e.perl_path >
+  use FindBin;
+  use lib "$FindBin::Bin/../lib";
+  use Egg::Helper;
+  
+  Egg::Helper->run( shift(@ARGV), {
+    project_name => '< $e.project_name >',
+    project_root => '< $e.project_root >',
+    } );
+  
+---
+filename: bin/< $e.lc_project_name >_tester.pl
+filetype: script
+value: |
+  #!< $e.perl_path >
+  use FindBin;
+  use lib "$FindBin::Bin/../lib";
+  use Egg::Helper;
+  
+  Egg::Helper->run(
+   'Project::Test',
+    project_name => '< $e.project_name >',
+    project_root => '< $e.project_root >',
+    );
+  
+---
+filename: etc/mod_perl2.conf.example
+filetype: text
+value: |
+  LoadModule perl_module modules/mod_perl.so
+  
+  <VirtualHost *:80>
+    ServerName  hostname.example.com
+    DocumentRoot < $e.project_root >/htdocs
+  
+    PerlOptions  +Parent
+    PerlSwitches -I< $e.project_root >/lib
+    PerlModule   mod_perl2
+    PerlModule   < $e.project_name >
+  
+    <LocationMatch "^/([^\.]+)?$">
+     SetHandler  perl-script
+     PerlHandler < $e.project_name >
+    </LocationMatch>
+  
+  </VirtualHost>
+  #
+  # When proxy such as Pound is put on frontend, it is likely to need it.
+  #
+  # * The reference ahead. -> http://stderr.net/apache/rpaf/ 
+  #
+  # LoadModule rpaf_module modules/mod_rpaf-X.X.so
+  # RPAFenable On
+  # RPAFsethostname Off
+  # RPAFproxy_ips 255.255.255.255
+  
+---
+filename: etc/lighttpd+fastcgi.conf.example
+filetype: text
+value: |
+  $HTTP["host"] == "mydomain.name" {
+  #  $HTTP["remoteip"] !~ "^255\.255\.255\.0$" {
+  #    url.access-deny = ("")
+  #    }
+    server.document-root = "< $e.project_root >/htdocs"
+    url.rewrite-once = (
+      "^/([^\.]+)?([\?\#].*)?$" => "/dispatch.fcgi/$1$2",
+      )
+    fastcgi.server = ( "/dispatch.fcgi" => ((
+      "socket"   => "< $e.project_root >/tmp/fcgi.socket",
+      "bin-path" => "< $e.project_root >/htdocs/dispatch.fcgi",
+      "max-procs" => 1,
+  #    "idle-timeout" => 10
+      ))
+    )
+  }
+  
+---
+filename: t/01_< $e.project_name >.t
+filetype: text
 value: |
   # Before `make install' is performed this script should be runnable with
   # `make test'. After `make install' it should work as `perl test.t'
@@ -409,37 +465,30 @@ value: |
   
   # change 'tests => 1' to 'tests => last_test_to_print';
   
-  use Test::More tests => 1;<# debug_libs #>
-  BEGIN { use_ok('<# project #>') };
+  use Test::More tests => 1;< $e.egg_inc >
+  BEGIN { use_ok('< $e.project_name >') };
   
   #########################
   
   # Insert your test code below, the Test::More module is use()ed here so read
   # its man page ( perldoc Test::More ) for help writing this test script.
 ---
-filename: t/02_<# project #>-config.t
+filename: t/02_< $e.project_name >-config.t
+filetype: text
 value: |
-  use Test::More tests => 1;<# debug_libs #>
-  BEGIN { use_ok('<# project #>::config') };
+  use Test::More tests => 1;< $e.egg_inc >
+  BEGIN { use_ok('< $e.project_name >::config') };
 ---
-filename: t/03_<# project #>-D.t
-value: |
-  use Test::More tests => 4;<# debug_libs #>
-  use <# project #>;
-  
-  ok( my $e= <# project #>->new );
-  ok( $e->prepare_component );
-  ok( my $dispath_name= ref($e->dispatch) );
-  ok( $dispath_name eq '<# project #>::D' );
----
-filename: t/89_pod.t
+filename: t/89_pod.t~
+filetype: text
 value: |
   use Test::More;
   eval "use Test::Pod 1.00";
   plan skip_all => "Test::Pod 1.00 required for testing POD" if $@;
   all_pod_files_ok();
 ---
-filename: t/98_perlcritic.t~~
+filename: t/98_perlcritic.t~
+filetype: text
 value: |
   use strict;
   use Test::More;
@@ -451,7 +500,8 @@ value: |
   # - perl -MCPAN -e "install Test::Perl::Critic"
   #
 ---
-filename: t/99_pod_coverage.t~~
+filename: t/99_pod_coverage.t~
+filetype: text
 value: |
   use Test::More;
   eval "use Test::Pod::Coverage 1.00";
@@ -459,16 +509,18 @@ value: |
   all_pod_coverage_ok();
 ---
 filename: Changes
+filetype: text
 value: |
-  Revision history for Perl extension <# project #>.
+  Revision history for Perl extension < $e.project_name >.
   
-  <# version #>  <# gmtime_string #>
-  	- original version; created by <# created #>
-  	   with module name <# project #>.
+  < $e.version >  < $e.gmtime_string >
+  	- original version; created by < $e.created >
+  	   with module name < $e.project_name >.
 ---
 filename: README
+filetype: text
 value: |
-  <# project #>.
+  < $e.project_name >.
   =================================================
   
   The README is used to introduce the module and provide instructions on
@@ -500,19 +552,20 @@ value: |
   
   AUTHOR
   
-  <# author #>
+  < $e.author >
   
   COPYRIGHT AND LICENCE
   
   Put the correct copyright and licence information here.
   
-  Copyright (C) <# year #> by <# copyright #>, All Rights Reserved.
+  Copyright (C) < $e.year > by < $e.copyright >, All Rights Reserved.
   
   This library is free software; you can redistribute it and/or modify
-  it under the same terms as Perl itself, either Perl version 5.8.6 or,
+  it under the same terms as Perl itself, either Perl version < $e.perl_version > or,
   at your option, any later version of Perl 5 you may have available.
 ---
 filename: MANIFEST.SKIP
+filetype: text
 value: |
   \bRCS\b
   \bCVS\b
@@ -953,4 +1006,3 @@ value: |
   DExnSh2V1hQ1iVCASLnwiId2lAtF2gErh7qA3hRgqPtJ0wEEhdRB+HNFCTOIr7xA1aquZifLpEAj
   PnGYZbaocgqVAMsGSRvNPKc9CTPYVinXHpx4Fa04EcjCJiOdOLhVrWtN68IMA1ev0olijqiqYKNz
   gNoIVifaCaxgdQiwik2id5CtUQQAADs=
-
