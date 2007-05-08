@@ -13,7 +13,7 @@ Egg::Release - Version of Egg WEB Application Framework.
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 our $DISTURL = 'http://egg.bomcity.com/';
 
 =head1 DESCRIPTION

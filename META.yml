@@ -39,4 +39,4 @@ requires:
   URI: 1.35
   WWW::Mechanize::CGI: 0.03
   YAML: 0.62
-version: 2.00
+version: 2.01

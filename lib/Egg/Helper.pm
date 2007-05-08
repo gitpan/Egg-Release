@@ -87,7 +87,7 @@ use Egg::Exception;
 use base qw/Egg::Base/;
 use Carp qw/croak/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 my $Alias= {
   M => 'Model',  V => 'View',  D => 'Dispatch', R => 'Request',
@@ -840,7 +840,7 @@ sub _setup_module_maker {
 	$hash->{dist}= sub {
 		my($proto, $param)= splice @_, 0, 2;
 		my $proot_regix= $g->{project_root};
-		   $proot_regix=~s{\\} ['\\']ge;
+		   $proot_regix=~s{\\} [\\\\]g;
 		my $fname= $proto->_conv_unix_path(@_) || return "";
 		$fname=~s{^[A-Za-z]\:+} []o;
 		$fname=~s{^$proot_regix} []o;
