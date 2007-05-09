@@ -2,7 +2,7 @@ package Egg::Plugin::Log;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Log.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Log.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -30,7 +30,7 @@ If $e-E<gt>config->{log_file} is set, the log is preserved.
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 sub _setup {
 	my($e)= @_;
@@ -107,7 +107,9 @@ sub _log {
 sub _line {
 	my($self, $label, $call)= splice @_, 0, 3;
 	my $msg= $_[1] ? join(' : ', @_): ($_[0] || 'none.');
-	   $msg=~s{\s+} [ ]sg;
+	   $msg=~s{^\s+} []s;
+	   $msg=~s{\s+$} []s;
+	   $msg=~s{(\s)\s+} [$1]sg;
 	  "$self->{date} [$label] "
 	. (join(' - ', ($self->{req}->path, $msg, $self->{req}->uri)) || "")
 	. " at $call->[0] line $call->[2]\n";

@@ -2,7 +2,7 @@ package Egg::Release;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Release.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -13,7 +13,7 @@ Egg::Release - Version of Egg WEB Application Framework.
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 our $DISTURL = 'http://egg.bomcity.com/';
 
 =head1 DESCRIPTION

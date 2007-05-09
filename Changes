@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+2.02  2007/05/09
+	- bugfix of 'mod_name_resolv' method for Egg::Helper.
+	- bugfix for Egg.
+	- bugfix of 'config' method for Egg::Base.
+
 2.01  2007/05/08
 	- bugfix for Egg::Helper.
 

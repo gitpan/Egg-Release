@@ -1,6 +1,6 @@
 package Egg::Response;
 #
-# $Id: Response.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Response.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -386,9 +386,6 @@ When STATUS_STRING is omitted, acquisition is tried from %Egg::Response::Status.
   500 ... Internal Server Error
 
 The above-mentioned content is revokable from the controller etc.
-
-* The part of the content should make to ARRAY and set the flag for result at
-  the same time when changing.
 
   %Egg::Response::Status= (
     200 => 'OK',

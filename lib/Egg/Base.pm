@@ -2,7 +2,7 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Base.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -46,7 +46,7 @@ use UNIVERSAL::require;
 use base qw/Class::Data::Inheritable/;
 use Carp qw/croak/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 =head1 METHODS
 
@@ -73,8 +73,9 @@ Passed HASH_REF is set as a configuration.
 		my $base = ref($class) || $class || return 0;
 		return ${"${base}::__GLOBAL_CONDIG"} || {} unless @_;
 		my $conf= ${"${base}::__GLOBAL_CONDIG"}= $_[1] ? {@_}: ($_[0] || {});
-		my $config;
-		if ($base=~m{^([^\:]+)\:.+} and ($config= $1->config)) {
+		my($config, $method);
+		if ($base=~m{^([^\:]+)\:.+}
+		    and $method= $1->can('config') and $config= $method->($1)) {
 			$class->replace_deep($config, $conf);
 		}
 		$conf;

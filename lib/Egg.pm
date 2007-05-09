@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Egg.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -205,7 +205,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.00';
+our $VERSION= '2.01';
 
 =head1 METHODS
 
@@ -541,7 +541,9 @@ When VIEW_NAME is omitted, the VIEW object of default is returned.
 			}
 			if ($e->debug and @class) {
 				$e->debug_out( "# + $project - load $c_name : "
-				. join(", ", map{"$_ v". ${"$class{$_}::VERSION"}}@class));
+				. join(", ", map{ "$_".
+				(${"$class{$_}::VERSION"} ? 'v '.${"$class{$_}::VERSION"}: "")
+				  } @class ));
 			}
 
 		}

@@ -2,7 +2,7 @@ package Egg::Helper::Project::Build;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Build.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -289,7 +289,7 @@ value: |
 
   # * For Pod::HTML plugin.
   # plugin_pod2html=> {
-  #   lib_path  => [qw{ /path/to/lib }],
+  #   pod_libs  => [qw{ /path/to/lib }],
   #   extension => '.pm',
   #   },
 

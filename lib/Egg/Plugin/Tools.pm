@@ -2,7 +2,7 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Tools.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -35,7 +35,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = 2.00;
+our $VERSION = '2.00';
 
 {
 	no warnings 'redefine';
@@ -175,6 +175,27 @@ sub shuffle_array {
 		@$deck[$i,$j] = @$deck[$j,$i];
 	}
 	wantarray ? @$deck: $deck;
+}
+
+=head2 filefind ( [FIND_REGIX], [SEARCH_DIR_ARRAY] )
+
+L<File::Find> is done and the result is returned by the ARRAY reference.
+
+  my $files= $e->filefind(qr{\.pm$}, qw( /usr/lib/perl5/... ))
+          || return 0;
+
+=cut
+sub filefind {
+	require File::Find;
+	my $e= shift;
+	my $regix= shift || croak q{ I want File Regixp };
+	@_ || croak q{ I want Find PATH. };
+	my @files;
+	my $wanted= sub {
+		push @files, $File::Find::name if $File::Find::name=~m{$regix};
+	  };
+	File::Find::find($wanted, ref($_[0]) eq 'ARRAY' ? @{$_[0]}: @_ );
+	@files ? \@files: 0;
 }
 
 1;

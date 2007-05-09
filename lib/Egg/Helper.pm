@@ -2,7 +2,7 @@ package Egg::Helper;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Helper.pm 111 2007-05-09 21:31:43Z lushe $
 #
 
 =head1 NAME
@@ -87,7 +87,7 @@ use Egg::Exception;
 use base qw/Egg::Base/;
 use Carp qw/croak/;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 my $Alias= {
   M => 'Model',  V => 'View',  D => 'Dispatch', R => 'Request',
@@ -359,8 +359,8 @@ sub save_file {
 	my $self = shift;
 	my $data = shift || croak q{ I want data.  };
 	my $param= shift || 0;
-	my $path= $self->replace(($param || {}), $data->{filename})
-	                 || croak q{ I want data->{filename} };
+	my $path = $self->replace(($param || {}), $data->{filename})
+	        || croak q{ I want data->{filename} };
 	my $ftype= $data->{filetype} || "";
 	my $value= $ftype=~/^bin/i ? do {
 		MIME::Base64->require;
@@ -579,14 +579,16 @@ of Perl, 0 is returned.
 =cut
 sub mod_name_resolv {
 	my $self= shift;
-	my $name= join ':', @_;
+	my $name= join(':', @_) || croak q{ I want module strings. };
 	   $name=~s{\.pm} []; $name=~s{\s+} []sg;
 	my @parts;
-	for ( split /[\\\/\-\:]+/, $name ) {
-		/^[A-Za-z][A-Za-z0-9_]+$/ || return 0;
+	for ( split /\s*[\\\/\-\:]+\s*/, $name ) {
+		/^([A-Za-z][A-Za-z0-9_]*)$/
+		   || croak qq{ A part of the module name is bad. };
 		push @parts, $_;
 	}
-	wantarray ? @parts: (@parts ? \@parts: 0);
+	@parts || die q{ There are no parts of the module. };
+	wantarray ? @parts: \@parts;
 }
 
 =head2 is_platform
