@@ -2,7 +2,7 @@ package Egg::Request;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Request.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Request.pm 122 2007-05-10 18:21:18Z lushe $
 #
 
 =head1 NAME
@@ -72,7 +72,7 @@ use CGI::Cookie;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 __PACKAGE__->mk_accessors(qw/ e r path is_get is_post is_head /);
 
@@ -342,13 +342,14 @@ sub new {
 	$req->path( $path=~m{^/} ? $path: "/$path" );
 
 	# Request parts are generated.
-	my $max;
 	$path=~s#\s+##g; $path=~s#^/+##; $path=~s#/+$##;
 	my @snip= split /\/+/, $path;
-	$max= $e->config->{max_snip_deep}
-	    and scalar(@snip)> $max and $e->finished(403) and return $req;
-
-	$req->{snip}= \@snip;
+	my $max;
+	if ($max= $e->config->{max_snip_deep} and $max< scalar(@snip)) {
+		$e->finished(403);
+	} else {
+		$req->{snip}= \@snip;
+	}
 	$req;
 }
 

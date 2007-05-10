@@ -1,6 +1,6 @@
 package Egg::Response;
 #
-# $Id: Response.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Response.pm 122 2007-05-10 18:21:18Z lushe $
 #
 
 =head1 NAME
@@ -83,7 +83,7 @@ use Carp qw/croak/;
 __PACKAGE__->mk_accessors(qw/ e request nph status
   is_expires last_modified content_type content_language location /);
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 our $CRLF    = "\015\012";
 our $AUTOLOAD;
 
@@ -122,14 +122,23 @@ Constructor. When the project is usually started, this is called.
 sub new {
 	my($class, $e)= @_;
 	bless {
-	  e => $e, body => undef,
-	  request  => $e->request,
-	  status   => 0,
+	  e => $e,
+	  body=> undef,
+	  status=> 0,
 	  location => "",
 	  content_type => "",
 	  content_language => "",
 	  set_modified => ($e->config->{set_modified_constant} || 0),
 	  }, $class;
+}
+
+=head2 request
+
+Accessor to $e-E<gt>request.
+
+=cut
+sub request {
+	$_[0]->{request} ||= $_[0]->e->request;
 }
 
 =head2 body ( [RESPONSE_CONTENT_BODY] )

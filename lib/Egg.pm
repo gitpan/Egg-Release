@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Egg.pm 122 2007-05-10 18:21:18Z lushe $
 #
 
 =head1 NAME
@@ -369,8 +369,8 @@ END_INFO
 			  snip  => [],  stash => {},
 			  model => {},  view  => {},
 			  }, $pr;
-			$egg->request( $g->{REQUEST_PACKAGE}->new($r, $egg) );
 			$egg->response( Egg::Response->new($egg) );
+			$egg->request( $g->{REQUEST_PACKAGE}->new($r, $egg) );
 			$egg;
 		  };
 
@@ -676,8 +676,9 @@ invalidated.
 =cut
 sub finished {
 	my $e= shift;
-	return $e->{finished} || undef unless @_;
+	return ($e->{finished} || 0) unless @_;
 	if (my $status= shift) {
+			;
 		$e->response->status($status);
 		if (@_) {
 			if    ($status>= 500) { $e->log->error($status, @_) }
@@ -695,7 +696,7 @@ sub finished {
 $e-E<gt>request-E<gt>snip is returned. 
 
 =cut
-sub snip { shift->request->snip(@_) }
+sub snip { shift->request->snip(@_) || [] }
 
 =head2 action
 

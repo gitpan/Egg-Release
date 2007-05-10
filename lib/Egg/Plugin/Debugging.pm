@@ -2,12 +2,12 @@ package Egg::Plugin::Debugging;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Debugging.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Debugging.pm 122 2007-05-10 18:21:18Z lushe $
 #
 
 =head1 NAME
 
-Egg::Release2 - Debugging function is offered for Egg.
+Egg::Plugin::Debugging - Debugging function is offered for Egg.
 
 =head1 SYNOPSIS
 
