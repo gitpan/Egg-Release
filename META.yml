@@ -1,19 +1,13 @@
-abstract: Version of Egg WEB Application Framework.
-author: Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
-build_requires: 
-  Test::Perl::Critic: 0
-  Test::Pod: 0
-  Test::Pod::Coverage: 0
-  Test::Simple: 0
-distribution_type: module
-generated_by: Module::Install version 0.64
-license: perl
+---
 name: Egg-Release
-no_index: 
-  directory: 
-    - inc
-    - t
-requires: 
+version: 2.04
+author:
+  - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
+abstract: Version of Egg WEB Application Framework.
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
   CGI: 3.28
   Class::Accessor: 0.3
   Class::C3: 0.14
@@ -33,10 +27,231 @@ requires:
   Jcode: 2.06
   MIME::Base64: 3.07
   ModPerl::VersionUtil: 0.03
+  Test::Perl::Critic: 0
+  Test::Pod: 0
+  Test::Pod::Coverage: 0
+  Test::Simple: 0
   Tie::RefHash: 1.35
   Time::HiRes: 0
   UNIVERSAL::require: 0.11
   URI: 1.35
   WWW::Mechanize::CGI: 0.03
   YAML: 0.62
-version: 2.03
+provides:
+  Egg:
+    file: lib/Egg.pm
+    version: 2.02
+  Egg::Base:
+    file: lib/Egg/Base.pm
+    version: 2.01
+  Egg::Const:
+    file: lib/Egg/Const.pm
+    version: 2.00
+  Egg::DummyLog:
+    file: lib/Egg.pm
+  Egg::Error:
+    file: lib/Egg/Exception.pm
+  Egg::Exception:
+    file: lib/Egg/Exception.pm
+    version: 2.00
+  Egg::Helper:
+    file: lib/Egg/Helper.pm
+    version: 2.02
+  Egg::Helper::BlankPage:
+    file: lib/Egg/Helper/BlankPage.pm
+    version: 2.00
+  Egg::Helper::Plugin::Maker:
+    file: lib/Egg/Helper/Plugin/Maker.pm
+    version: 2.00
+  Egg::Helper::Plugin::Prototype:
+    file: lib/Egg/Helper/Plugin/Prototype.pm
+    version: 2.00
+  Egg::Helper::Plugin::YAML:
+    file: lib/Egg/Helper/Plugin/YAML.pm
+    version: 2.00
+  Egg::Helper::Project::Build:
+    file: lib/Egg/Helper/Project/Build.pm
+    version: 2.00
+  Egg::Helper::Project::Test:
+    file: lib/Egg/Helper/Project/Test.pm
+    version: 2.00
+  Egg::Helper::VirtualTest:
+    file: lib/Egg/Helper/VirtualTest.pm
+    version: 2.00
+  Egg::Model:
+    file: lib/Egg/Model.pm
+    version: 2.00
+  Egg::Model::DBI:
+    file: lib/Egg/Model/DBI.pm
+    version: 2.00
+  Egg::Plugin::Charset:
+    file: lib/Egg/Plugin/Charset.pm
+    version: 2.00
+  Egg::Plugin::Charset::EUC_JP:
+    file: lib/Egg/Plugin/Charset/EUC_JP.pm
+    version: 2.00
+  Egg::Plugin::Charset::Shift_JIS:
+    file: lib/Egg/Plugin/Charset/Shift_JIS.pm
+    version: 2.00
+  Egg::Plugin::Charset::UTF8:
+    file: lib/Egg/Plugin/Charset/UTF8.pm
+    version: 2.00
+  Egg::Plugin::ConfigLoader:
+    file: lib/Egg/Plugin/ConfigLoader.pm
+    version: 2.00
+  Egg::Plugin::DBI::Easy:
+    file: lib/Egg/Plugin/DBI/Easy.pm
+    version: 2.00
+  Egg::Plugin::DBI::Easy::accessors:
+    file: lib/Egg/Plugin/DBI/Easy.pm
+  Egg::Plugin::DBI::Easy::handler:
+    file: lib/Egg/Plugin/DBI/Easy.pm
+  Egg::Plugin::DBI::Transaction:
+    file: lib/Egg/Plugin/DBI/Transaction.pm
+    version: 2.00
+  Egg::Plugin::Debugging:
+    file: lib/Egg/Plugin/Debugging.pm
+    version: 2.00
+  Egg::Plugin::Debugging::Report:
+    file: lib/Egg/Plugin/Debugging/Report.pm
+    version: 2.00
+  Egg::Plugin::Debugging::Report::SimpleBench:
+    file: lib/Egg/Plugin/Debugging/Report.pm
+  Egg::Plugin::Debugging::Screen:
+    file: lib/Egg/Plugin/Debugging/Screen.pm
+    version: 2.00
+  Egg::Plugin::Debugging::handler:
+    file: lib/Egg/Plugin/Debugging.pm
+  Egg::Plugin::Dispatch:
+    file: lib/Egg/Plugin/Dispatch.pm
+    version: 2.01
+  Egg::Plugin::Dispatch::Fast:
+    file: lib/Egg/Plugin/Dispatch/Fast.pm
+    version: 2.00
+  Egg::Plugin::Dispatch::Fast::handler:
+    file: lib/Egg/Plugin/Dispatch/Fast.pm
+  Egg::Plugin::Dispatch::Standard:
+    file: lib/Egg/Plugin/Dispatch/Standard.pm
+    version: 2.01
+  Egg::Plugin::Dispatch::Standard::handler:
+    file: lib/Egg/Plugin/Dispatch/Standard.pm
+  Egg::Plugin::Dispatch::handler:
+    file: lib/Egg/Plugin/Dispatch.pm
+  Egg::Plugin::Encode:
+    file: lib/Egg/Plugin/Encode.pm
+    version: 2.00
+  Egg::Plugin::ErrorDocument:
+    file: lib/Egg/Plugin/ErrorDocument.pm
+    version: 2.00
+  Egg::Plugin::File::Rotate:
+    file: lib/Egg/Plugin/File/Rotate.pm
+    version: 2.00
+  Egg::Plugin::FillInForm:
+    file: lib/Egg/Plugin/FillInForm.pm
+    version: 2.00
+  Egg::Plugin::Filter:
+    file: lib/Egg/Plugin/Filter.pm
+    version: 2.00
+  Egg::Plugin::Filter::Plugin::Japanese:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese.pm
+    version: 2.00
+  Egg::Plugin::Filter::Plugin::Japanese::EUC:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/EUC.pm
+    version: 2.00
+  Egg::Plugin::Filter::Plugin::Japanese::Shift_JIS:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/Shift_JIS.pm
+    version: 2.00
+  Egg::Plugin::Filter::Plugin::Japanese::UTF8:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/UTF8.pm
+    version: 2.00
+  Egg::Plugin::FormValidator::Simple:
+    file: lib/Egg/Plugin/FormValidator/Simple.pm
+    version: 2.00
+  Egg::Plugin::HTTP::HeadParser:
+    file: lib/Egg/Plugin/HTTP/HeadParser.pm
+    version: 2.00
+  Egg::Plugin::Log:
+    file: lib/Egg/Plugin/Log.pm
+    version: 2.01
+  Egg::Plugin::Log::handler:
+    file: lib/Egg/Plugin/Log.pm
+  Egg::Plugin::Pod::HTML:
+    file: lib/Egg/Plugin/Pod/HTML.pm
+    version: 2.00
+  Egg::Plugin::Pod::HTML::options:
+    file: lib/Egg/Plugin/Pod/HTML.pm
+  Egg::Plugin::Prototype:
+    file: lib/Egg/Plugin/Prototype.pm
+    version: 2.00
+  Egg::Plugin::Redirect::Body:
+    file: lib/Egg/Plugin/Redirect/Body.pm
+    version: 2.00
+  Egg::Plugin::Tools:
+    file: lib/Egg/Plugin/Tools.pm
+    version: 2.01
+  Egg::Plugin::Upload:
+    file: lib/Egg/Plugin/Upload.pm
+    version: 2.00
+  Egg::Plugin::Upload::CGI:
+    file: lib/Egg/Plugin/Upload/CGI.pm
+    version: 2.00
+  Egg::Plugin::Upload::ModPerl:
+    file: lib/Egg/Plugin/Upload/ModPerl.pm
+    version: 2.00
+  Egg::Plugin::Upload::handler:
+    file: lib/Egg/Plugin/Upload.pm
+  Egg::Plugin::YAML:
+    file: lib/Egg/Plugin/YAML.pm
+    version: 2.00
+  Egg::Plugin::rc:
+    file: lib/Egg/Plugin/rc.pm
+    version: 2.00
+  Egg::Release:
+    file: lib/Egg/Release.pm
+    version: 2.04
+  Egg::Request:
+    file: lib/Egg/Request.pm
+    version: 2.01
+  Egg::Request::Apache:
+    file: lib/Egg/Request/Apache.pm
+    version: 2.00
+  Egg::Request::Apache::MP13:
+    file: lib/Egg/Request/Apache/MP13.pm
+    version: 2.00
+  Egg::Request::Apache::MP19:
+    file: lib/Egg/Request/Apache/MP19.pm
+    version: 2.00
+  Egg::Request::Apache::MP20:
+    file: lib/Egg/Request/Apache/MP20.pm
+    version: 2.00
+  Egg::Request::CGI:
+    file: lib/Egg/Request/CGI.pm
+    version: 2.00
+  Egg::Request::CGI::handler:
+    file: lib/Egg/Request/CGI.pm
+  Egg::Request::FastCGI:
+    file: lib/Egg/Request/FastCGI.pm
+    version: 2.00
+  Egg::Response:
+    file: lib/Egg/Response.pm
+    version: 2.01
+  Egg::Response::FetchCookie:
+    file: lib/Egg/Response.pm
+  Egg::Response::TieCookie:
+    file: lib/Egg/Response.pm
+  Egg::View:
+    file: lib/Egg/View.pm
+    version: 2.00
+  Egg::View::Mason:
+    file: lib/Egg/View/Mason.pm
+    version: 2.00
+  Egg::View::Template:
+    file: lib/Egg/View/Template.pm
+    version: 2.00
+  Egg::View::Template::Params:
+    file: lib/Egg/View/Template/Params.pm
+    version: 2.00
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

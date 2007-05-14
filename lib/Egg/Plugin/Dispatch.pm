@@ -2,7 +2,7 @@ package Egg::Plugin::Dispatch;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Dispatch.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Dispatch.pm 147 2007-05-14 02:24:16Z lushe $
 #
 
 =head1 NAME
@@ -30,7 +30,54 @@ use strict;
 use warnings;
 use Carp qw/croak/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
+
+=head1 EXPORT FUNCTION
+
+It is a function compulsorily exported by the controller of the project.
+
+=cut
+sub _import {
+	my($project)= @_;
+	no strict 'refs';  ## no critic
+	no warnings 'redefine';
+
+=head2 code ( [PACKAGE_NAME], [METHOD_NAME] )
+
+PACKAGE_NAME is read, and the code reference of METHOD_NAME is returned.
+
+Please give PACKAGE_NAME the module name since the project name.
+
+Using it because of the setting of run_modes etc. is convenient for this method.
+
+  # The CODE reference of the content method of MyApp::Dispatch is set.
+  # * In this case, ($dispatch, $e) extends to the content method.
+  package MyApp;
+  .......
+  ...
+  __PACKAGE__->egg_startup(
+    .......
+    ...
+    content => code( Dispatch => 'content' ),
+    );
+  
+  # When using it in the code. * An arbitrary argument is passed.
+  $e->code( Dispatch => 'content' )->($e, ... args );
+
+=cut
+	*{"${project}::code"}= sub {
+		shift if ref($_[0]);
+		my $pkg= shift || croak q{ I want include package name. };
+		   $pkg= "${project}::$pkg";
+		my $method= shift || croak q{ I want method name. };
+		$pkg->require or die $@;
+		$pkg->can($method) || croak qq{ '$method' method is not found. };
+	  };
+
+	$project->next::method;
+}
+
+=head1 METHODS
 
 =head2 run_modes ( [RUN_MODE_HASH] )
 

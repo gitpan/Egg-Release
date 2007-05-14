@@ -2,7 +2,7 @@ package Egg::Plugin::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Standard.pm 147 2007-05-14 02:24:16Z lushe $
 #
 
 =head1 NAME
@@ -138,11 +138,15 @@ use Tie::RefHash;
 use UNIVERSAL::require;
 use base qw/Egg::Plugin::Dispatch/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 =head1 EXPORT FUNCTION
 
 It is a function compulsorily exported by the controller of the project.
+
+=cut
+sub _import {
+	my($project)= @_;
 
 =head2 refhash ( [HASH] )
 
@@ -161,24 +165,18 @@ the HASH is returned by the reference.
      );
 
 =cut
-sub _setup {
-	my($e)= @_;
-	unless ( Tie::RefHash->require ) {
+	if ( Tie::RefHash->require ) {
+		no strict 'refs';  ## no critic
+		no warnings 'redefine';
+		*{"${project}::refhash"}= sub {
+			my %refhash;
+			tie %refhash, 'Tie::RefHash', @_;
+			\%refhash;
+		  };
+	} else {
 		warn q{ 'Tie::RefHash' is not installed. };
-		return $e->next::method;
 	}
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	*{"$e->{namespace}::refhash"}= sub {
-		#
-		# * Call it as a usual function.
-		#   refhash( [ Normal HASH ] )
-		#
-		my %refhash;
-		tie %refhash, 'Tie::RefHash', @_;
-		\%refhash;
-	  };
-	$e->next::method;
+	$project->next::method;
 }
 
 =head1 METHODS

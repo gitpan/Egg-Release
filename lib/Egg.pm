@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 122 2007-05-10 18:21:18Z lushe $
+# $Id: Egg.pm 147 2007-05-14 02:24:16Z lushe $
 #
 
 =head1 NAME
@@ -205,7 +205,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.01';
+our $VERSION= '2.02';
 
 =head1 METHODS
 
@@ -281,6 +281,7 @@ sub import {
 
 	$_->require or confess($@) for @{$g{egg_plugins}};
 	@{$project->global}{keys %g}= values %g;
+	$project->_import;
 }
 
 =head2 egg_startup ( [CONFIG_HASH] )
@@ -914,6 +915,7 @@ sub _load_config {
 	$conf;
 }
 sub _example_code { 'unknown.' }
+sub _import { @_ }
 
 package Egg::DummyLog;
 use strict;

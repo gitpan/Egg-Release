@@ -1,5 +1,11 @@
 Revision history for Perl extension .
 
+2.04  2007/05/13
+	- '_import' call is added for Egg.
+	- 'call' method is added for Egg::Plugin::Tools.
+	- 'code' function is added for Egg::Plugin::Dispatch.
+	- bugfix of 'refhash' for Egg::Plugin::Dispatch::Standard.
+
 2.03  2007/05/11
 	- bugfix for Egg.
 	- fixed for Egg::Request.

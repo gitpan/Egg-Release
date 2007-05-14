@@ -2,7 +2,7 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Tools.pm 147 2007-05-14 02:24:16Z lushe $
 #
 
 =head1 NAME
@@ -35,12 +35,13 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.00';
-
-{
-	no warnings 'redefine';
+our $VERSION = '2.01';
 
 =head1 METHODS
+
+=cut
+{
+	no warnings 'redefine';
 
 =head2 encode_entities ( [HTML_TEXT], [ARGS] )
 
@@ -125,6 +126,27 @@ The result of L<URI::Escape>::uri_unescape is returned.
 	*ueURI        = \&uri_unescape;
 
   };
+
+=head2 call ( [PACKAGE_NAME], [METHOD_NAME], [ARGS] )
+
+PACKAGE_NAME is read, and METHOD_NAME is called.
+
+Please give PACKAGE_NAME the module name since the project name.
+
+$e and ARGS are passed to METHOD_NAME.
+
+  # MyApp::AnyPkg->call_method($e, ... args ); is done.
+  my $result= $e->call( AnyPkg => 'call_method', .... args );
+
+=cut
+sub call {
+	my $e= shift;
+	my $pkg= shift || croak q{ I want include package name. };
+	   $pkg= "$e->{namespace}::$pkg";
+	my $method= shift || return $pkg;
+	$pkg->require or die $@;
+	$pkg->$method($e, @_);
+}
 
 =head2 md5_hex ( [DATA] )
 
