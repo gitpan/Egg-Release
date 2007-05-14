@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.05  2007/05/15
+	- bugfix for Egg::Helper::Plugin::YAML.
+
 2.04  2007/05/13
 	- '_import' call is added for Egg.
 	- 'call' method is added for Egg::Plugin::Tools.

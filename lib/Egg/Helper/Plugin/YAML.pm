@@ -2,7 +2,7 @@ package Egg::Helper::Plugin::YAML;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: YAML.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: YAML.pm 148 2007-05-14 16:13:31Z lushe $
 #
 
 =head1 NAME
@@ -33,39 +33,60 @@ use File::Spec;
 use YAML;
 use base qw/ Egg::Plugin::File::Rotate /;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 sub _execute {
 	my($self)= @_;
 	my $g= $self->global;
+	my $project= $self->project_name;
+	my $lcname = lc($project);
 
 	return $self->_output_help if $g->{help};
 
-	$self->project_root->require or die $@;
-	my $orign= $self->project_root->out;
-
-	my $conf= $self->load_project_config(1);  ## pm only.
-	   $conf->{dir} || die q{ I want setup 'dir' };
-	my $etc = $g->{output_path}
-	       || $conf->{dir}{etc}
-	       || die q{ I want setup dir-> 'etc' };
-
-	my $yaml_file= "$etc/". lc($self->project_name). ".yaml";
-
-	$self->rotate($yaml_file);
-
-	eval{
-		$self->
+	$self->_setup_module_maker(__PACKAGE__);
+	my $c_class= "${project}::config";
+	   $c_class->require or die qq{ configuration is not found: $@ };
+	my $config= $c_class->out || {};
+	$config->{root} || die q{ I want setup 'root'. };
+	$config->{dir}  || die q{ I want setup 'dir'.  };
+	my $etc= $config->{dir}{etc} || die q{ I want setup 'dir->etc'. };
+	$self->replace($config, \$etc);
+	my $yaml= "$etc/$lcname.yaml";
+	$self->rotate($yaml);
+	eval {
+		$self->save_file({
+		  filename=> $yaml, value=>
+		    "#\n"
+		  . "# $project Configuration. - $lcname.yaml\n"
+		  . "#\n"
+		  . "# output date: $g->{gmtime_string} GMT\n"
+		  . "#\n"
+		  . YAML::Dump($config),
+		  });
 	  };
-
-	if ($@) {
-		$self->rotate( $yaml_file, reverse=> 1 );
+	if (my $err= $@) {
+		$self->rotate( $yaml, reverse=> 1 );
+		$self->_output_help($err);
 	} else {
+		print <<END_EXEC;
+
+... completed.
+
+  output : $yaml
+
+END_EXEC
 	}
+}
+sub _output_help {
+	my $self = shift;
+	my $msg  = $_[0] ? "$_[0]\n": "";
+	my $pname= lc($self->project_name);
+	print <<END_HELP;
 
+${msg}# usage: perl ${pname}_helper.pl Plugin:YAML
 
-	my $yaml= "$etc/";
-
+END_HELP
+	exit;
 }
 
 =head1 SEE ALSO
