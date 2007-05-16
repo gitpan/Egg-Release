@@ -62,6 +62,7 @@ lib/Egg/Plugin/Pod/HTML.pm
 lib/Egg/Plugin/Prototype.pm
 lib/Egg/Plugin/rc.pm
 lib/Egg/Plugin/Redirect/Body.pm
+lib/Egg/Plugin/Request/ServerPort.pm
 lib/Egg/Plugin/Tools.pm
 lib/Egg/Plugin/Upload.pm
 lib/Egg/Plugin/Upload/CGI.pm

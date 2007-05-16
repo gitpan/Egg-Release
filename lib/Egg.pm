@@ -205,7 +205,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.02';
+our $VERSION= '2.03';
 
 =head1 METHODS
 
@@ -561,8 +561,13 @@ sub _setup {
 
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
-	*{"$e->{namespace}::_start_engine"}=
-	   $e->debug ? \&_start_engine_debug: \&_start_engine_real;
+	if ($e->debug) {
+		require Egg::Exception;
+		${"$e->{namespace}::SIG"}{__DIE__} = sub { Egg::Error->throw(@_) };
+		*{"$e->{namespace}::_start_engine"}= \&_start_engine_debug;
+	} else {
+		*{"$e->{namespace}::_start_engine"}= \&_start_engine_real;
+	}
 
 	$e;
 }
@@ -756,6 +761,11 @@ sub _start_engine_real {
 }
 sub _start_engine_debug {
 	my($e)= @_;
+	{
+		require Egg::Exception;
+		no strict 'refs';  ## no critic
+		${"$e->{namespace}::SIG"}{__DIE__}= sub { Egg::Error->throw(@_) };
+	  };
 	$e->debugging->report;
 	my $bench= $e->{bench}= $e->debugging->simple_bench;
 	   $bench->_settime;

@@ -1,5 +1,13 @@
 Revision history for Perl extension .
 
+2.06  2007/05/17
+	- Egg::Plugin::Request::ServerPoert module is added.
+	- bugfix for Egg::Plugin::DBI::Transaction.
+	- bugfix for Egg::Plugin::Log.
+	- fixed for Egg::Release.
+	- fixed for Egg::Plugin::Debugging.
+	- fixed for Egg.
+
 2.05  2007/05/15
 	- bugfix for Egg::Helper::Plugin::YAML.
 

@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use base qw/Class::Accessor/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 =head1 METHODS
 
@@ -59,34 +59,19 @@ sub _setup {
 	my($e)= @_;
 	my $dbi= $e->model('DBI') || die q{ I want setup 'Model::DBI'. };
 	my $dbh= $dbi->dbh;
-
 	return $e->next::method if $dbh->{AutoCommit};
 
 	no warnings 'redefine';
 	*is_autocommit= sub { 0 };
-
-	*dbh_commit= sub {
-		$_[0]->dbh->commit;
-		$_[0]->debug_out("# + dbh->commit was called.");
-	  };
-
-	*dbh_rollback= sub {
+	*dbh_rollback = sub {
 		eval{
 		  $_[0]->dbh->rollback;
 		  $_[0]->debug_out("# + dbh->rollback was called.");
 		  };
 	  };
-
-	*_finalize_error= sub {
-		my($e)= @_;
-		$e->commit_ok(0);
-		$e->next::method;
-	  };
-
-	*_finalize_result= sub {
-		my($e)= @_;
-		$e->rollback_ok ? $e->dbh_rollback: $e->dbh_commit;
-		$e->next::method;
+	*dbh_commit= sub {
+		$_[0]->dbh->commit;
+		$_[0]->debug_out("# + dbh->commit was called.");
 	  };
 
 	$e->next::method;
@@ -104,18 +89,18 @@ It commits when it is called and it reports with $e-E<gt>debug_out.
 =cut
 sub dbh_commit    { 1 }
 
-=head2 dbh_rollback
-
-When it is called, it reports on the rollback by doing $e-E<gt>debug_out.
-
-=cut
-sub dbh_rollback  { 1 }
-
 =head2 commit_ok ( [BOOL] )
 
 The flag to commit it at the end of processing is hoisted.
 
 * It influences rollback_ok.
+
+=head2 dbh_rollback
+
+When it is called, it reports on the rollback by doing $e-E<gt>debug_out.
+
+=cut
+sub dbh_rollback { 0 }
 
 =head2 rollback_ok ( [BOOL] )
 
@@ -142,6 +127,17 @@ The state of DBI->dbh->{AutoCommit} is returned.
 
 =cut
 sub is_autocommit { 1 }
+
+sub _finalize_result {
+	my($e)= @_;
+	$e->commit_ok ? $e->dbh_commit: $e->dbh_rollback;
+	$e->next::method;
+}
+sub _finalize_error {
+	my($e)= @_;
+	$e->commit_ok(0);
+	$e->next::method;
+}
 
 =head1 SEE ALSO
 

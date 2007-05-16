@@ -19,24 +19,13 @@ The function concerning debugging is offered to Egg.
 
 Egg doesn't operate if there is no debugging method.
 
-Therefore, it is necessary to load the plug-in with the debugging method.
+Therefore, it is necessary to load the plugin with the debugging method.
 
 =cut
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
-
-sub _setup {
-	my($e)= @_;
-	if ($e->debug) {
-		require Egg::Exception;
-		no strict 'refs';  ## no critic
-		${"$e->{namespace}::SIG"}{__DIE__}=
-		   sub { Egg::Error->throw(@_) } if $e->debug;
-	}
-	$e->next::method;
-}
+our $VERSION = '2.01';
 
 =head1 METHODS
 

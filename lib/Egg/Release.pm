@@ -13,7 +13,7 @@ Egg::Release - Version of Egg WEB Application Framework.
 use strict;
 use warnings;
 
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 our $DISTURL = 'http://egg.bomcity.com/';
 
 =head1 DESCRIPTION
@@ -87,7 +87,7 @@ And, all configuration files are generated to the directory.
 
 =head2 SCRIPT FILE
 
-プロジェクトに関する次のようないくつかのスクリプトが ./bin の中に生成されます。
+Some following scripts concerning the project. It is generated to '/bin'.
 
 =over 4
 
@@ -112,15 +112,15 @@ Script used when operating with FastCGI.
 
 =back
 
-=head2 静的コンテンツ
+=head2 Static contents
 
 The banner image etc. of some Egg are generated to ./htdocs as static contents.
 
-=head2 ライブラリ
+=head2 Library
 
 The controller and the configuration for the project are generated to ./lib.
 
-=head2 ディレクトリ
+=head2 Directory
 
 Additionally, the following directories are generated according to the usage.
 

@@ -30,25 +30,7 @@ If $e-E<gt>config->{log_file} is set, the log is preserved.
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
-
-sub _setup {
-	my($e)= @_;
-	my $logfile= $e->config->{log_file} || return $e->next::method;
-
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	*_finalize_result= sub {
-		my($egg)= @_;
-		return $egg->next::method unless $egg->{log_body};
-		open FH, ">> $logfile" || die "$logfile : $!";  ## no critic
-		print FH $egg->{log_body};
-		close FH;
-		$egg->next::method;
-	  };
-
-	$e->next::method;
-}
+our $VERSION = '2.02';
 
 =head1 METHODS
 
@@ -113,6 +95,15 @@ sub _line {
 	  "$self->{date} [$label] "
 	. (join(' - ', ($self->{req}->path, $msg, $self->{req}->uri)) || "")
 	. " at $call->[0] line $call->[2]\n";
+}
+sub _finalize_result {
+	my($e)= @_;
+	my $logfile= $e->config->{log_file} || return $e->next::method;
+	return $e->next::method unless $e->{log_body};
+	open FH, ">> $logfile" || die "$logfile : $!";  ## no critic
+	print FH $e->{log_body};
+	close FH;
+	$e->next::method;
 }
 
 =head1 SEE ALSO
