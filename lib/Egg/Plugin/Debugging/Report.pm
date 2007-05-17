@@ -2,8 +2,12 @@ package Egg::Plugin::Debugging::Report;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Report.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Report.pm 154 2007-05-17 03:01:31Z lushe $
 #
+use strict;
+use warnings;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -14,12 +18,6 @@ Egg::Plugin::Debugging::Report - debug report for Egg Plugin.
 This module is read from L<Egg::Debugging>.
 
 Please refer to the document of L<Egg::Debugging> for details.
-
-=cut
-use strict;
-use warnings;
-
-our $VERSION = '2.00';
 
 =head1 METHODS
 
@@ -32,7 +30,7 @@ sub report {
 	my($debug)= @_;  my $e= $debug->e;
 	my $project= $e->namespace. '-'. $e->VERSION;
 	my $path   = $e->request->path || '---';
-	my $report = "\n"
+	my $report = ($debug->{notes} || ""). "\n"
 	 . "# $project -< Process >-----------------------\n"
 	 . "# + Request path     : $path\n";
 	my $param;

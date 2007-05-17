@@ -2,7 +2,7 @@ package Egg::Plugin::DBI::Transaction;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Transaction.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Transaction.pm 153 2007-05-16 22:58:27Z lushe $
 #
 
 =head1 NAME

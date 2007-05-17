@@ -2,18 +2,19 @@ package Egg::Release;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 150 2007-05-14 16:15:20Z lushe $
+# $Id: Release.pm 154 2007-05-17 03:01:31Z lushe $
 #
+use strict;
+use warnings;
+
+our $VERSION = '2.07';
 
 =head1 NAME
 
 Egg::Release - Version of Egg WEB Application Framework.
 
 =cut
-use strict;
-use warnings;
 
-our $VERSION = '2.06';
 our $DISTURL = 'http://egg.bomcity.com/';
 
 =head1 DESCRIPTION

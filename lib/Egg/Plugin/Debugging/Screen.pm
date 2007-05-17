@@ -2,8 +2,13 @@ package Egg::Plugin::Debugging::Screen;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Screen.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Screen.pm 154 2007-05-17 03:01:31Z lushe $
 #
+use strict;
+use warnings;
+use Egg::Release;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -14,13 +19,6 @@ Egg::Plugin::Debugging::Screen - Exception is generated, the debugging screen is
 The screen of the exception generation is output.
 
 This module is read from L<Egg::Plugin::Debugging>.
-
-=cut
-use strict;
-use warnings;
-use Egg::Release;
-
-our $VERSION = '2.00';
 
 =head1 METHODS
 

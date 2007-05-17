@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+2.07  2007/05/18
+	- fixed for Egg::Debugging.
+	- fixed for Egg::Debugging::Report.
+	- fixed for Egg.
+
 2.06  2007/05/17
 	- Egg::Plugin::Request::ServerPoert module is added.
 	- bugfix for Egg::Plugin::DBI::Transaction.

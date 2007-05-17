@@ -2,8 +2,16 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 147 2007-05-14 02:24:16Z lushe $
+# $Id: Egg.pm 154 2007-05-17 03:01:31Z lushe $
 #
+use strict;
+use warnings;
+use Egg::Request;
+use Egg::Response;
+use base qw/Egg::Base/;
+use Carp qw/croak confess/;
+
+our $VERSION= '2.04';
 
 =head1 NAME
 
@@ -197,16 +205,6 @@ The setting of the first is treated as VIEW of default.
 
 Please refer to the module document of each object for other settings.
 
-=cut
-use strict;
-use warnings;
-use Egg::Request;
-use Egg::Response;
-use base qw/Egg::Base/;
-use Carp qw/croak confess/;
-
-our $VERSION= '2.03';
-
 =head1 METHODS
 
 =head2 namespace
@@ -304,7 +302,7 @@ sub egg_startup {
 
 	my $conf= $project->config( $project->_load_config(@_) );
 	my $g   = $project->global;
-	my $e   = bless { namespace=> $project }, $project;
+	my $e   = bless { namespace=> $project, egg_startup=> 1 }, $project;
 
 	if ($e->debug) {
 		print STDERR <<END_INFO;

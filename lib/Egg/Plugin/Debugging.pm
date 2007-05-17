@@ -2,8 +2,12 @@ package Egg::Plugin::Debugging;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Debugging.pm 122 2007-05-10 18:21:18Z lushe $
+# $Id: Debugging.pm 154 2007-05-17 03:01:31Z lushe $
 #
+use strict;
+use warnings;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -20,12 +24,6 @@ The function concerning debugging is offered to Egg.
 Egg doesn't operate if there is no debugging method.
 
 Therefore, it is necessary to load the plugin with the debugging method.
-
-=cut
-use strict;
-use warnings;
-
-our $VERSION = '2.01';
 
 =head1 METHODS
 
@@ -55,7 +53,8 @@ sub notes {
 	my $self= shift;
 	my $msg = $_[1] ? join("\n", @_): ($_[0] || return 0);
 	   $msg =~s{[\r\n]+$} [];
-	print STDERR "$msg\n";
+	$self->e->{egg_startup}
+	   ? do { print STDERR "$msg\n" }: do { $self->{notes}.= "$msg\n" };
 }
 
 =head2 output

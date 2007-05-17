@@ -2,7 +2,7 @@ package Egg::Plugin::Log;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Log.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Log.pm 153 2007-05-16 22:58:27Z lushe $
 #
 
 =head1 NAME
