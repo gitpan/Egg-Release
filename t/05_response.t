@@ -1,5 +1,5 @@
 
-use Test::More tests => 82;
+use Test::More tests => 95;
 use Egg::Helper::VirtualTest;
 
 my $test= Egg::Helper::VirtualTest->new( prepare=> 1 );
@@ -18,21 +18,35 @@ can_ok $res, qw{
   };
 
 ok ! $res->status;
-ok $e->finished(200);
+ok $e->finished(200), 'OK';
 is $res->status, 200;
 is $res->status_string, ' OK';
-ok $e->finished(403);
+ok $e->finished(403), 'Forbidden';
 is $res->status, 403;
 is $res->status_string, ' Forbidden';
-ok $e->finished(404);
+ok $e->finished(404), 'Not Found';
 is $res->status, 404;
 is $res->status_string, ' Not Found';
-ok $e->finished(500);
+ok $e->finished(500), 'Internal Server Error';
 is $res->status, 500;
 is $res->status_string, ' Internal Server Error';
 ok ! $e->finished(0);
 ok ! $res->status;
 is $res->status_string, ' OK';
+
+ok $res->status(200,'OK'), '200 OK';
+is $res->status, 200;
+is $res->status_string, ' OK';
+ok $res->status(403, 'Forbidden'), '403 Forbidden';
+is $res->status, 403;
+is $res->status_string, ' Forbidden';
+ok $res->status('200 OK'), '200 OK';
+is $res->status, 200;
+is $res->status_string, ' OK';
+ok $res->status('403 Forbidden'), '403 Forbidden';
+is $res->status, 403;
+is $res->status_string, ' Forbidden';
+ok ! $e->finished(0);
 
 ok ! $res->body;
 ok $res->body('test');
@@ -69,6 +83,7 @@ ok $res->attachment('test.file');
 ok $res->window_target('test');
 ok $res->content_encoding('identity');
 ok my $header= $res->header($body);
+
 like $$header, qr{\bContent\-Type\: +text/html}s;
 like $$header, qr{\bContent\-Language\: +ja}s;
 like $$header, qr{\bWindow\-Target\: +test}s;

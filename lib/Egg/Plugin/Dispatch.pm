@@ -4,6 +4,11 @@ package Egg::Plugin::Dispatch;
 #
 # $Id: Dispatch.pm 147 2007-05-14 02:24:16Z lushe $
 #
+use strict;
+use warnings;
+use Carp qw/croak/;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -24,13 +29,6 @@ Egg::Plugin::Dispatch - It is a base class for Dispatch.
 This is a base class for the Dispatch plugin.
 
 To do the function as Dispatch of Egg, necessary minimum method is offered.
-
-=cut
-use strict;
-use warnings;
-use Carp qw/croak/;
-
-our $VERSION = '2.01';
 
 =head1 EXPORT FUNCTION
 
@@ -60,7 +58,7 @@ Using it because of the setting of run_modes etc. is convenient for this method.
     ...
     content => code( Dispatch => 'content' ),
     );
-  
+
   # When using it in the code. * An arbitrary argument is passed.
   $e->code( Dispatch => 'content' )->($e, ... args );
 

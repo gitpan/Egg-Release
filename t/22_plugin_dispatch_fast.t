@@ -66,7 +66,7 @@ is $e->template, 'test3.tt';
 __DATA__
 
  _default => sub {},
- test1    => sub { $_[0]->{flag}{test1}= 1 },
- test2    => sub { $_[1]->finished(403) },
- test3    => sub { $_[1]->template('test3.tt') },
+ test1    => sub { $_[1]->{flag}{test1}= 1 },
+ test2    => sub { $_[0]->finished(403) },
+ test3    => sub { $_[0]->template('test3.tt') },
 

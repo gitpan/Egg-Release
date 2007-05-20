@@ -4,6 +4,13 @@ package Egg::Plugin::Dispatch::Standard;
 #
 # $Id: Standard.pm 147 2007-05-14 02:24:16Z lushe $
 #
+use strict;
+use warnings;
+use Tie::RefHash;
+use UNIVERSAL::require;
+use base qw/Egg::Plugin::Dispatch/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -47,7 +54,7 @@ Egg::Plugin::Dispatch::Standard - Dispatch of Egg standard.
   
     # Prior processing can be defined.
     _begin => sub {
-      my($dispatch, $e)= @_;
+      my($e, $dispatch)= @_;
       ... blog begin code.
       },
   
@@ -55,19 +62,19 @@ Egg::Plugin::Dispatch::Standard - Dispatch of Egg standard.
     # The regular expression can be used for the action. A rear reference is
     # the third argument that extends to CODE.
     { G => qr{^article_(\d{4}/\d{2}/\d{2})}, label => 'Article' } => sub {
-      my($dispatch, $e, $parts)= @_;
+      my($e, $dispatch, $parts)= @_;
       ... data search ( $parts->[0] ).
       },
   
     # 'P' is an alias of 'POST'.
     { 'P' => 'edit', label => 'BLOG Edit Form.' } => sub {
-      my($dispatch, $e)= @_;
+      my($e, $dispatch)= @_;
       ... edit code.
       },
   
     # Processing can be defined after the fact.
     _end => sub {
-      my($dispatch, $e)= @_;
+      my($e, $dispatch)= @_;
       ... blog begin code.
       },
   
@@ -107,7 +114,7 @@ It is Dispatch of the Egg standard.
      # It is OK if it pulls it out for oneself by using $e-E<gt>request-E<gt>path etc.
   
      qr{^boo_(.+)}=> sub {  # <- Naturally, this can be referred to.
-        my($d, $e, $p)= @_;
+        my($e, $d, $p)= @_;
         },
     },
 
@@ -130,15 +137,6 @@ It is Dispatch of the Egg standard.
         _begin => sub {},
         _end   => sub {},
     },
-
-=cut
-use strict;
-use warnings;
-use Tie::RefHash;
-use UNIVERSAL::require;
-use base qw/Egg::Plugin::Dispatch/;
-
-our $VERSION = '2.01';
 
 =head1 EXPORT FUNCTION
 
@@ -289,7 +287,7 @@ sub _start {
 	  ($self->e->request->is_post || 0),
 	  );
 	my $begin= $self->_scan_mode_more || return 0;
-	$begin->($self, $self->e);
+	$begin->($self->e, $self);
 	1;
 }
 sub _action {
@@ -298,13 +296,13 @@ sub _action {
 	my $action= $self->{__action_code}
 	  || return $self->e->finished(404);  # NOT_FOUND.
 	$self->_backup_action( $self->{__backup_action} );
-	$action->[0]->($self, $self->e, ($action->[1] || []));
+	$action->[0]->($self->e, $self, ($action->[1] || []));
 	1;
 }
 sub _finish {
 	my($self)= @_;
 	my $end= $self->{__end_code} || return 0;
-	$end->($self, $self->e);
+	$end->($self->e, $self);
 	1;
 }
 sub _scan_mode {
@@ -383,7 +381,7 @@ use Egg qw/ -Debug
   ConfigLoader
   Dispatch::Standard
   Debugging
-  Log /;
+  /;
 use Egg::Const;
 
 __PACKAGE__->egg_startup;
@@ -393,7 +391,7 @@ __PACKAGE__->run_modes( refhash (
   # 'ANY' matches to the method of requesting all.
   # The value of label is used with page_title.
   { ANY => '_default', label => 'index page.' }=> sub {
-    my(\$dispatch, \$e)= \@_;
+    my(\$e, \$dispatch)= \@_;
     \$e->template('document/default.tt');
     },
   
@@ -403,13 +401,13 @@ __PACKAGE__->run_modes( refhash (
   
   # When the request method is only GET, 'GET' is matched.
   { GET => 'bbs_view', label => 'BBS' } => sub {
-    my(\$dispatch, \$e)= \@_;
+    my(\$e, \$dispatch)= \@_;
     .... bbs view code.
     },
   
   # When the request method is only POST, 'POST' is matched.
   { POST => 'bbs_post', label => 'BBS Contribution.' } => sub {
-    my(\$dispatch, \$e)= \@_;
+    my(\$e, \$dispatch)= \@_;
     .... bbs post code.
     },
   
@@ -421,7 +419,7 @@ __PACKAGE__->run_modes( refhash (
   
     # Prior processing can be defined.
     _begin => sub {
-      my(\$dispatch, \$e)= \@_;
+      my(\$e, \$dispatch)= \@_;
       ... blog begin code.
       },
   
@@ -435,13 +433,13 @@ __PACKAGE__->run_modes( refhash (
   
     # 'P' is an alias of 'POST'.
     { 'P' => 'edit', label => 'BLOG Edit Form.' } => sub {
-      my(\$dispatch, \$e)= \@_;
+      my(\$e, \$dispatch)= \@_;
       ... edit code.
       },
   
     # Processing can be defined after the fact.
     _end => sub {
-      my(\$dispatch, \$e)= \@_;
+      my(\$e, \$dispatch)= \@_;
       ... blog begin code.
       },
   

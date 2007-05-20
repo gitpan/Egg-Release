@@ -4,6 +4,14 @@ package Egg::Helper::VirtualTest;
 #
 # $Id: VirtualTest.pm 96 2007-05-07 21:31:53Z lushe $
 #
+use strict;
+use warnings;
+use File::Temp qw/tempdir/;
+use Data::Dumper;
+use Carp qw/croak/;
+use base qw/Egg::Helper/;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -41,14 +49,6 @@ Moreover, the result to a virtual request and the operation of the script
 are verifiable it according to WWW::Mechanize::CGI.
 
 =cut
-use strict;
-use warnings;
-use File::Temp qw/tempdir/;
-use Data::Dumper;
-use Carp qw/croak/;
-use base qw/Egg::Helper/;
-
-our $VERSION = '2.00';
 
 __PACKAGE__->mk_accessors(qw/ option /);
 
@@ -599,7 +599,7 @@ END_CODE
 	                  || $attr->{dispatch}
 	                  || <<END_CODE;
  $default_name => sub {
-  my(\$dispatch, \$e)= \@_;
+  my(\$e, \$dispatch)= \@_;
   require Egg::Helper::BlankPage;
   \$e->response->body( Egg::Helper::BlankPage->out(\$e) );
   },

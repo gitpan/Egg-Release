@@ -1,5 +1,15 @@
 Revision history for Perl extension .
 
+2.09  2007/05/20
+	- 'status' method is fixed for Egg::Response.
+	- '_action' method is fixed for Egg::Plugin::Dispatch::Fast.
+	- '_start' and '_action' and '_finish' method is fixed for
+	  Egg::Plugin::Dispatch::Standard.
+	* Project context and dispatch context are passed for the code reference
+	  contrary to before.
+	- fixed for Egg::Helper::Project::Build.
+	- fixed for Egg::Helper::VirtualTest.
+
 2.08  2007/05/19
 	- fixed for Egg::Plugin::DBI::Easy.
 	- bugfix for Egg::Plugin::Debugging.

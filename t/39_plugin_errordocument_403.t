@@ -40,7 +40,7 @@ like $body, qr{<div>FORBIDDEN</div>}s;
 __DATA__
 ---
 value: |
-  _default=> sub { $_[1]->finished(403) },
+  _default=> sub { $_[0]->finished(403) },
 ---
 filename: comp/error_document.tt
 value: |

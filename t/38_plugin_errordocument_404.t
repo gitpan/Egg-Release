@@ -40,7 +40,7 @@ like $body, qr{<div>NOT_FOUND</div>}s;
 __DATA__
 ---
 value: |
-  _default=> sub { $_[1]->finished(404) },
+  _default=> sub { $_[0]->finished(404) },
 ---
 filename: comp/error_document.tt
 value: |

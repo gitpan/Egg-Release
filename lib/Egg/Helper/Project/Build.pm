@@ -4,6 +4,11 @@ package Egg::Helper::Project::Build;
 #
 # $Id: Build.pm 111 2007-05-09 21:31:43Z lushe $
 #
+use strict;
+use warnings;
+use YAML;
+
+our $VERSION= '2.01';
 
 =head1 NAME
 
@@ -40,12 +45,6 @@ option.
   For this case, please set 'PERL_PATH' in the environment variable.
 
 =cut
-use strict;
-use warnings;
-use YAML;
-
-our $VERSION= '2.00';
-
 sub _execute {
 	my($self)= @_;
 	my $g= $self->global;
@@ -133,7 +132,7 @@ value: |
   __PACKAGE__->run_modes(
   
     _default => sub {
-      my($dispatch, $e)= @_;
+      my($e, $dispatch)= @_;
       require Egg::Helper::BlankPage;
       $e->response->body( Egg::Helper::BlankPage->out($e) );
       },

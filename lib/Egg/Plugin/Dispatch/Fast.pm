@@ -4,6 +4,11 @@ package Egg::Plugin::Dispatch::Fast;
 #
 # $Id: Fast.pm 96 2007-05-07 21:31:53Z lushe $
 #
+use strict;
+use warnings;
+use base qw/Egg::Plugin::Dispatch/;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -29,6 +34,8 @@ Egg::Plugin::Dispatch::Fast - High-speed Dispatch for Egg Plugin.
       action => sub { ... },
       },
   
+    boo => sub { ... },
+  
     );
 
 =head1 DESCRIPTION
@@ -44,13 +51,6 @@ The content of the key should be CODE reference.
 
 The argument passed for the CODE reference is similar
 to L<Egg::Plugin::Dispatch::Standard>.
-
-=cut
-use strict;
-use warnings;
-use base qw/Egg::Plugin::Dispatch/;
-
-our $VERSION = '2.00';
 
 =head1 METHODS
 
@@ -126,7 +126,7 @@ sub _action {
 	my($self)= @_;
 	my $action= $self->_action_code
 	   || return $self->e->finished(404);  # NOT_FOUND.
-	$action->($self, $self->e);
+	$action->($self->e, $self);
 	1;
 }
 sub _finish { 1 }

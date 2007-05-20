@@ -40,7 +40,7 @@ like $body, qr{<div>SERVER_ERROR</div>}s;
 __DATA__
 ---
 value: |
-  _default=> sub { $_[1]->finished(500) },
+  _default=> sub { $_[0]->finished(500) },
 ---
 filename: comp/error_document.tt
 value: |

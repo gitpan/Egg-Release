@@ -204,19 +204,19 @@ __DATA__
 _default => sub { },
 
 test => {
-  _begin   => sub { $_[0]->{flag}{test_begin_ok}= 1 },
-  _end     => sub { $_[0]->{flag}{test_end_ok}  = 1 },
-  _default => sub { $_[1]->template('test.tt') },
+  _begin   => sub { $_[1]->{flag}{test_begin_ok}= 1 },
+  _end     => sub { $_[1]->{flag}{test_end_ok}  = 1 },
+  _default => sub { $_[0]->template('test.tt') },
   test2=> {
-    _begin         => sub { $_[0]->{flag}{test_test_begin_ok}= 1 },
-    _end           => sub { $_[0]->{flag}{test_test_end_ok}  = 1 },
-    _default       => sub { $_[1]->finished(403) },
-    qr/^foo(\d+)/  => sub { $_[0]->{flag}{test_test_foo_ok} = $_[2]->[0] },
-    qr/^hoge(\w+)/ => sub { $_[0]->{flag}{test_test_hoge_ok}= $_[2]->[0] },
+    _begin         => sub { $_[1]->{flag}{test_test_begin_ok}= 1 },
+    _end           => sub { $_[1]->{flag}{test_test_end_ok}  = 1 },
+    _default       => sub { $_[0]->finished(403) },
+    qr/^foo(\d+)/  => sub { $_[1]->{flag}{test_test_foo_ok} = $_[2]->[0] },
+    qr/^hoge(\w+)/ => sub { $_[1]->{flag}{test_test_hoge_ok}= $_[2]->[0] },
     },
   test3=> {
-    _begin => sub { $_[0]->{flag}{test_test3_begin_ok}= 1 },
+    _begin => sub { $_[1]->{flag}{test_test3_begin_ok}= 1 },
     },
-  banban => sub { $_[1]->template('banban/index.tt') },
+  banban => sub { $_[0]->template('banban/index.tt') },
   },
 

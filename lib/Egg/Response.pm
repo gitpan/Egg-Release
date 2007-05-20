@@ -1,7 +1,18 @@
 package Egg::Response;
 #
+# Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
+#
 # $Id: Response.pm 122 2007-05-10 18:21:18Z lushe $
 #
+use strict;
+use warnings;
+use HTTP::Headers;
+use CGI::Cookie;
+use CGI::Util qw/expires/;
+use base qw/Class::Accessor::Fast/;
+use Carp qw/croak/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -72,18 +83,10 @@ Warning: Cookie cannot be referred to from the connection of usual http.
 =back
 
 =cut
-use strict;
-use warnings;
-use HTTP::Headers;
-use CGI::Cookie;
-use CGI::Util qw/expires/;
-use base qw/Class::Accessor::Fast/;
-use Carp qw/croak/;
 
-__PACKAGE__->mk_accessors(qw/ e request nph status
+__PACKAGE__->mk_accessors(qw/ e request nph
   is_expires last_modified content_type content_language location /);
 
-our $VERSION = '2.01';
 our $CRLF    = "\015\012";
 our $AUTOLOAD;
 
@@ -404,6 +407,16 @@ The above-mentioned content is revokable from the controller etc.
     500 => 'Internal Error',
     );
 
+=cut
+sub status {
+	my $e= shift;
+	return $e->{status} unless @_;
+	my $status= shift || 0;
+	$e->{status_string}= shift || "";
+	$e->{status}= $status=~/^(\d+) +(.+)/
+	   ? do { $e->{status_string} ||= $2; $1 }: $status;
+}
+
 =head2 status_string
 
 STATUS_STRING set with $response-E<gt>status is returned.
@@ -412,7 +425,8 @@ Half angle space is sure to be included in the head if it has defined it.
 
 =cut
 sub status_string {
-	my $status= $_[0]->status    || return " $Status{200}";
+	return " $_[0]->{status_string}" if $_[0]->{status_string};
+	my $status= $_[0]->status || return " $Status{200}";
 	my $string= $Status{$status} || return "";
 	" $string";
 }

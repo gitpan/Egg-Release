@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.08
+version: 2.09
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -71,13 +71,13 @@ provides:
     version: 2.01
   Egg::Helper::Project::Build:
     file: lib/Egg/Helper/Project/Build.pm
-    version: 2.00
+    version: 2.01
   Egg::Helper::Project::Test:
     file: lib/Egg/Helper/Project/Test.pm
     version: 2.00
   Egg::Helper::VirtualTest:
     file: lib/Egg/Helper/VirtualTest.pm
-    version: 2.00
+    version: 2.01
   Egg::Model:
     file: lib/Egg/Model.pm
     version: 2.00
@@ -127,12 +127,12 @@ provides:
     version: 2.01
   Egg::Plugin::Dispatch::Fast:
     file: lib/Egg/Plugin/Dispatch/Fast.pm
-    version: 2.00
+    version: 2.01
   Egg::Plugin::Dispatch::Fast::handler:
     file: lib/Egg/Plugin/Dispatch/Fast.pm
   Egg::Plugin::Dispatch::Standard:
     file: lib/Egg/Plugin/Dispatch/Standard.pm
-    version: 2.01
+    version: 2.02
   Egg::Plugin::Dispatch::Standard::handler:
     file: lib/Egg/Plugin/Dispatch/Standard.pm
   Egg::Plugin::Dispatch::handler:
@@ -211,7 +211,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.08
+    version: 2.09
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
@@ -237,7 +237,7 @@ provides:
     version: 2.00
   Egg::Response:
     file: lib/Egg/Response.pm
-    version: 2.01
+    version: 2.02
   Egg::Response::FetchCookie:
     file: lib/Egg/Response.pm
   Egg::Response::TieCookie:
