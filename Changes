@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+2.08  2007/05/19
+	- fixed for Egg::Plugin::DBI::Easy.
+	- bugfix for Egg::Plugin::Debugging.
+	- bugfix for Egg::Plugin::Debugging::Report.
+
 2.07  2007/05/18
 	- fixed for Egg::Debugging.
 	- fixed for Egg::Debugging::Report.

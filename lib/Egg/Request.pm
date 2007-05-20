@@ -2,7 +2,7 @@ package Egg::Request;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Request.pm 122 2007-05-10 18:21:18Z lushe $
+# $Id: Request.pm 155 2007-05-20 04:05:33Z lushe $
 #
 
 =head1 NAME
@@ -541,7 +541,7 @@ sub host_name {
 Default is 'localhost',
 
 =cut
-sub host { $ENV{HTTP_HOST}    || $ENV{SERVER_NAME} || 'localhost' }
+sub host { $ENV{HTTP_HOST} || $ENV{SERVER_NAME} || 'localhost' }
 
 =head2 args
 

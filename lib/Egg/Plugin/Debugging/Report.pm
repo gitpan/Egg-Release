@@ -2,12 +2,12 @@ package Egg::Plugin::Debugging::Report;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Report.pm 154 2007-05-17 03:01:31Z lushe $
+# $Id: Report.pm 155 2007-05-20 04:05:33Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -30,8 +30,8 @@ sub report {
 	my($debug)= @_;  my $e= $debug->e;
 	my $project= $e->namespace. '-'. $e->VERSION;
 	my $path   = $e->request->path || '---';
-	my $report = ($debug->{notes} || ""). "\n"
-	 . "# $project -< Process >-----------------------\n"
+	my $report =
+	   "# $project -< Process >-----------------------\n"
 	 . "# + Request path     : $path\n";
 	my $param;
 	if ($param= $e->request->{parameters} and %$param) {

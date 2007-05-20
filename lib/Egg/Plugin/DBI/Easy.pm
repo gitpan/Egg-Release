@@ -2,8 +2,13 @@ package Egg::Plugin::DBI::Easy;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Easy.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Easy.pm 155 2007-05-20 04:05:33Z lushe $
 #
+use strict;
+use warnings;
+use Time::Piece::MySQL;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -40,11 +45,6 @@ that tends to become tedious easily.
 * However, complex SQL cannot be treated.
 
 =cut
-use strict;
-use warnings;
-use Time::Piece::MySQL;
-
-our $VERSION = '2.00';
 
 sub _setup {
 	my($e)= @_;
@@ -99,7 +99,7 @@ sub dbh_hashref {
 	my $e   = shift;
 	my $key = shift || return 0;
 	my $sql = shift || return 0;
-	my $args= &__args(@_);
+	my($args)= &__args(@_);
 	my %bind;
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
@@ -109,7 +109,7 @@ sub dbh_hashref {
 	$bind{$key} ? \%bind: 0;
 }
 
-=head2 dbh_arrayref ( [SQL], [EXECUTE_ARGS] )
+=head2 dbh_arrayref ( [SQL], [EXECUTE_ARGS], [CODE_REF] )
 
 The result is returned by the ARRAY reference.
 
@@ -123,16 +123,45 @@ The result is returned by the ARRAY reference.
     print "$db->{id} = $db->{name} : $db->{email} \n";
   }
 
+If EXECUTE_ARGS is ARRAY reference, CODE_REF can be passed.
+
+  my $code= sub {
+  	my($array, %hash)= @_;
+  	return 0 unless ($hash{name} and $hash{email});
+  	push @$array, "$hash{id} = $hash{name}:$hash{email}\n";
+    };
+  my $array= $e->dbh_arrayref
+      ('SELECT * FROM myapp_table WHERE email like ?', ['%name%'], $code)
+      || return 0;
+  print join('', @$array);
+
+Or
+
+  my $output;
+  my $code= sub {
+  	my($array, %hash)= @_;
+  	return 0 unless ($hash{name} and $hash{email});
+  	$output.= "$hash{id} = $hash{name}:$hash{email} \n";
+    };
+  $e->dbh_arrayref
+     ('SELECT * FROM myapp_table WHERE email like ?', ['%name%'], $code);
+  $output || return 0;
+  print $output;
+
 =cut
 sub dbh_arrayref {
 	my $e   = shift;
 	my $sql = shift || return 0;
-	my $args= &__args(@_);
+	my($args, $code)= &__args(@_);
+	$code ||= sub {
+		my($array, %hash)= @_;
+		push @$array, \%hash
+	  };
 	my(@array, %bind);
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
 	$sth->bind_columns(\(@bind{map{$_}@{$sth->{NAME_lc}}}));
-	while ($sth->fetch) { my %hash= %bind; push @array, \%hash }
+	while ($sth->fetch) { $code->(\@array, %bind) }
 	$sth->finish;
 	$e->debug_out("# + dbh_arrayref: $sql");
 	scalar(@array) ? \@array: 0;
@@ -154,7 +183,7 @@ The result is returned by the SCALAR reference.
 sub dbh_scalarref {
 	my $e   = shift;
 	my $sql = shift || return 0;
-	my $args= &__args(@_);
+	my($args)= &__args(@_);
 	my $result;
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
@@ -181,7 +210,8 @@ sub db {
 }
 
 sub __args {
-	@_ ? (ref($_[0]) eq 'ARRAY' ? $_[0]: [@_]): [];
+	return [] unless @_;
+	ref($_[0]) eq 'ARRAY' ? @_: [@_];
 }
 
 package Egg::Plugin::DBI::Easy::handler;
@@ -274,7 +304,7 @@ sub hashref {
 	  ($pkey, qq{SELECT $items FROM $db->{dbname}$where }, @_);
 }
 
-=head2 arrayref ( [GET_COLUMN], [WHERE_SQL], [EXECUTE_ARGS] )
+=head2 arrayref ( [GET_COLUMN], [WHERE_SQL], [EXECUTE_ARGS], [CODE_REF] )
 
 The result of dbh_arrayref is returned.
 
@@ -288,6 +318,9 @@ When GET_COLUMN is omitted, '*' is used.
   for my $db (@$array) {
     print "$db->{id} = $db->{name} : $db->{email} \n";
   }
+
+If EXECUTE_ARGS is ARRAY reference, CODE_REF can be passed.
+* Please refer to 'dbh_array_ref' for the example of the code.
 
 =cut
 sub arrayref {
