@@ -2,12 +2,12 @@ package Egg::Release;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 155 2007-05-20 04:05:33Z lushe $
+# $Id: Release.pm 157 2007-05-21 03:41:10Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.09';
+our $VERSION = '2.10';
 
 =head1 NAME
 
@@ -208,9 +208,9 @@ Please refer to the document of L<Egg> for a set item of Egg.
 
 =item * Dispatch ‚ÌÝ’è
 
-The setting for loaded Dispatch is set up by 'run_modes'.
+The setting for loaded Dispatch is set up by 'dispatch_map'.
 
-  __PACKAGE__->run_modes(
+  __PACKAGE__->dispatch_map(
     .....
     ...
     .

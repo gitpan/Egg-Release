@@ -2,13 +2,13 @@ package Egg::Plugin::Dispatch::Fast;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Fast.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Fast.pm 156 2007-05-21 03:39:31Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Plugin::Dispatch/;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -18,7 +18,7 @@ Egg::Plugin::Dispatch::Fast - High-speed Dispatch for Egg Plugin.
 
   use Egg qw/ Dispatch::Fast /;
   
-  __PACKAGE__->run_modes(
+  __PACKAGE__->dispatch_map(
   
     _default => {
       label=> 'index page.',
@@ -43,7 +43,7 @@ Egg::Plugin::Dispatch::Fast - High-speed Dispatch for Egg Plugin.
 It is a plugin to do Dispatch that is more high-speed
 than L<Egg::Plugin::Dispatch::Standard> of the Egg standard.
 
-HASH of run_modes can recognize only a single hierarchy.
+HASH of dispatch_map can recognize only a single hierarchy.
 
 Moreover, the regular expression etc. cannot be used for the key.
 
@@ -92,7 +92,7 @@ sub new {
 
 =head2 mode_now
 
-The mode that matches to run_modes is actually returned.
+The mode that matches to dispatch_map is actually returned.
 
 * The value of 'default_mode' method is returned when failing in the match.
 
@@ -101,10 +101,10 @@ The mode that matches to run_modes is actually returned.
 sub _start {
 	my($self)= @_;
 	my($code, $mode, $label);
-	if ($code= $self->run_modes->{$self->mode}) {
+	if ($code= $self->dispatch_map->{$self->mode}) {
 		$mode= $self->mode_now($self->mode);
 		$self->action([$mode]);
-	} elsif ($code= $self->run_modes->{$self->default_mode}) {
+	} elsif ($code= $self->dispatch_map->{$self->default_mode}) {
 		$mode= $self->mode_now($self->default_mode);
 		$self->action([$self->default_name]);
 	} else {
@@ -149,7 +149,7 @@ use $a->{project_name}::BBS;
 
 __PACKAGE__->_egg_setup;
 
-__PACKAGE__->run_modes(
+__PACKAGE__->dispatch_map(
 
   # HASH can be used for the value.
   # Please define not HASH but CODE if you do not use the label.

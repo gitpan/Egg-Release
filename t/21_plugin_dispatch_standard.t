@@ -9,7 +9,7 @@ my $e= $test->egg_pcomp_context;
 
 ok my $dispatch= $e->dispatch;
 isa_ok $dispatch, 'Egg::Plugin::Dispatch::Standard::handler';
-ok my $run= $dispatch->run_modes;
+ok my $run= $dispatch->dispatch_map;
 
 ok $run->{_default};
 ok $run->{test};

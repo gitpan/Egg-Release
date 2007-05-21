@@ -2,13 +2,13 @@ package Egg::Helper::Project::Build;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Build.pm 156 2007-05-21 03:39:31Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '2.01';
+our $VERSION= '2.02';
 
 =head1 NAME
 
@@ -128,8 +128,7 @@ value: |
   
   __PACKAGE__->egg_startup;
   
-  # Dispatch. ------------------------------------------------
-  __PACKAGE__->run_modes(
+  __PACKAGE__->dispatch_map(
   
     _default => sub {
       my($e, $dispatch)= @_;
@@ -138,7 +137,6 @@ value: |
       },
   
     );
-  # ----------------------------------------------------------
   
   1;
   
@@ -148,7 +146,7 @@ value: |
   #
   # use < $e.project_name >::Dispatch::Members;
   #
-  # __PACKAGE__->run_modes( refhash( # <= Importance.
+  # __PACKAGE__->dispatch_map( refhash( # <= Importance.
   #
   #   { ANY=> '_default', label=> 'HOME' }=> sub {},  ## template => index.tt
   #
@@ -157,7 +155,7 @@ value: |
   #      _begin=> \&< $e.project_name >::Dispatch::Members::session_start,
   #
   #      _default=> sub {
-  #        my($d, $e)= @_;
+  #        my($e, $d)= @_;
   #        $e->finished( FORBIDDEN );  ## see Egg::Plugin::ErrorDocument.
   #        },
   #

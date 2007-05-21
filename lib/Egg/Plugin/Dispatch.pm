@@ -2,13 +2,13 @@ package Egg::Plugin::Dispatch;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Dispatch.pm 147 2007-05-14 02:24:16Z lushe $
+# $Id: Dispatch.pm 156 2007-05-21 03:39:31Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/croak/;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -18,7 +18,7 @@ Egg::Plugin::Dispatch - It is a base class for Dispatch.
 
   use base qw/Egg::Plugin::Dispatch/;
   
-  __PACKAGE__->run_modes( ... );
+  __PACKAGE__->dispatch_map( ... );
   
   __PACKAGE__->default_mode( ... );
   
@@ -46,10 +46,10 @@ PACKAGE_NAME is read, and the code reference of METHOD_NAME is returned.
 
 Please give PACKAGE_NAME the module name since the project name.
 
-Using it because of the setting of run_modes etc. is convenient for this method.
+Using it because of the setting of dispatch_map etc. is convenient for this method.
 
   # The CODE reference of the content method of MyApp::Dispatch is set.
-  # * In this case, ($dispatch, $e) extends to the content method.
+  # * In this case, ($e, $dispatch) extends to the content method.
   package MyApp;
   .......
   ...
@@ -77,25 +77,32 @@ Using it because of the setting of run_modes etc. is convenient for this method.
 
 =head1 METHODS
 
-=head2 run_modes ( [RUN_MODE_HASH] )
+=head2 dispatch_map ( [DISPATCH_MAP_HASH] )
 
-Received RUN_MODE_HASH is set in the global variable of the project.
+Received DISPATCH_MAP_HASH is set in the global variable of the project.
 
-RUN_MODE_HASH set to omit RUN_MODE_HASH is returned.
+DISPATCH_MAP_HASH set to omit DISPATCH_MAP_HASH is returned.
 
-  __PACKAGE__->run_modes (
+  __PACKAGE__->dispatch_map (
     _default => sub {},
     hoge     => sub { ... },
     );
 
+=over 4
+
+=item * Alias: run_modes.
+
+=back
+
 =cut
-sub run_modes {
+sub dispatch_map {
 	my $class= shift;
-	return $class->global->{dispatch_run_modes} || 0 unless @_;
+	return $class->global->{dispatch_dispatch_map} || 0 unless @_;
 	my $modes= ref($_[0]) ? $_[0]: {@_};
-	$class->global->{dispatch_run_modes}=
-	   $class->_run_modes_check($modes, $class);
+	$class->global->{dispatch_dispatch_map}=
+	   $class->_dispatch_map_check($modes, $class);
 }
+*run_modes = \&dispatch_map;
 
 =head2 default_mode ( [DEFAULT_MODE] )
 
@@ -158,8 +165,8 @@ class.
 =cut
 sub dispatch  { die q{ Absolute method is not found. } }
 
-sub _get_mode        { 0 }
-sub _run_modes_check { $_[1] }
+sub _get_mode { 0 }
+sub _dispatch_map_check { $_[1] }
 
 
 package Egg::Plugin::Dispatch::handler;
@@ -179,13 +186,13 @@ Accessor to Egg object.
 
 Accessor to $e-E<gt>stash. * However, contents are the HASH references.
 
-=head2 run_modes
+=head2 dispatch_map or run_modes
 
-Accessor to HASH reference set with run_modes.
+Accessor to HASH reference set with dispatch_map.
 
 =head2 action
 
-Accessor for storage of list of matched run_modes key.
+Accessor for storage of list of matched dispatch_map key.
 
 * The thing that is the ARRAY reference is hoped for without fail.
 
@@ -208,10 +215,9 @@ Accessor to value set in default_mode.
 The value of 'template_default_name' of $e-E<gt>config is returned.
 
 =cut
-__PACKAGE__->mk_accessors(qw{
-  e stash config run_modes
-  action mode label page_title default_mode default_name
-  });
+
+__PACKAGE__->mk_accessors(qw/ e stash config
+  dispatch_map action mode label page_title default_mode default_name /);
 
 =head2 new
 
@@ -229,7 +235,7 @@ sub new {
 	  label  => [],
 	  action => [],
 	  page_title  => "",
-	  run_modes   => ($e->run_modes || {}),
+	  dispatch_map=> ($e->dispatch_map || {}),
 	  default_name=> $e->config->{template_default_name},
 	  default_mode=> $e->default_mode,
 	  }, $class;

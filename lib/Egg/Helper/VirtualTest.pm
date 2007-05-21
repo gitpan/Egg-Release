@@ -2,7 +2,7 @@ package Egg::Helper::VirtualTest;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: VirtualTest.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: VirtualTest.pm 156 2007-05-21 03:39:31Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Data::Dumper;
 use Carp qw/croak/;
 use base qw/Egg::Helper/;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -163,11 +163,11 @@ Name of default_mode defined in default_mode.
 
   controller => { default_mode => 'default' },
 
-=item * egg_run_modes => [RUN_MODES_TEXT]
+=item * egg_dispatch_map => [DISPATCH_MAP_TEXT]
 
-The setting of run_modes is set as it is in the text.
+The setting of dispatch_map is set as it is in the text.
 
-  my $run_modes= <<'END_MODE';
+  my $dispatch_map= <<'END_MODE';
   
     _default => sub {},
     hoo => sub {
@@ -178,7 +178,7 @@ The setting of run_modes is set as it is in the text.
   
   END_MODE
   
-  controller => { run_modes => $run_modes },
+  controller => { dispatch_map => $dispatch_map },
 
 =item * egg_mode_param => [PARAM_NAME]
 
@@ -595,9 +595,9 @@ END_CODE
 	} else {
 		$default_name= '_default';
 	}
-	$g->{egg_run_modes}= $attr->{run_modes}
-	                  || $attr->{dispatch}
-	                  || <<END_CODE;
+	$g->{egg_dispatch_map} ||= $g->{egg_run_modes}
+	    || $attr->{dispatch_map} || $attr->{run_modes}
+	    || $attr->{dispatch}     || <<END_CODE;
  $default_name => sub {
   my(\$e, \$dispatch)= \@_;
   require Egg::Helper::BlankPage;
@@ -706,7 +706,7 @@ value: |
   < $e.egg_default_mode >
   < $e.egg_mode_param >
   # Dispatch. ------------------------------------------------
-  __PACKAGE__->run_modes( < $e.egg_run_modes > );
+  __PACKAGE__->dispatch_map( < $e.egg_dispatch_map > );
   # ----------------------------------------------------------
   
   < $e.egg_last_code >

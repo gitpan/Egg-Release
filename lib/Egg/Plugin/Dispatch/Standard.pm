@@ -2,7 +2,7 @@ package Egg::Plugin::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 147 2007-05-14 02:24:16Z lushe $
+# $Id: Standard.pm 156 2007-05-21 03:39:31Z lushe $
 #
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use Tie::RefHash;
 use UNIVERSAL::require;
 use base qw/Egg::Plugin::Dispatch/;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Egg::Plugin::Dispatch::Standard - Dispatch of Egg standard.
   use Egg qw/ Dispatch::Standard /;
   
   # If HASH is used for the key, the refhash function is used.
-  __PACKAGE__->run_modes( refhash(
+  __PACKAGE__->dispatch_map( refhash(
   
   # 'ANY' matches to the method of requesting all.
   # The value of label is used with page_title.
@@ -86,7 +86,7 @@ Egg::Plugin::Dispatch::Standard - Dispatch of Egg standard.
 
 It is Dispatch of the Egg standard.
 
-* HASH is set from the controller to run_modes and Dispatch is defined.
+* HASH is set from the controller to dispatch_map and Dispatch is defined.
 
 * HASH of the layered structure is appreciable.
 
@@ -148,7 +148,7 @@ sub _import {
 
 =head2 refhash ( [HASH] )
 
-Whenever the key to the HASH form is set to run_modes, it is made by way of
+Whenever the key to the HASH form is set to dispatch_map, it is made by way of
 this function.
 
 This function returns received HASH and after Tie is done by L<Tie::RefHash>,
@@ -214,7 +214,7 @@ see L<Egg::Plugin::Dispatch>.
 	}
   };
 
-sub _run_modes_check {
+sub _dispatch_map_check {
 	my($self, $hash, $myname)= @_;
 	while (my($key, $value)= each %$hash) {
 		if (! ref($key) and $key=~/^HASH\(0x[0-9a-f]+\)/) {
@@ -227,7 +227,7 @@ sub _run_modes_check {
 			     $key->{A} || $key->{ANY} || $key->{P} || $key->{POST}
 			  || $key->{G} || $key->{GET} || $key->{LABEL} || 'none.'
 			  ): $key;
-			$self->_run_modes_check($value, $name);
+			$self->_dispatch_map_check($value, $name);
 		}
 	}
 	$hash;
@@ -282,7 +282,7 @@ sub label {
 sub _start {
 	my($self)= @_;
 	$self->_scan_mode( 0,
-	  $self->run_modes,
+	  $self->dispatch_map,
 	  $self->default_mode,
 	  ($self->e->request->is_post || 0),
 	  );
@@ -386,7 +386,7 @@ use Egg::Const;
 
 __PACKAGE__->egg_startup;
 
-__PACKAGE__->run_modes( refhash (
+__PACKAGE__->dispatch_map( refhash (
   
   # 'ANY' matches to the method of requesting all.
   # The value of label is used with page_title.

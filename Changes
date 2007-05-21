@@ -1,5 +1,13 @@
 Revision history for Perl extension .
 
+2.10  2007/05/21
+	- 'run_modes' method of Egg::Plugin::Dispatch is changed to 'dispatch_map'.
+	  * 'run_modes' was made the alias to 'dispatch_map'.
+	- fixed for Egg::Plugin::Dispatch::Fast.
+	- fixed for Egg::Plugin::Dispatch::Standard.
+	- fixed for Egg::Helper::Build.
+	- fixed for Egg::Helper::VirtualTest.
+
 2.09  2007/05/20
 	- 'status' method is fixed for Egg::Response.
 	- '_action' method is fixed for Egg::Plugin::Dispatch::Fast.

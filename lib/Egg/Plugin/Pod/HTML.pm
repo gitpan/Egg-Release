@@ -2,7 +2,7 @@ package Egg::Plugin::Pod::HTML;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: HTML.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: HTML.pm 156 2007-05-21 03:39:31Z lushe $
 #
 
 =head1 NAME
@@ -24,7 +24,7 @@ Egg::Plugin::Pod::HTML - pod2html for Egg Plugin.
   
     );
   
-  __PACKAGE__->run_modes(
+  __PACKAGE__->dispatch_map(
     ...
     .....
   

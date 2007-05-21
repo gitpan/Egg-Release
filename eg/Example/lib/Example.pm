@@ -12,17 +12,15 @@ our $VERSION= '0.01';
 
 __PACKAGE__->egg_startup;
 
-# Dispatch. ------------------------------------------------
-__PACKAGE__->run_modes(
+__PACKAGE__->dispatch_map(
 
   _default => sub {
-    my($dispatch, $e)= @_;
+    my($e, $dispatch)= @_;
     require Egg::Helper::BlankPage;
     $e->response->body( Egg::Helper::BlankPage->out($e) );
     },
 
   );
-# ----------------------------------------------------------
 
 1;
 
@@ -32,7 +30,7 @@ __END__
 #
 # use Example::Dispatch::Members;
 #
-# __PACKAGE__->run_modes( refhash( # <= Importance.
+# __PACKAGE__->dispatch_map( refhash( # <= Importance.
 #
 #   { ANY=> '_default', label=> 'HOME' }=> sub {},  ## template => index.tt
 #
@@ -41,7 +39,7 @@ __END__
 #      _begin=> \&Example::Dispatch::Members::session_start,
 #
 #      _default=> sub {
-#        my($d, $e)= @_;
+#        my($e, $d)= @_;
 #        $e->finished( FORBIDDEN );  ## see Egg::Plugin::ErrorDocument.
 #        },
 #
