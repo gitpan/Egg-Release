@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.11  2007/05/23
+	- 'ridirect' method is fixed for Egg::Response.
+
 2.10  2007/05/21
 	- 'run_modes' method of Egg::Plugin::Dispatch is changed to 'dispatch_map'.
 	  * 'run_modes' was made the alias to 'dispatch_map'.

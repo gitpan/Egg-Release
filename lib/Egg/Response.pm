@@ -2,7 +2,7 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 156 2007-05-21 03:39:31Z lushe $
+# $Id: Response.pm 158 2007-05-24 08:14:33Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use CGI::Util qw/expires/;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.02';
+our $VERSION = '2.04';
 
 =head1 NAME
 
@@ -305,16 +305,16 @@ sub cookies {
 The cash control is set.
 
 When EXPIRES is given, $response-E<gt>expires is set at the same time.
-If $response-E<gt>expires is undefined, it defaults and '+1d' is set.
+If $response-E<gt>expires is undefined, it defaults and '-1d' is set.
 
 When LAST_MODIFIED is given, $response-E<gt>last_modified is set at the same time.
-If $response-E<gt>expires is undefined, it defaults and '+1d' is set.
+If $response-E<gt>expires is undefined, it defaults and '-1d' is set.
 
 0 Becomes invalid if it gives it.
 Moreover, please note that $response-E<gt>last_modified and $response-E<gt>is_expires
 also set 0 at the same time.
 
-  $response-E<gt>no_cache(1, '+3d', '+3d');
+  $response-E<gt>no_cache(1, '-3d', '-3d');
 
 =cut
 sub no_cache {
@@ -322,9 +322,9 @@ sub no_cache {
 	return $res->{no_cache} || 0 unless @_;
 	if ($_[0]) {
 		$_[1] ? $res->is_expires($_[1])
-		      : ($res->is_expires || $res->is_expires('+1d'));
+		      : ($res->is_expires || $res->is_expires('-1d'));
 		$_[2] ? $res->last_modified($_[1])
-		      : ($res->last_modified || $res->last_modified('+1d'));
+		      : ($res->last_modified || $res->last_modified('-1d'));
 		$res->{no_cache}= 1;
 	} else {
 		$res->is_expires(0);
@@ -440,19 +440,20 @@ When STATUS is omitted, 302 is set.
 When WINDOW_TARGET is specified, $response-E<gt>window_target is set at the
 same time.
 
-  $response-E<gt>redirect
+  $response->redirect
      ( '/redirect', 307 => 'Temporarily Redirect', '_parent' );
+  
+  if ($response->redirect) { true }
 
 =cut
 sub redirect {
 	my $res= shift;
-	unless ($res->request->is_head) {
-		my $location= shift || '/';
-		my $status  = shift || 302;
-		$res->window_target($_[0]) if $_[0];
-		$res->location($location);
-		$res->status($status);
-	}
+	return ($res->location ? 1: 0) unless @_;
+	my $location= shift || '/';
+	my $status  = shift || 302;
+	$res->window_target($_[0]) if $_[0];
+	$res->location($location);
+	$res->status($status);
 }
 
 =head2 clear_body
