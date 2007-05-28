@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+2.12  2007/05/28
+	- fixed for Egg::Response::TieCookie.
+	- 'Egg::Plugin::TemplateAuto' is added.
+	- Some methods are added to Egg::Plugin::Tools.
+
 2.11  2007/05/23
 	- 'ridirect' method is fixed for Egg::Response.
 

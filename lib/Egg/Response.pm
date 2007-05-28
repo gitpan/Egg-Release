@@ -2,7 +2,7 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 158 2007-05-24 08:14:33Z lushe $
+# $Id: Response.pm 164 2007-05-28 09:03:45Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use CGI::Util qw/expires/;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.04';
+our $VERSION = '2.05';
 
 =head1 NAME
 
@@ -240,15 +240,22 @@ sub header {
 	}
 	if (my $cookies= $res->{Cookies}) {
 		while (my($name, $hash)= each %$cookies) {
-			my $value= CGI::Cookie->new(
-			  -name   => $name,
-			  -value  => $hash->{value},
-			  -expires=> $hash->{expires},
-			  -domain => $hash->{domain},
-			  -path   => $hash->{path},
-			  -secure => $hash->{secure},
-			  ) || next;
-			$header.= "Set-Cookie: $value$CRLF";
+			if (ref($hash) eq 'ARRAY') {
+				for (@$hash) {
+					my $obj= $_->{obj} || next;
+					$header.= "Set-Cookie: ". $obj->as_string. $CRLF;
+				}
+			} else {
+				my $cookie= $hash->{obj} || CGI::Cookie->new(
+				  -name   => $name,
+				  -value  => $hash->{value},
+				  -expires=> $hash->{expires},
+				  -domain => $hash->{domain},
+				  -path   => $hash->{path},
+				  -secure => $hash->{secure},
+				  ) || next;
+				$header.= "Set-Cookie: ". $cookie->as_string. $CRLF;
+			}
 		}
 	}
 	$res->{header}= $header
@@ -576,8 +583,19 @@ sub TIEHASH {
 sub STORE {
 	my $self= shift;
 	my $key = shift || return 0;
-	my $hash= $_[0] ? (ref($_[0]) eq 'HASH' ? $_[0]: { value=> $_[0] })
-	                : { value => 0 };
+	my $hash= $_[0] ? do {
+		ref($_[0]) ? do {
+			ref($_[0]) eq 'HASH' ? $_[0]: return do {
+				my $add= { obj=> $_[0] };
+				if (my $tmp= $self->[$COOKIE]{$key}) {
+					ref($tmp) eq 'ARRAY' ? do { push @$tmp, $add }
+					  : do { $self->[$COOKIE]{$key}= [$tmp, $add] };
+				} else {
+					$self->[$COOKIE]{$key}= $add;
+				}
+			  };
+		  }: { value=> $_[0] };
+	  }: { value => 0 };
 
 	exists($hash->{value}) or die q{ I want cookie 'value'. };
 	$hash->{name} ||= $key;

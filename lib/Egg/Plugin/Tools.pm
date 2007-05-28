@@ -2,8 +2,15 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 147 2007-05-14 02:24:16Z lushe $
+# $Id: Tools.pm 164 2007-05-28 09:03:45Z lushe $
 #
+use strict;
+use warnings;
+use URI::Escape;
+use HTML::Entities;
+use Carp qw/croak/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -17,7 +24,7 @@ Egg::Plugin::Tools - Various function collections.
   
   $e->unescape_html($plain);
   
-  $e->md5_hex('abcdefg');
+  $e->sha1_hex('abcdefg');
   
   $e->comma('12345.123');
   
@@ -27,15 +34,6 @@ Egg::Plugin::Tools - Various function collections.
 =head1 DESCRIPTION
 
 This plugin offers the method of various functions.
-
-=cut
-use strict;
-use warnings;
-use URI::Escape;
-use HTML::Entities;
-use Carp qw/croak/;
-
-our $VERSION = '2.01';
 
 =head1 METHODS
 
@@ -148,16 +146,23 @@ sub call {
 	$pkg->$method($e, @_);
 }
 
-=head2 md5_hex ( [DATA] )
+=head2 sha1_hex ( [DATA] )
 
-The result of L<Digest::MD5>::md5_hex is returned.
+The result of L<Digest::SHA1>::sha1_hex is returned.
+
+=over 4
+
+=item * Alias: md5_hex
+
+=back
 
 =cut
-sub md5_hex {
-	require Digest::MD5;
+*md5_hex= \&sha1_hex;
+sub sha1_hex {
+	require Digest::SHA1;
 	my $e   = shift;
 	my $data= ref($_[0]) eq 'SCALAR' ? $_[0]: \$_[0];
-	Digest::MD5::md5_hex($$data);
+	Digest::SHA1::sha1_hex($$data);
 }
 
 =head2 comma ( [NUMBER] )
@@ -220,13 +225,47 @@ sub filefind {
 	@files ? \@files: 0;
 }
 
+=head2 referer_check ([FLAG])
+
+The request is own passing on the site or it checks it.
+
+If the request method is POST and doesn't exist when FLAG is given, false is 
+returned.
+
+HTTP_REFERER cannot be acquired by the influence of the security software that
+those who inspect it use etc.
+When HTTP_REFERER cannot be acquired by there is often a thing, too, true is 
+returned.
+
+=cut
+sub referer_check {
+	my $e= shift;
+	if ($_[0]) { $e->req->is_post || return 0 }
+	my $refer= $e->req->referer   || return 1;
+	my $host = $e->req->host_name || return 0;
+	$refer=~m{^https?\://$host} ? 1: 0;
+}
+
+=head2 gettimeofday
+
+The result of L<Time::HiRes>::gettimeofday is returned.
+
+  my($second, $micro)= $e->gettimeofday;
+
+=cut
+sub gettimeofday {
+	require Time::HiRes;
+	Time::HiRes::gettimeofday();
+}
+
 1;
 
 =head1 SEE ALSO
 
 L<HTML::Entities>,
 L<URI::Escape>,
-L<Digest::MD5>,
+L<Digest::SHA1>,
+L<Time::HiRes>,
 L<Egg::Release>,
 
 =head1 AUTHOR

@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.11
+version: 2.12
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -189,9 +189,12 @@ provides:
   Egg::Plugin::Request::ServerPort:
     file: lib/Egg/Plugin/Request/ServerPort.pm
     version: 2.00
+  Egg::Plugin::TemplateAuto:
+    file: lib/Egg/Plugin/TemplateAuto.pm
+    version: 2.00
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
-    version: 2.01
+    version: 2.02
   Egg::Plugin::Upload:
     file: lib/Egg/Plugin/Upload.pm
     version: 2.00
@@ -211,7 +214,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.11
+    version: 2.12
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
@@ -237,7 +240,7 @@ provides:
     version: 2.00
   Egg::Response:
     file: lib/Egg/Response.pm
-    version: 2.04
+    version: 2.05
   Egg::Response::FetchCookie:
     file: lib/Egg/Response.pm
   Egg::Response::TieCookie:
