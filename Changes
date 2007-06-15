@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+2.13  2007/06/15
+	- Some methods are added to Egg::Plugin::Tools.
+	- 'email' filter is added to Egg::Plugin::Filter.
+	- fixed for t/23_plugin_upload.t
+
 2.12  2007/05/28
 	- fixed for Egg::Response::TieCookie.
 	- 'Egg::Plugin::TemplateAuto' is added.

@@ -2,7 +2,7 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 164 2007-05-28 09:03:45Z lushe $
+# $Id: Tools.pm 169 2007-06-15 07:45:17Z lushe $
 #
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 =head1 NAME
 
@@ -258,6 +258,36 @@ sub gettimeofday {
 	Time::HiRes::gettimeofday();
 }
 
+=head2 mkpath ( [DIR], [VERBOSE], [PERMISSION] )
+
+L<File::Path>::mkpath is done.
+
+* The argument extends to L<File::Path>::mkpath as it is.
+
+  $e->mkpath('/home/hoge', 0, 0755);
+
+=cut
+sub mkpath {
+	require File::Path;
+	shift;
+	File::Path::mkpath(@_);
+}
+
+=head2 rmtree ( [DIR_LIST] )
+
+L<File::Path>::rmtree is done.
+
+* The argument extends to L<File::Path>::rmtree as it is.
+
+  $e->rmtree('/home/hoge', '/home/boo');
+
+=cut
+sub rmtree {
+	require File::Path;
+	shift;
+	File::Path::rmtree(@_);
+}
+
 1;
 
 =head1 SEE ALSO
@@ -266,6 +296,7 @@ L<HTML::Entities>,
 L<URI::Escape>,
 L<Digest::SHA1>,
 L<Time::HiRes>,
+L<File::Path>,
 L<Egg::Release>,
 
 =head1 AUTHOR

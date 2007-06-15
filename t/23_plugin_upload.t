@@ -14,6 +14,8 @@ $test->prepare(
   );
 
 SKIP: {
+skip q{ $ENV{EGG_UPLOAD_TEST} is no set. } unless $ENV{EGG_UPLOAD_TEST};
+
 skip q{ WWW::Mechanize::CGI is not installed. } unless $test->mech_ok;
 
 my($metch, $e);

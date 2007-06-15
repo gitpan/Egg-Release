@@ -2,8 +2,14 @@ package Egg::Plugin::Filter;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Filter.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Filter.pm 169 2007-06-15 07:45:17Z lushe $
 #
+use strict;
+use warnings;
+use UNIVERSAL::require;
+use HTML::Entities;
+
+our $VERSION= '2.01';
 
 =head1 NAME
 
@@ -29,18 +35,6 @@ Egg::Plugin::Filter - Filter of request query for Egg plugin.
 =head1 DESCRIPTION
 
 It is filter plugin to pass it as for data.
-
-=cut
-use strict;
-use warnings;
-use UNIVERSAL::require;
-use HTML::Entities;
-
-our $VERSION= '2.00';
-
-my $EGG= 0;
-my $VAL= 1;
-my $ARG= 2;
 
 =head1 FILTERS
 
@@ -155,7 +149,24 @@ The character that cannot be used by the telephone number is deleted.
 
 quotemeta is done.
 
+=head2 email
+
+The domain name part in the mail address is converted into the small letter.
+
+  MyName@DOMAIN.COM => MyName@domain.com
+
+=head2 url
+
+The domain name part in the URL is converted into the small letter.
+
+  http://MYDOMAIN.COM/Hoge/Boo.html => http://mydomain.com/Hoge/Boo.html
+
 =cut
+
+my $EGG= 0;
+my $VAL= 1;
+my $ARG= 2;
+
 our %Filters= (
 
  trim=> sub {
@@ -255,6 +266,16 @@ our %Filters= (
  quotemeta=> sub {
    ${$_[$VAL]}= quotemeta(${$_[$VAL]}) if defined(${$_[$VAL]});
    },
+ email=> sub {
+   return 0 unless ${$_[$VAL]};
+   ${$_[$VAL]}=~s{\s+} []sg;
+   ${$_[$VAL]}=~s{(.+?\@)([^\@]+)$} [$1. lc($2)]e;
+   },
+ url=> sub {
+   return 0 unless ${$_[$VAL]};
+   ${$_[$VAL]}=~s{\s+} []sg;
+   ${$_[$VAL]}=~s{^(https?\://)([^/]+)(.*)} [$1. lc($2). $3]e;
+   },
  );
 
 sub _filters { \%Filters }
@@ -333,7 +354,8 @@ sub filter {
 			FILTERPIECE:
 			for my $piece (@$config) {
 				my($name, @args)= split /\:/, $piece;
-				my $func= $Filters{$name} || next FILTERPIECE;
+				my $func= $Filters{$name}
+				       || die qq{ '$name' filter is not defined. };
 				eval { $func->($e, $value, \@args) };
 				$@ and die __PACKAGE__. ": $@";
 			}

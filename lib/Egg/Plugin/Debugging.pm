@@ -2,12 +2,12 @@ package Egg::Plugin::Debugging;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Debugging.pm 155 2007-05-20 04:05:33Z lushe $
+# $Id: Debugging.pm 169 2007-06-15 07:45:17Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.03';
+our $VERSION = '2.04';
 
 =head1 NAME
 
@@ -34,6 +34,22 @@ The handler object of this plug-in is returned.
 =cut
 sub debugging {
 	$_[0]->{Debugging} ||= Egg::Plugin::Debugging::handler->new(@_);
+}
+
+=head2 debug_alert ( [DISP_STRING] )
+
+=cut
+sub debug_alert {
+	shift;
+	my $string= shift || '<N/A>';
+	$string=~tr/\r\n\t//d;
+	$string=~s{<} [&lt;]g;  $string=~s{\"} [&quot;]g;
+	$string=~s{>} [&gt;]g;  $string=~s{\'} [&rsquo;]g;
+	<<END_JS;
+<script type="text/javascript"><!-- //
+alert('$string');
+// --></script>
+END_JS
 }
 
 package Egg::Plugin::Debugging::handler;
