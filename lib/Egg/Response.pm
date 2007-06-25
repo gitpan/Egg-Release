@@ -12,7 +12,7 @@ use CGI::Util qw/expires/;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 
 =head1 NAME
 
@@ -438,19 +438,30 @@ sub status_string {
 	" $string";
 }
 
-=head2 redirect ( [LOCATION_URI], [STATUS], [WINDOW_TARGET])
+=head2 redirect ( [LOCATION_URI], [STATUS], [REDIRECT_OPTION])
 
 Redirecting is setup.
 
 When STATUS is omitted, 302 is set.
 
-When WINDOW_TARGET is specified, $response-E<gt>window_target is set at the
-same time.
+The following options can be passed.
 
-  $response->redirect
-     ( '/redirect', 307 => 'Temporarily Redirect', '_parent' );
-  
-  if ($response->redirect) { true }
+=over 4
+
+=item * target => [TARGET_STRING]
+
+=item * template => [TEMPLATE_PATH]
+
+When this option is given, $e-E<gt>finished is not set.
+
+And, it outputs it to the screen by processing the given template.
+
+=back
+
+  $response->redirect(
+    '/redirect', '307 Temporarily Redirect',
+    { target=> '_parent', template=> 'redirect.tt' }
+    );
 
 =cut
 sub redirect {
@@ -458,9 +469,15 @@ sub redirect {
 	return ($res->location ? 1: 0) unless @_;
 	my $location= shift || '/';
 	my $status  = shift || 302;
-	$res->window_target($_[0]) if $_[0];
+	my $option  = ref($_[0]) eq 'HASH' ? $_[0]: {@_};
 	$res->location($location);
-	$res->status($status);
+	$res->window_target($option->{target}) if $option->{target};
+	if ($option->{template}) {
+		$res->e->template($option->{template});
+		return $res->status($status);
+	} else {
+		return $res->e->finished($res->status($status));
+	}
 }
 
 =head2 clear_body

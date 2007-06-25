@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.14  2007/06/25
+	- 'ridirect' method is fixed for Egg::Response.
+
 2.13  2007/06/15
 	- Some methods are added to Egg::Plugin::Tools.
 	- 'email' filter is added to Egg::Plugin::Filter.
