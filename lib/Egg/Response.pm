@@ -2,7 +2,7 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 164 2007-05-28 09:03:45Z lushe $
+# $Id: Response.pm 170 2007-06-25 15:19:22Z lushe $
 #
 use strict;
 use warnings;

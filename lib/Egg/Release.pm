@@ -2,12 +2,12 @@ package Egg::Release;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 169 2007-06-15 07:45:17Z lushe $
+# $Id: Release.pm 171 2007-06-25 15:25:10Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.14';
+our $VERSION = '2.15';
 
 =head1 NAME
 
