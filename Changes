@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.16  2007/06/27
+	- fixed for test.
+
 2.14  2007/06/25
 	- 'ridirect' method is fixed for Egg::Response.
 

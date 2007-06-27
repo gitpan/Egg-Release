@@ -8,10 +8,10 @@ my $psw   = $ENV{EGG_RDBMS_PASSWORD}   || "";
 my $table = $ENV{EGG_RDBMS_TEST_TABLE} || 'egg_release_dbi_test_table';
 
 SKIP: {
-skip q{ Data base is not setup. } unless ($dsn and $uid);
+skip q{ Data base is not setup. }, 6 unless ($dsn and $uid);
 
 eval{ require DBI };
-skip q{ 'DBI' module is not installed. } if $@;
+skip q{ 'DBI' module is not installed. }, 6 if $@;
 
 my $test= Egg::Helper::VirtualTest->new( prepare=> {
   controller=> { egg_includes=> [qw/ DBI::Transaction /] },
@@ -29,7 +29,7 @@ my $e;
 eval{ $e= $test->egg_pcomp_context };
 if ($@) {
 	die $@;
-	skip q{ Doesn't connect with the data base. };
+	skip q{ Doesn't connect with the data base. }, 6;
 }
 
 can_ok $e,

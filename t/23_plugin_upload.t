@@ -1,5 +1,5 @@
 
-use Test::More qw/no_plan/;
+use Test::More tests=> 25;
 use Egg::Helper::VirtualTest;
 
 my $test = Egg::Helper::VirtualTest->new;
@@ -14,9 +14,9 @@ $test->prepare(
   );
 
 SKIP: {
-skip q{ $ENV{EGG_UPLOAD_TEST} is no set. } unless $ENV{EGG_UPLOAD_TEST};
+skip q{ $ENV{EGG_UPLOAD_TEST} is no set. }, 25 unless $ENV{EGG_UPLOAD_TEST};
 
-skip q{ WWW::Mechanize::CGI is not installed. } unless $test->mech_ok;
+skip q{ WWW::Mechanize::CGI is not installed. }, 25 unless $test->mech_ok;
 
 my($metch, $e);
 eval{
@@ -29,7 +29,7 @@ eval{
 	    ],
 	  } );
 };
-skip q{ VirtualTest->mech_post method is invalid. } if $@;
+skip q{ VirtualTest->mech_post method is invalid. }, 25 if $@;
 
 ok $req= $e->request;
 ok $req->is_post;

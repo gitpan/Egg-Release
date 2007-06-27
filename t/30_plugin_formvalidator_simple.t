@@ -4,7 +4,7 @@ use Egg::Helper::VirtualTest;
 
 SKIP: {
 eval{ require FormValidator::Simple };
-skip q{ FormValidator::Simple is not installed. } if $@;
+skip 'FormValidator::Simple is not installed.', 4 if $@;
 
 my $test= Egg::Helper::VirtualTest->new( prepare=> {
   controller=> { egg_includes=> [qw/ FormValidator::Simple /] },

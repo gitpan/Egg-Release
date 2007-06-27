@@ -8,13 +8,13 @@ my $psw   = $ENV{EGG_RDBMS_PASSWORD}   || "";
 my $table = $ENV{EGG_RDBMS_TEST_TABLE} || 'egg_release_dbi_test_table';
 
 SKIP: {
-skip q{ Data base is not setup. } unless ($dsn and $uid);
+skip q{ Data base is not setup. }, 40 unless ($dsn and $uid);
 
 eval{ require DBI };
-skip q{ 'DBI' module is not installed. } if $@;
+skip q{ 'DBI' module is not installed. }, 40 if $@;
 
 eval{ require Time::Piece::MySQL };
-skip q{ 'Time::Piece::MySQL' is not installed. } if $@;
+skip q{ 'Time::Piece::MySQL' is not installed. }, 40 if $@;
 
 my $test= Egg::Helper::VirtualTest->new( prepare=> {
   controller=> { egg_includes=> [qw/ DBI::Easy /] },
@@ -54,7 +54,7 @@ can_ok 'Egg::Plugin::DBI::Easy::accessors', qw/
 
 my $dbh;
 eval{ $dbh= $e->dbh };
-skip q{ Doesn't connect with the data base. } if ($@ or ! $dbh);
+skip q{ Doesn't connect with the data base. }, 40 if ($@ or ! $dbh);
 
 eval{
 $dbh->do(<<"END_ST");

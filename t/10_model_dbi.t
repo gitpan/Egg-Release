@@ -1,5 +1,5 @@
 
-use Test::More qw/no_plan/;
+use Test::More tests=> 23;
 use Egg::Helper::VirtualTest;
 
 my $dsn   = $ENV{EGG_RDBMS_DSN}        || "";
@@ -8,10 +8,10 @@ my $psw   = $ENV{EGG_RDBMS_PASSWORD}   || "";
 my $table = $ENV{EGG_RDBMS_TEST_TABLE} || 'egg_release_dbi_test_table';
 
 SKIP: {
-skip q{ Data base is not setup. } unless ($dsn and $uid);
+skip q{ Data base is not setup. }, 23  unless ($dsn and $uid);
 
 eval{ require DBI };
-skip q{ 'DBI' module is not installed. } if $@;
+skip q{ 'DBI' module is not installed. }, 23 if $@;
 
 my $test= Egg::Helper::VirtualTest->new;
 $test->prepare( config => {
@@ -30,7 +30,7 @@ can_ok $dbi, qw/ dbh /;
 
 my $dbh;
 eval{ $dbh= $dbi->dbh };
-skip q{ Doesn't connect with the data base. } if ($@ or ! $dbh);
+skip q{ Doesn't connect with the data base. }, 20 if ($@ or ! $dbh);
 
 my $ima= $dbi->isa('Ima::DBI') ? 1: 0;
 
@@ -46,7 +46,7 @@ CREATE TABLE $table (
 END_ST
   };
 
-skip q{ No permission to create table. } if $@;
+skip q{ No permission to create table. }, 19 if $@;
 
 my $result;
 
