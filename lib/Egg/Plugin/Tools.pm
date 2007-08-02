@@ -10,7 +10,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.03';
+our $VERSION = '2.04';
 
 =head1 NAME
 
@@ -288,6 +288,26 @@ sub rmtree {
 	File::Path::rmtree(@_);
 }
 
+=head2 jfold ( [STRING], [LENGTH] )
+
+L<Jcode>::jfold is done.
+
+Egg::Encode plugin is used.
+
+$e-E<gt>encode-E<gt>set([STRING])-E<gt>jfold([LENGTH]) is executed.
+
+The result is returned by the ARRAY reference.
+
+  my $text= 'ABCDEFG';
+  print $e->jfold(\$text, 3)->[0];  ## print is "ABC".
+
+=cut
+sub jfold {
+	my $e   = shift;
+	my $str = shift || croak q{ I want string. };
+	[ $e->encode->set($str)->jfold(@_) ];
+}
+
 1;
 
 =head1 SEE ALSO
@@ -298,6 +318,7 @@ L<Digest::SHA1>,
 L<Time::HiRes>,
 L<File::Path>,
 L<Egg::Release>,
+L<Egg::Plugin::Encode>,
 
 =head1 AUTHOR
 

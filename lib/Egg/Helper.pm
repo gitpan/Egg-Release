@@ -4,6 +4,20 @@ package Egg::Helper;
 #
 # $Id: Helper.pm 111 2007-05-09 21:31:43Z lushe $
 #
+use strict;
+use warnings;
+use UNIVERSAL::require;
+use Cwd;
+use Getopt::Easy;
+use File::Which;
+use File::Path;
+use YAML;
+use Egg::Release;
+use Egg::Exception;
+use base qw/Egg::Base/;
+use Carp qw/croak/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -74,20 +88,6 @@ module.
 A convenient code is only freely written now if a target helper module starts.
 
 =cut
-use strict;
-use warnings;
-use UNIVERSAL::require;
-use Cwd;
-use Getopt::Easy;
-use File::Which;
-use File::Path;
-use YAML;
-use Egg::Release;
-use Egg::Exception;
-use base qw/Egg::Base/;
-use Carp qw/croak/;
-
-our $VERSION = '2.02';
 
 my $Alias= {
   M => 'Model',  V => 'View',  D => 'Dispatch', R => 'Request',
@@ -841,11 +841,12 @@ sub _setup_module_maker {
 	  };
 	$hash->{dist}= sub {
 		my($proto, $param)= splice @_, 0, 2;
-		my $proot_regix= $g->{project_root};
-		   $proot_regix=~s{\\} [\\\\]g;
 		my $fname= $proto->_conv_unix_path(@_) || return "";
 		$fname=~s{^[A-Za-z]\:+} []o;
-		$fname=~s{^$proot_regix} []o;
+		if (my $proot_regix= $g->{project_root}) {
+			$proot_regix=~s{\\} [\\\\]g;
+			$fname=~s{^$proot_regix} []o;
+		}
 		$fname=~s{^/?lib} []o;
 		$fname=~s{^/+} []o;
 		$fname=~s{\.pm$} []o;

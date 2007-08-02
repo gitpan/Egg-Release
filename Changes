@@ -1,5 +1,11 @@
 Revision history for Perl extension .
 
+2.17  2007/08/03
+	- fixed for Egg::Helper.
+	- HTTP::Headers was not used by Egg::Response.
+	- The method of jfold is added to Egg::Plugin::Tools.
+	- fixed for test.
+
 2.16  2007/06/27
 	- fixed for test.
 

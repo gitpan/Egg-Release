@@ -59,7 +59,7 @@ ok $body= $res->body;
 is $$body, $text;
 
 ok $res->headers;
-isa_ok $res->headers, 'HTTP::Headers';
+isa_ok $res->headers, 'Egg::Response::Headers';
 
 ok my $cookies= $res->cookies;
 isa_ok $cookies, 'HASH';

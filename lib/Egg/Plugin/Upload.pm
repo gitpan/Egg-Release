@@ -4,6 +4,12 @@ package Egg::Plugin::Upload;
 #
 # $Id: Upload.pm 96 2007-05-07 21:31:53Z lushe $
 #
+use strict;
+use warnings;
+use UNIVERSAL::require;
+use Egg::View;
+
+our $VERSION= '2.00';
 
 =head1 NAME
 
@@ -17,13 +23,6 @@ However, it is good only to describe Upload in Egg.
 The subclass judges the environment and reads by the automatic operation.
 
 =cut
-use strict;
-use warnings;
-use UNIVERSAL::require;
-use Egg::View;
-
-our $VERSION= '2.00';
-
 sub _setup {
 	my($e)= @_;
 
@@ -55,7 +54,7 @@ __PACKAGE__->mk_accessors( qw/name handle/ );
 
 =head1 UPLOAD METHODS
 
-$e-E<gt>request-E<gt>upload で受け取った オブジェクトで使用できるメソッドです。
+It is a method that can be used with the object received by $e-E<gt>request-E<gt>upload.
 
 =head2 new
 
@@ -71,7 +70,7 @@ sub new {
 
 =head2 name
 
-パラメータ名を返します。
+The parameter name is returned.
 
 =over 4
 

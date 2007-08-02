@@ -6,13 +6,12 @@ package Egg::Response;
 #
 use strict;
 use warnings;
-use HTTP::Headers;
 use CGI::Cookie;
 use CGI::Util qw/expires/;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.06';
+our $VERSION = '2.07';
 
 =head1 NAME
 
@@ -157,11 +156,11 @@ sub body {
 
 =head2 headers
 
-L<HTTP::Headers> object is returned.
+Egg::Response::Headers object is returned.
 
 =cut
 sub headers {
-	$_[0]->{http_headers} ||= HTTP::Headers->new;
+	$_[0]->{__headers} ||= Egg::Response::Headers->new($_[0]);
 }
 
 =head2 header ( [CONTENT_BODY] )
@@ -184,7 +183,7 @@ sub header {
 	 }: sub { };
 
 	my $e= $res->e;
-	my $headers= $res->{http_headers} || {};
+	my $headers= $res->{__headers} || {};
 	my($status, $content_type);
 	if ($res->nph) {
 		$header.= ($res->request->protocol || 'HTTP/1.0')
@@ -201,17 +200,12 @@ sub header {
 			$header.= "Content-Type: $content_type$CRLF";
 		}
 	} else {
-		$content_type= $res->content_type || $res->content_type(
-		     $headers->{'content-type'}
-		  || $e->config->{content_type}
-		  || 'text/html'
-		  );
+		$content_type= $res->content_type
+		  || $res->content_type($e->config->{content_type} || 'text/html');
 		$header.= "Content-Type: $content_type$CRLF";
 	}
-
 	if ($content_type=~m{^text/.+}i) {
-		if (my $language= $headers->{'content-language'}
-		               || $res->content_language ) {
+		if (my $language= $res->content_language) {
 			$header.= "Content-Language: $language$CRLF";
 		}
 #		$leng_code->();
@@ -219,10 +213,9 @@ sub header {
 		$leng_code->();
 	}
 
-	while (my($name, $value)= each %$headers) {
-		next if $name=~/^Content\-(?:Type|Length|Language)$/i;
-		$header.= ucfirst($name). "\: $_$CRLF"
-		   for (ref($value) eq 'ARRAY' ? @$value: $value);
+	for my $h (values %$headers) {
+		$header.= "$h->[0]\: $_$CRLF"
+		  for (ref($h->[1]) eq 'ARRAY' ? @{$h->[1]}: $h->[1]);
 	}
 
 	$header.= 'Date: '. expires(0,'http'). $CRLF
@@ -509,7 +502,7 @@ sub clear {
 	$res->{content_type}= $res->{content_language}= "";
 	$res->is_expires(0);
 	$res->last_modified(0);
-	$res->headers->clear if $res->{http_headers};
+	$res->headers->clear if $res->{__headers};
 	$res->clear_cookies;
 	undef($res->{header});
 	1;
@@ -569,17 +562,125 @@ The last-Modified header is set.
 
 =cut
 
-sub AUTOLOAD {
-	my $res= shift;
-	my($method)= $AUTOLOAD=~/([^\:]+)$/;
-	no strict 'refs';  ## no critic
-	no warnings 'redefine';
-	*{__PACKAGE__."::$method"}= sub { shift->headers->$method(@_) };
-	$res->$method(@_);
-}
 sub DESTROY {
 	my($res)= @_;
 	untie %{$res->{Cookies}} if $res->{Cookies};
+}
+
+package Egg::Response::Headers;
+use strict;
+
+=head1 Egg::Response::Headers METHODS
+
+=head2 new ([ EGG::Response context ])
+
+The object is returned.
+
+* The object is HASH reference of the set header.
+
+* The key is a name that lc is done for recognition.
+
+* The content is ARRAY reference and [ "ORIGINAL NAME", "VALUE" ].
+
+  my $headers= $e->response->headers;
+  $headers->{X_AnyName}= 'any header.';
+
+Reference to content.
+
+  $headers->{X_AnyName}[1];
+
+Refer to all data.
+
+  for my $head (values %headers) {
+    print "$head->[0]: $head->[1]\r\n";
+  }
+
+*  The value is returned in order set by L<Tie::Hash::Indexed>.
+
+=cut
+sub new {
+	my $class= shift;
+	tie my %headers, 'Egg::Response::Headers::TieHash', @_;
+	bless \%headers, $class;
+}
+
+=head2 header ([HEAD_NAME], [VALUE])
+
+The value set in [HEAD_NAME] is returned.
+
+When [VALUE] is given, the value is set.
+
+* If [VALUE] is undef, the data that relates to the key is deleted.
+
+  $header->header( X_AnyName => 'any_header' );
+
+=cut
+sub header {
+	my $self= shift;
+	return $self->{$_[0]} if @_< 2;
+	$self->{$_[0]}= $_[1];
+}
+
+=head2 clear
+
+セット済みの値をデータを初期化します。
+
+  $header->clear;
+
+=cut
+sub clear {
+	my $self= shift;
+	%{$self}= ();
+}
+
+package Egg::Response::Headers::TieHash;
+use strict;
+use Tie::Hash::Indexed;
+use Tie::Hash;
+
+our @ISA = 'Tie::ExtraHash';
+
+my $ForwardRegex= qr{^(?:content_type|content_language|location|status)$};
+
+sub TIEHASH {
+	my($class, $response)= @_;
+	tie my %param, 'Tie::Hash::Indexed';
+	bless [\%param, $response], $class;
+}
+sub FETCH {
+	my($self, $key, $org)= &_getkey;
+	return $self->[1]->$key if $key=~m{$ForwardRegex};
+	$self->[0]{$key};
+}
+sub STORE {
+	my($self, $key, $org, $value)= &_getkey;
+	return $self->[1]->$key($value) if $key=~m{$ForwardRegex};
+	if (defined($value)) {
+		if ($self->[0]{$key}) {
+			ref($self->[0]{$key}) eq 'ARRAY'
+			  ? do { push @{$self->[0]{$key}}, [$org, $value] }
+			  : do { $self->[0]{$key}= [$self->[0]{$key}, [$org, $value]] };
+		} else {
+			$self->[0]{$key}= [$org, $value];
+		}
+	} else {
+		delete($self->[0]{$key}) if exists($self->[0]{$key});
+	}
+}
+sub DELETE {
+	my($self, $key)= &_getkey;
+	delete($self->[0]{$key});
+}
+sub EXISTS {
+	my($self, $key)= &_getkey;
+	exists($self->[0]{$key});
+}
+sub _getkey {
+	my($self, $org)= splice @_, 0, 2;
+	   $org=~s{_} [-]g;
+	my $key= lc($org);
+	   $key=~s{-} [_]g;
+	($self, $key, $org, @_);
 }
 
 package Egg::Response::TieCookie;
@@ -639,7 +740,6 @@ sub new { bless $_[1], $_[0] }
 
 =head1 SEE ALSO
 
-L<HTTP::Headers>,
 L<CGI::Cookie>,
 L<Egg::Release>,
 

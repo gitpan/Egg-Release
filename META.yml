@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.16
+version: 2.17
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -12,7 +12,7 @@ requires:
   Class::Accessor: 0.3
   Class::C3: 0.14
   Devel::StackTrace: 1.14
-  Digest::MD5: 2.36
+  Digest::SHA1: 2.11
   File::Spec: 3.24
   File::Temp: 0.18
   File::Which: 0.05
@@ -31,6 +31,7 @@ requires:
   Test::Pod: 0
   Test::Pod::Coverage: 0
   Test::Simple: 0
+  Tie::Hash::Indexed: 0.04
   Tie::RefHash: 1.35
   Time::HiRes: 0
   UNIVERSAL::require: 0.11
@@ -194,7 +195,7 @@ provides:
     version: 2.00
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
-    version: 2.03
+    version: 2.04
   Egg::Plugin::Upload:
     file: lib/Egg/Plugin/Upload.pm
     version: 2.00
@@ -214,7 +215,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.16
+    version: 2.17
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
@@ -240,8 +241,12 @@ provides:
     version: 2.00
   Egg::Response:
     file: lib/Egg/Response.pm
-    version: 2.06
+    version: 2.07
   Egg::Response::FetchCookie:
+    file: lib/Egg/Response.pm
+  Egg::Response::Headers:
+    file: lib/Egg/Response.pm
+  Egg::Response::Headers::TieHash:
     file: lib/Egg/Response.pm
   Egg::Response::TieCookie:
     file: lib/Egg/Response.pm

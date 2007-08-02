@@ -64,7 +64,7 @@ eval {
 	isa_ok $res, ref($e->res);
 	ok $res->request;
 	isa_ok $res->request, 'Egg::Request';
-	isa_ok $res->headers, 'HTTP::Headers';
+	isa_ok $res->headers, 'Egg::Response::Headers';
 	is $res->status, 0;
 
 	## model.
