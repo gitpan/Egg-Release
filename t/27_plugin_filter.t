@@ -114,7 +114,7 @@ like $param->{t_strip},         qr/^t e s t$/;
 like $param->{t_hold_tab},      qr/^test$/;
 like $param->{t_strip_tab},     qr/^t e s t$/;
 like $param->{t_hold_crlf},     qr/^test$/;
-like $param->{t_strip_crlf},    qr/^t  e  s  t$/;
+like $param->{t_strip_crlf},    qr/^t e s t$/;
 like $param->{t_crlf1},         qr/^t\ne\ns\nt$/;
 like $param->{t_crlf2},         qr/^t\n\ne\n\ns\n\nt$/;
 like $param->{t_crlf3},         qr/^t\n\n\ne\n\n\ns\n\n\nt$/;

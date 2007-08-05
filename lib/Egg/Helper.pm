@@ -2,7 +2,7 @@ package Egg::Helper;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Helper.pm 181 2007-08-02 18:28:43Z lushe $
 #
 use strict;
 use warnings;

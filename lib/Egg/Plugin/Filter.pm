@@ -2,14 +2,14 @@ package Egg::Plugin::Filter;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Filter.pm 169 2007-06-15 07:45:17Z lushe $
+# $Id: Filter.pm 182 2007-08-05 17:25:44Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use HTML::Entities;
 
-our $VERSION= '2.01';
+our $VERSION= '2.02';
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ Egg::Plugin::Filter - Filter of request query for Egg plugin.
   # The received form data is filtered.
   $e->filter(
    myname => [qw/hold_html abs_strip trim/],
-   address=> [qw/hold_html crlf1 abs_strip trim/],
+   address=> [qw/hold_html crlf:2 abs_strip trim/],
    tel    => [qw/hold phone/],
    );
 
@@ -170,7 +170,9 @@ my $ARG= 2;
 our %Filters= (
 
  trim=> sub {
-   ${$_[$VAL]}=~s{(^\s+|\s+$)} []sg if defined(${$_[$VAL]});
+   return 0 unless defined(${$_[$VAL]});
+   ${$_[$VAL]}=~s{^\s+} []s;
+   ${$_[$VAL]}=~s{\s+$} []s;
    },
  hold=> sub {
    ${$_[$VAL]}=~s{\s+} []sg if defined(${$_[$VAL]});
@@ -184,19 +186,19 @@ our %Filters= (
  crlf=> sub {
    return 0 unless defined(${$_[$VAL]});
    my $re= "\n" x ( $_[$ARG]->[0] ? (($_[$ARG]->[0]=~/(\d+)/)[0] || 1 ): 1 );
-   ${$_[$VAL]}=~s{\n\n+} [$re]sg;
+   ${$_[$VAL]}=~s{\n\n+} [$re]sge;
    },
  hold_tab=> sub {
-   ${$_[$VAL]}=~tr/\r\t//d if defined(${$_[$VAL]});
+   ${$_[$VAL]}=~tr/\t//d if defined(${$_[$VAL]});
    },
  strip_tab=> sub {
-   ${$_[$VAL]}=~tr/\r\t/ / if defined(${$_[$VAL]});
+   ${$_[$VAL]}=~tr/\t/ / if defined(${$_[$VAL]});
    },
  hold_crlf=> sub {
-   ${$_[$VAL]}=~tr/\r\n\t//d  if defined(${$_[$VAL]});
+   ${$_[$VAL]}=~tr/\n//d  if defined(${$_[$VAL]});
    },
  strip_crlf=> sub {
-   ${$_[$VAL]}=~tr/\r\n\t/ / if defined(${$_[$VAL]});
+   ${$_[$VAL]}=~tr/\n/ / if defined(${$_[$VAL]});
    },
  hold_html=> sub {
    ${$_[$VAL]}=~s{<.+?>} []sg  if defined(${$_[$VAL]});
@@ -350,6 +352,7 @@ sub filter {
 		next unless $param->{$key};
 		QUERYPARAM:
 		for (ref($param->{$key}) eq 'ARRAY' ? @{$param->{$key}}: $param->{$key}) {
+			s/(?:\r\n|\r)/\n/sg;
 			my $value= \$_;
 			FILTERPIECE:
 			for my $piece (@$config) {
@@ -364,7 +367,7 @@ sub filter {
 
 	$param;
 }
-sub __escape_html { &HTML::Entities::encode_entities(shift, q{'"&<>@}) }
+sub __escape_html { &HTML::Entities::encode_entities(shift, q{'"&<>}) }
 
 =head1 SEE ALSO
 

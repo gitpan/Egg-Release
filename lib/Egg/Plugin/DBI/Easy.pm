@@ -2,13 +2,13 @@ package Egg::Plugin::DBI::Easy;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Easy.pm 155 2007-05-20 04:05:33Z lushe $
+# $Id: Easy.pm 182 2007-08-05 17:25:44Z lushe $
 #
 use strict;
 use warnings;
 use Time::Piece::MySQL;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 =head1 NAME
 
@@ -259,6 +259,7 @@ sub DESTROY {}
 package Egg::Plugin::DBI::Easy::accessors;
 use strict;
 use Carp qw/croak/;
+use Tie::Hash::Indexed;
 
 =head1 HANDLER METHODS
 
@@ -350,6 +351,16 @@ sub scalarref {
 	  (qq{SELECT $item FROM $db->{dbname}$where}, @_);
 }
 
+=head2 scalar ( [GET_COLUMN], [WHERE_SQL], [EXECUTE_ARGS] )
+
+  print $e->db->myapp_table->scalar('email', 'id = ?', $id);
+
+=cut
+sub scalar {
+	my $result= shift->scalarref(@_) || return 0;
+	$$result;
+}
+
 =head2 insert ( [DATA_HASH], [IGNOR_COLUMN] )
 
 The data record is added.
@@ -366,17 +377,16 @@ sub insert {
 	my $db  = shift;
 	my $in  = shift || croak q{ I want insert fields. };
 	my $pkey= shift || 0;
-	my(@items, @values);
+	tie my %items, 'Tie::Hash::Indexed';
 	while (my($item, $value)= each %$in) {
 		next if $item eq $pkey;
-		push @items, $item;
-		push @values, (defined($value) ? $value: undef);
+		$items{$item}= defined($value) ? $value: undef;
 	}
 	my $sql= qq{INSERT INTO $db->{dbname}}
-	       . qq{ (}. join(', ', @items). q{) VALUES}
-	       . qq{ (}. join(', ', map{"?"}@items). q{)};
+	       . qq{ (}. join(', ', keys %items). q{) VALUES}
+	       . qq{ (}. join(', ', map{"?"}keys %items). q{)};
 	$db->{e}->debug_out("# + dbh_insert : $sql");
-	$db->{e}->dbh->do($sql, undef, @values);
+	$db->{e}->dbh->do($sql, undef, (values %items));
 }
 
 =head2 update ( [PRIMARY_COLUMN], [DATA_HASH] )
@@ -387,6 +397,10 @@ The data record is updated.
 
   $e->db->myapp_table->update('id', { id => 1, name=> 'yurname' });
 
+* Addition and subtraction of numeric column.
+
+  $e->db->myapp_table->update('id', { id => 1, name=> 'yurname', age=> \"1" });
+
 =cut
 sub update {
 	my $db  = shift;
@@ -394,16 +408,22 @@ sub update {
 	my $in  = shift || croak q{ I want update data };
 	$in->{$pkey}
 	  || croak qq{ Value of '$pkey' is not found from update data. };
-	my(@items, @values);
+	tie my %items, 'Tie::Hash::Indexed';
 	while (my($item, $value)= each %$in) {
 		next if $item eq $pkey;
-		push @items, $item;
-		push @values, (defined($value) ? $value: undef);
+		if (defined($value)) {
+			ref($value) eq 'SCALAR'
+			  ? $items{"$item = $item + ?"}= $$value
+			  : $items{"$item = ?"}= $value;
+		} else {
+			$items{"$item = ?"}= undef;
+		}
 	}
 	my $sql= qq{UPDATE $db->{dbname} SET }
-	       . join(', ', map{"$_ = ?"}@items). qq{ WHERE $pkey = ? };
+	       . join(', ', keys %items). qq{ WHERE $pkey = ? };
+	$sql.= " ". (shift || "");
 	$db->{e}->debug_out("# + dbh_update : $sql");
-	$db->{e}->dbh->do($sql, undef, @values, $in->{$pkey});
+	$db->{e}->dbh->do($sql, undef, (values %items), $in->{$pkey});
 }
 
 =head2 upgrade ( [DATA_HASH] )
@@ -412,18 +432,28 @@ Update that doesn't need WHERE is done. For two or more data update in a word.
 
   $e->db->myapp_table->upgrade({ age => 18 });
 
+* Addition and subtraction of numeric column.
+
+  my $num= -1;
+  $e->db->myapp_table->update({ age => \$num });
+
 =cut
 sub upgrade {
 	my $db= shift;
 	my $in= shift || croak q{ I want update data };
-	my(@items, @values);
+	tie my %items, 'Tie::Hash::Indexed';
 	while (my($item, $value)= each %$in) {
-		push @items, $item;
-		push @values, (defined($value) ? $value: undef);
+		if (defined($value)) {
+			ref($value) eq 'SCALAR'
+			  ? $items{"$item = $item + ?"}= $$value
+			  : $items{"$item = ?"}= $value;
+		} else {
+			$items{"$item = ?"}= undef;
+		}
 	}
-	my $sql= qq{UPDATE $db->{dbname} SET }. join(', ', map{"$_ = ?"}@items);
+	my $sql= qq{UPDATE $db->{dbname} SET }. join(', ', keys %items);
 	$db->{e}->debug_out("# + dbh_upgrade : $sql");
-	$db->{e}->dbh->do($sql, undef, @values);
+	$db->{e}->dbh->do($sql, undef, (values %items));
 }
 
 =head2 update_insert ( [PRIMARY_COLUMN], [DATA_HASH] )
@@ -431,25 +461,21 @@ sub upgrade {
 If the data of PRIMARY_COLUMN exists, update is done and insert is done if
 not existing.
 
-* Please pass it with ARRAY if PRIMARY_COLUMN is Serial type.
-
-  $e->db->myapp_table->update_insert(['id'], { id => 1, name=> 'yurname' });
+  $e->db->myapp_table->update_insert('id', { id => 1, name=> 'yurname' });
 
 =cut
 sub update_insert {
 	my $db  = shift;
 	my $pkey= shift || croak q{ I want primary_key };
 	my $in  = shift || croak q{ I want update data };
-	my($skey, $key)= ref($pkey) eq 'ARRAY'
-	                    ? ($pkey->[0], $pkey->[0]): (0, $pkey);
-	$in->{$key} || croak qq{ Value of '$key' is not found from update data. };
+	$in->{$pkey} || croak qq{ Value of '$pkey' is not found from update data. };
 	my $true;
 	my $sth= $db->{e}->dbh->prepare
-	   (qq{SELECT $pkey FROM $db->{dbname} WHERE $key = ? });
-	$sth->execute($in->{$key});
+	   (qq{SELECT $pkey FROM $db->{dbname} WHERE $pkey = ? });
+	$sth->execute($in->{$pkey});
 	$sth->bind_columns(\$true);
 	$sth->fetch; $sth->finish;
-	$true ? $db->update($key, $in): $db->insert($in, $skey);
+	$true ? $db->update($pkey, $in): $db->insert($in, $pkey);
 }
 
 =head2 delete ( [WHERE_SQL] )
@@ -493,6 +519,7 @@ sub _get_sql {
 L<Egg::Model::DBI>,
 L<Egg::Plugin::DBI::Transaction>,
 L<Egg::Release>,
+L<Tie::Hash::Indexed>,
 
 =head1 AUTHOR
 

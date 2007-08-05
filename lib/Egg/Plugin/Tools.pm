@@ -2,7 +2,7 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 169 2007-06-15 07:45:17Z lushe $
+# $Id: Tools.pm 182 2007-08-05 17:25:44Z lushe $
 #
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.04';
+our $VERSION = '2.05';
 
 =head1 NAME
 
@@ -306,6 +306,45 @@ sub jfold {
 	my $e   = shift;
 	my $str = shift || croak q{ I want string. };
 	[ $e->encode->set($str)->jfold(@_) ];
+}
+
+=head2 timelocal ( [YEAR], [MONTH], [DAY], [HOUR], [MINUTE], [SECOND] )
+
+The result of L<Time::Local>::timelocal is returned.
+
+* Please note that order by which the argument is given has reversed completely.
+
+  my $time= $e->timelocal(0, 0, 0, 1, 1, 2007);
+
+The date of a specific format can be passed.
+
+  my $time= $e->timelocal("2007-01-01 00:00:00");
+
+* However, it corresponds only to the following formats.
+
+  - 2007/01/01 00:00:00
+  - 2007-01-01 00:00:00
+
+=cut
+sub timelocal {
+	my $e  = shift;
+	my $arg= shift || croak q{ I want argument. };
+	require Time::Local;
+	my($yer, $mon, $day, $hou, $min, $sec);
+	if ($arg=~m{^(\d{4})[/\-](\d{2})[/\-](\d{2})(.*)}) {
+		($arg, $yer, $mon, $day)= ($1, $2, $3, $4);
+		if ($arg and $arg=~m{^.+?(\d{2})\:(\d{2})(.*)}) {
+			($arg, $hou, $min)= ($1, $2);
+			if ($arg and $arg=~m{^\:(\d{2})}) { $sec= $1 }
+		}
+		$hou ||= 0;  $min ||= 0;  $sec ||= 0;
+	} else {
+		$yer= $arg;
+		$mon= shift || croak q{ I want Month. };
+		$day= shift || croak q{ I want Day. };
+		$hou= shift || 0;  $min= shift || 0;  $sec= shift || 0;
+	}
+	Time::Local::timelocal($sec, $min, $hou, $day, ($mon- 1), ($yer- 1900));
 }
 
 1;

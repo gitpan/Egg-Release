@@ -2,7 +2,7 @@ package Egg::Plugin::Upload;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Upload.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Upload.pm 181 2007-08-02 18:28:43Z lushe $
 #
 use strict;
 use warnings;

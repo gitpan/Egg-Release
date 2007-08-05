@@ -2,7 +2,7 @@ package Egg::Plugin::Filter::Plugin::Japanese;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Japanese.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Japanese.pm 182 2007-08-05 17:25:44Z lushe $
 #
 
 =head1 NAME
@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use Egg::Plugin::Filter;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 our($Zspace, $RZspace);
 
@@ -87,7 +87,7 @@ substituted for one em-size space.
 =cut
 	$filters->{j_strip_j}= sub {
 		return 0 unless defined(${$_[$VAL]});
-		${$_[$VAL]}=~s{(?:\s|$Zspace)+} [Å@]sg;
+		${$_[$VAL]}=~s{(?:\s|$Zspace)+} [$RZspace]sge;
 	  };
 
 	@_;
