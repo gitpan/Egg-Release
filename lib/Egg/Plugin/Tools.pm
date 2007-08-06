@@ -2,7 +2,7 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 182 2007-08-05 17:25:44Z lushe $
+# $Id: Tools.pm 184 2007-08-06 19:59:01Z lushe $
 #
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 
 =head1 NAME
 
@@ -331,15 +331,15 @@ sub timelocal {
 	my $arg= shift || croak q{ I want argument. };
 	require Time::Local;
 	my($yer, $mon, $day, $hou, $min, $sec);
-	if ($arg=~m{^(\d{4})[/\-](\d{2})[/\-](\d{2})(.*)}) {
-		($arg, $yer, $mon, $day)= ($1, $2, $3, $4);
-		if ($arg and $arg=~m{^.+?(\d{2})\:(\d{2})(.*)}) {
-			($arg, $hou, $min)= ($1, $2);
-			if ($arg and $arg=~m{^\:(\d{2})}) { $sec= $1 }
+	if ($arg=~m{^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})(.*)}) {
+		($arg, $yer, $mon, $day)= ($4, $1, $2, $3);
+		if ($arg and $arg=~m{^.+?(\d{1,2})\:(\d{1,2})(.*)}) {
+			($arg, $hou, $min)= ($3, $1, $2);
+			if ($arg and $arg=~m{^\:(\d{1,2})}) { $sec= $1 }
 		}
 		$hou ||= 0;  $min ||= 0;  $sec ||= 0;
 	} else {
-		$yer= $arg;
+		$yer= $arg; $yer=~m{\D} and croak q{ Bad argument. };
 		$mon= shift || croak q{ I want Month. };
 		$day= shift || croak q{ I want Day. };
 		$hou= shift || 0;  $min= shift || 0;  $sec= shift || 0;

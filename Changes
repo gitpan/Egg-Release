@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.19  2007/08/07
+	- fixed for Egg::Plugin::Tools::timelocal.
+
 2.18  2007/08/05
 	- fixed for Egg::Plugin::Filter.
 	- The method of timelocal is added to Egg::Plugin::Tools.

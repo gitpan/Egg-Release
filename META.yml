@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.18
+version: 2.19
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -195,7 +195,7 @@ provides:
     version: 2.00
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
-    version: 2.05
+    version: 2.06
   Egg::Plugin::Upload:
     file: lib/Egg/Plugin/Upload.pm
     version: 2.00
@@ -215,7 +215,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.18
+    version: 2.19
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
