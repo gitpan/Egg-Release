@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.19
+version: 2.20
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -41,7 +41,7 @@ requires:
 provides:
   Egg:
     file: lib/Egg.pm
-    version: 2.04
+    version: 2.05
   Egg::Base:
     file: lib/Egg/Base.pm
     version: 2.01
@@ -72,7 +72,7 @@ provides:
     version: 2.01
   Egg::Helper::Project::Build:
     file: lib/Egg/Helper/Project/Build.pm
-    version: 2.02
+    version: 2.03
   Egg::Helper::Project::Test:
     file: lib/Egg/Helper/Project/Test.pm
     version: 2.00
@@ -215,7 +215,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.19
+    version: 2.20
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
@@ -241,7 +241,7 @@ provides:
     version: 2.00
   Egg::Response:
     file: lib/Egg/Response.pm
-    version: 2.07
+    version: 2.08
   Egg::Response::FetchCookie:
     file: lib/Egg/Response.pm
   Egg::Response::Headers:

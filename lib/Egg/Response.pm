@@ -2,7 +2,7 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 181 2007-08-02 18:28:43Z lushe $
+# $Id: Response.pm 185 2007-08-07 15:42:16Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use CGI::Util qw/expires/;
 use base qw/Class::Accessor::Fast/;
 use Carp qw/croak/;
 
-our $VERSION = '2.07';
+our $VERSION = '2.08';
 
 =head1 NAME
 
@@ -48,6 +48,23 @@ response.
 
 =head1 CONFIGURATION
 
+=head2 content_type
+
+Content_type is undefined contents type.
+
+Deafult is 'text/html'.
+
+* Please define it together if the setting of the character set is necessary.
+
+  content_type => 'text/html; charset=UTF-8',
+
+=head2 no_content_length_regex
+
+The pattern of Content-Type that doesn't send Conetnt-Length is set by the regular 
+expression.
+
+Deafult is '(?:^text/|/(?:rss\+)?xml)'.
+
 =head2 cookie
 
 The default of cookie can be setup.
@@ -83,7 +100,7 @@ Warning: Cookie cannot be referred to from the connection of usual http.
 
 =cut
 
-__PACKAGE__->mk_accessors(qw/ e request nph
+__PACKAGE__->mk_accessors(qw/ e request nph no_content_length
   is_expires last_modified content_type content_language location /);
 
 our $CRLF    = "\015\012";
@@ -130,6 +147,9 @@ sub new {
 	  location => "",
 	  content_type => "",
 	  content_language => "",
+	  no_content_length => 0,
+	  no_content_length_regex=>
+	  ($e->config->{no_content_length_regex} || qr{(?:^text/|/(?:rss\+)?xml)}),
 	  set_modified => ($e->config->{set_modified_constant} || 0),
 	  }, $class;
 }
@@ -173,14 +193,8 @@ When CONTENT_BODY is given, 'Content-Length' header is added.
 sub header {
 	my $res = shift;
 #	return \$res->{header} if $res->{header};
-
-	my($header, $body);
-	my $leng_code= $res->request->is_head ? do {
-		if ($body= shift) { $$body= "" }
-		sub { };
-	 }: ($body= shift and $$body) ? do {
-		sub { $header.= "Content-Length: ".length($$body).$CRLF };
-	 }: sub { };
+	my $body= shift || undef;
+	my $header;
 
 	my $e= $res->e;
 	my $headers= $res->{__headers} || {};
@@ -204,13 +218,14 @@ sub header {
 		  || $res->content_type($e->config->{content_type} || 'text/html');
 		$header.= "Content-Type: $content_type$CRLF";
 	}
-	if ($content_type=~m{^text/.+}i) {
+	my $regext= $res->{no_content_length_regex};
+	if ($content_type=~m{$regext}i) {
 		if (my $language= $res->content_language) {
 			$header.= "Content-Language: $language$CRLF";
 		}
-#		$leng_code->();
-	} else {
-		$leng_code->();
+	} elsif (! $res->request->is_head
+	     and ! $res->no_content_length and $body and $$body) {
+		$header.= "Content-Length: ". length($$body). $CRLF;
 	}
 
 	for my $h (values %$headers) {
@@ -559,6 +574,10 @@ The Expires header is set.
 The last-Modified header is set.
 
   $response-E<gt>last_modified('+1H');
+
+=head2 no_content_length ( [BOOL] )
+
+The content_length header is not temporarily sent.
 
 =cut
 

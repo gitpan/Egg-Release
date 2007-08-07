@@ -2,13 +2,13 @@ package Egg::Helper::Project::Build;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 156 2007-05-21 03:39:31Z lushe $
+# $Id: Build.pm 185 2007-08-07 15:42:16Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '2.02';
+our $VERSION= '2.03';
 
 =head1 NAME
 
@@ -211,7 +211,9 @@ value: |
   
   # Default content type and language.
   #  content_type    => 'text/html; charset=euc-jp',
-  #  content_language=> 'ja',
+  
+  # Regular expression of Content-Type that doesn't send Content-Length.
+  #  no_content_length_regex => qr{(?:^text/|/(?:rss\+)?xml)},
   
   # Upper bound of request directory hierarchy.
   #  max_snip_deep=> 5,

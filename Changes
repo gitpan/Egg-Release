@@ -1,7 +1,14 @@
 Revision history for Perl extension .
 
+2.20  2007/08/08
+	- Sending content_length was decided by setting no_content_length_regex in Egg::Response.
+	- The method of no_content_length is added to Egg::Response.
+	- fixed for Egg::Helper::Project::Build.
+	- When default_model and default_view were set, the object was returned for Egg.
+	- fixed for Egg.
+
 2.19  2007/08/07
-	- fixed for Egg::Plugin::Tools::timelocal.
+	- Bug fixed for Egg::Plugin::Tools::timelocal.
 
 2.18  2007/08/05
 	- fixed for Egg::Plugin::Filter.

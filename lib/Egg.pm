@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 154 2007-05-17 03:01:31Z lushe $
+# $Id: Egg.pm 185 2007-08-07 15:42:16Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.04';
+our $VERSION= '2.05';
 
 =head1 NAME
 
@@ -480,22 +480,26 @@ The use of specified VIEW is enabled.
 The MODEL name of default is returned.
 * A high setting of the priority level defaults most and it is treated.
 
-When MODEL_NAME is specified, default is temporarily replaced.
+Default is temporarily replaced when MODEL_NAME is specified,
+and the object of the MODEL is returned.
 
 =head2 default_view ( [VIEW_NAME] )
 
 The VIEW name of default is returned.
 * A high setting of the priority level defaults most and it is treated.
 
-When VIEW_NAME is specified, default is temporarily replaced.
+Default is temporarily replaced when VIEW_NAME is specified,
+and the object of the VIEW is returned.
 
 =cut
 			my $default= "default_${c_name}";
 			*{__PACKAGE__."::$default"}= sub {
 				my $egg= shift;
-				return do { $egg->{$default} ||= $class[0] || 0 } unless @_;
-				my $name= $class{lc($_[0])}  || return 0;
-				$_[0]->{$default}= $name;
+				my $key= shift
+				   || return do { $egg->{$default} ||= $class[0] || 0 };
+				my $name= $class{lc($key)} || return 0;
+				$egg->{$default}= $name;
+				$egg->$c_name($name);
 			  };
 
 =head2 model ( [MODEL_NAME] )
@@ -514,10 +518,8 @@ When VIEW_NAME is omitted, the VIEW object of default is returned.
 			*{__PACKAGE__."::${c_name}"}= sub {
 				my $egg= shift;
 				if (my $key= lc($_[0])) {
-					$egg->{$c_name}{$key} || do {
-						my $obj= $egg->_create_comps($c_name, @_);
-						$egg->{$c_name}{$key}= $obj;
-					  };
+					$egg->{$c_name}{$key}
+					  ||= $egg->_create_comps($c_name, @_);
 				} else {
 					$egg->{$c_name}{lc($egg->$default)}
 					  ||= $egg->_create_comps($c_name, $egg->$default);
