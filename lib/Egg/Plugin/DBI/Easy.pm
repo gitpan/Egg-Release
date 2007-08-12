@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Time::Piece::MySQL;
 
-our $VERSION = '2.03';
+our $VERSION = '2.05';
 
 =head1 NAME
 
@@ -42,12 +42,29 @@ Egg::Plugin::DBI::Easy - Plugin of an easy doing as for treatment of DBI.
 It is a plug-in to be able to write the description of the DBI processing
 that tends to become tedious easily.
 
-* However, complex SQL cannot be treated.
+* Complex SQL cannot be treated. Please examine the introduction of
+  L<Egg::Model::DBIC > wanting the easy treatment of complex SQL.
+
+=head1 CONFIGURATION
+
+It setup it with 'plugin_dbi_easy'.
+
+=head2 table_alias = [HASH_REF]
+
+Alias for the table object is setup.
+
+  table_alias => {
+    any_name=> 'real_table_name',
+    },
+  
+  # It comes to be able to operate 'real_table_name' table by $e->db->any_name.
 
 =cut
 
 sub _setup {
 	my($e)= @_;
+	my $conf= $e->config->{plugin_dbi_easy} ||= {};
+	   $conf->{table_alias} ||= {};
 	return $e->next::method if $e->isa('Egg::Plugin::DBI::Transaction');
 	$e->mk_accessors('dbh');
 	$e->next::method;
@@ -59,6 +76,10 @@ sub _prepare {
 }
 
 =head1 METHODS
+
+=head2 dbh
+
+When the DBI::Transaction plug-in is not loaded, the dbh method can be used.
 
 =head2 sql_datetime ( [TIME] )
 
@@ -270,6 +291,9 @@ Constructor who returns handler object.
 =cut
 sub new {
 	my($class, $e, $dbname)= @_;
+	if (my $alias= $e->config->{plugin_dbi_easy}{table_alias}{$dbname}) {
+		$dbname= $alias;
+	}
 	bless { e=> $e, dbname=> $dbname }, $class;
 }
 
@@ -361,69 +385,154 @@ sub scalar {
 	$$result;
 }
 
-=head2 insert ( [DATA_HASH], [IGNOR_COLUMN] )
+=head2 insert ( [DATA_HASH] || [PKEY_ARRAY], [DATA_HASH])
 
 The data record is added.
 
-IGNOR_COLUMN is included in DATA_HASH, and it specifies it when there is
-column that wanting the inclusion is not in SQL.
-* Being able to specify is 1 It is only column.
+  $e->db->myapp_table->insert(
+    user_name => 'hoge',
+    email_addr=> 'hoge@domain',
+    age       => 20,
+    );
 
-  # Do not include the data type of id in DATA_HASH for Serial etc.
-  $e->db->myapp_table->insert({ name => 'myname', email => 'email@addr' });
+When an unpalatable column exists, it is specified for PKEY_ARRAY that it is 
+included in the INSERT sentence as the column of the serial form is included
+in DATA_HASH by a double ARRAY reference.
+
+  $e->db->myapp_table->insert( [['id']], {
+    id        => 1, 
+    user_name => 'hoge',
+    email_addr=> 'hoge@domain',
+    });
+  
+  # When this form is used, DATA_HASH is a thing passed without fail
+  # by the HASH reference.
+
+* The IGNOR_COLUMN specification by the second argument was abolished.
 
 =cut
 sub insert {
-	my $db  = shift;
-	my $in  = shift || croak q{ I want insert fields. };
-	my $pkey= shift || 0;
-	tie my %items, 'Tie::Hash::Indexed';
-	while (my($item, $value)= each %$in) {
-		next if $item eq $pkey;
-		$items{$item}= defined($value) ? $value: undef;
-	}
+	my $db   = shift;
+	my $args = Egg::Plugin::DBI::Easy::args->new(@_);
+	my $items= $args->insert_items;
 	my $sql= qq{INSERT INTO $db->{dbname}}
-	       . qq{ (}. join(', ', keys %items). q{) VALUES}
-	       . qq{ (}. join(', ', map{"?"}keys %items). q{)};
+	       . qq{ (}. join(', ', keys %$items). q{) VALUES}
+	       . qq{ (}. join(', ', map{"?"}keys %$items). q{)};
 	$db->{e}->debug_out("# + dbh_insert : $sql");
-	$db->{e}->dbh->do($sql, undef, (values %items));
+	$db->{e}->dbh->do($sql, undef, (values %$items));
 }
 
-=head2 update ( [PRIMARY_COLUMN], [DATA_HASH] )
+=head2 update ( [WHERE_COLUMNS], [DATA_HASH] )
 
 The data record is updated.
 
-* The value of PRIMARY_COLUMN is excluded from the set sentence.
+WHERE_COLUMN is good at the thing specified by the ARRAY reference in
+the column name to retrieve data.
 
-  $e->db->myapp_table->update('id', { id => 1, name=> 'yurname' });
+Moreover, it develops with following WHERE_COLUMN and the WHERE phrase
+is generated.
 
-* Addition and subtraction of numeric column.
+=over 4
 
-  $e->db->myapp_table->update('id', { id => 1, name=> 'yurname', age=> \"1" });
+=item * When you give one column by a usual variable.
+
+  $e->db->my_table->update('id', { id=> 1, myname=> 'hoge' });
+
+  WHERE key_name = ?
+
+* This is the same as giving usual HASH to DATA_HASH.
+
+  $e->db->my_table->update( id=> 1, myname=> 'hoge' );
+
+=item * When you delimit all columns with 'and'.
+
+  $e->db->my_table->update(
+    [qw/ myname age sex /],
+    { myname=> 'hoge', age=> 20, sex=> 'man', email=> 'myname@email' }
+    );
+
+  WHERE myname = ? and age = ? and sex and ?
+
+=item * When you want to specify inequitable value, like, and '>', etc.
+
+  $e->db->my_table->update(
+    [qw/ myname age:>= sex:like /],
+    { myname=> 'hoge', age=> 18, sex=> '%man%', email=> 'myname@email' }
+    );
+
+  WHERE myname = ? and age != ? and sex like ?
+
+=item * When you want to place 'or' etc.
+
+  $e->db->my_table->update(
+    ['myname', { or => 'age:>=' }, 'sex'],
+    { myname=> 'hoge', age=> 20, sex=> 'man', email=> 'myname@email' }
+    );
+
+  WHERE myname = ? or age >= ? and sex = ?
+
+=back
+
+* Only the above-mentioned WHERE phrase is generable.
+
+* The column given to WHERE_COLUMN is not reflected in the SET phrase.
+
+The addition and subtraction of a numeric column is set in the value of DATA_HASH
+by the SCALAR reference.
+
+  # One value of 'age' is added.
+  $e->db->myapp_table->update('id', { id => 1, age=> \'1' });
+
+or
+
+  # One value of 'age' is subtracted.
+  $e->db->myapp_table->update('id', { id => 1, age=> \'-1' });
 
 =cut
 sub update {
-	my $db  = shift;
-	my $pkey= shift || croak q{ I want primary_key };
-	my $in  = shift || croak q{ I want update data };
-	$in->{$pkey}
-	  || croak qq{ Value of '$pkey' is not found from update data. };
-	tie my %items, 'Tie::Hash::Indexed';
-	while (my($item, $value)= each %$in) {
-		next if $item eq $pkey;
-		if (defined($value)) {
-			ref($value) eq 'SCALAR'
-			  ? $items{"$item = $item + ?"}= $$value
-			  : $items{"$item = ?"}= $value;
-		} else {
-			$items{"$item = ?"}= undef;
-		}
-	}
-	my $sql= qq{UPDATE $db->{dbname} SET }
-	       . join(', ', keys %items). qq{ WHERE $pkey = ? };
-	$sql.= " ". (shift || "");
+	my $db   = shift;
+	my $args = Egg::Plugin::DBI::Easy::args->new(@_);
+	my $items= $args->update_items;
+	my $sql  = qq{UPDATE $db->{dbname} SET }
+	         . join(', ', keys %$items). qq{ WHERE $args->{where}};
 	$db->{e}->debug_out("# + dbh_update : $sql");
-	$db->{e}->dbh->do($sql, undef, (values %items), $in->{$pkey});
+	$db->{e}->dbh->do($sql, undef,
+	   (values %$items), (values %{$args->{unique}}) );
+}
+
+=head2 update_insert ( [WHERE_COLUMNS], [DATA_HASH] )
+
+Update and insert are distributed by the existence of the data of WHERE_COLUMNS.
+
+The way to pass WHERE_COLUMNS is similar to update.
+
+  $e->db->my_table->update_insert(
+    [qw/ id user_name /],
+    { id=> 1, user_name=> 'hoge', email=> 'hoge@domain' },
+    );
+
+It is specified that it is included in the VALUES phrase if insert is 
+done by using a double ARRAY reference when there is an unpalatable column.
+
+  $e->db->my_table->update_insert(
+    [[qw/ id /], qw/ user_name /]
+    { id=> 1, user_name=> 'hoge', email=> 'hoge@domain' },
+    );
+
+=cut
+sub update_insert {
+	my $db= shift;
+	my $args= Egg::Plugin::DBI::Easy::args->new(@_);
+	@{$args->{ukey}} || croak q{ I want  };
+	my $pkey= $args->{primary}
+	        ? $args->{primary}[0]: (keys %{$args->{unique}})[0];
+	my($sql, $true)= qq{SELECT $pkey FROM $db->{dbname} WHERE $args->{where} };
+	$db->{e}->debug_out("# + update_insert : $sql");
+	my $sth= $db->{e}->dbh->prepare($sql);
+	$sth->execute( values %{$args->{unique}} );
+	$sth->bind_columns(\$true);
+	$sth->fetch; $sth->finish;
+	defined($true) ? $db->update($args): $db->insert($args);
 }
 
 =head2 upgrade ( [DATA_HASH] )
@@ -440,42 +549,11 @@ Update that doesn't need WHERE is done. For two or more data update in a word.
 =cut
 sub upgrade {
 	my $db= shift;
-	my $in= shift || croak q{ I want update data };
-	tie my %items, 'Tie::Hash::Indexed';
-	while (my($item, $value)= each %$in) {
-		if (defined($value)) {
-			ref($value) eq 'SCALAR'
-			  ? $items{"$item = $item + ?"}= $$value
-			  : $items{"$item = ?"}= $value;
-		} else {
-			$items{"$item = ?"}= undef;
-		}
-	}
-	my $sql= qq{UPDATE $db->{dbname} SET }. join(', ', keys %items);
+	my $in= $_[0] ? ($_[1] ? {@_}: $_[0]): croak q{ I want upgrade data. };
+	my $items= Egg::Plugin::DBI::Easy::args->update_items($in);
+	my $sql= qq{UPDATE $db->{dbname} SET }. join(', ', keys %$items);
 	$db->{e}->debug_out("# + dbh_upgrade : $sql");
-	$db->{e}->dbh->do($sql, undef, (values %items));
-}
-
-=head2 update_insert ( [PRIMARY_COLUMN], [DATA_HASH] )
-
-If the data of PRIMARY_COLUMN exists, update is done and insert is done if
-not existing.
-
-  $e->db->myapp_table->update_insert('id', { id => 1, name=> 'yurname' });
-
-=cut
-sub update_insert {
-	my $db  = shift;
-	my $pkey= shift || croak q{ I want primary_key };
-	my $in  = shift || croak q{ I want update data };
-	$in->{$pkey} || croak qq{ Value of '$pkey' is not found from update data. };
-	my $true;
-	my $sth= $db->{e}->dbh->prepare
-	   (qq{SELECT $pkey FROM $db->{dbname} WHERE $pkey = ? });
-	$sth->execute($in->{$pkey});
-	$sth->bind_columns(\$true);
-	$sth->fetch; $sth->finish;
-	$true ? $db->update($pkey, $in): $db->insert($in, $pkey);
+	$db->{e}->dbh->do($sql, undef, (values %$items));
 }
 
 =head2 delete ( [WHERE_SQL] )
@@ -512,6 +590,90 @@ sub clear {
 sub _get_sql {
 	my $sql= shift || return "";
 	ref($sql) eq 'ARRAY' ? ' '. join(' ', @$sql): " WHERE $sql";
+}
+
+package Egg::Plugin::DBI::Easy::args;
+use strict;
+
+sub new {
+	my $class= shift;
+	my $ukey = shift || [];
+	return $ukey if ref($ukey) eq __PACKAGE__;
+	my $data;
+	if (ref($ukey) eq 'HASH') { $data= $ukey; $ukey= [] }
+	elsif (ref($ukey) ne 'ARRAY') { $ukey= [$ukey] }
+	my $primary= ($ukey->[0] and ref($ukey->[0]) eq 'ARRAY')
+	   ? do { my $tmp= $ukey->[0]; $ukey->[0]= $ukey->[0][0]; $tmp }: undef;
+	my $where= "";
+	tie my %unique, 'Tie::Hash::Indexed';
+	if (my $key= $ukey->[0]) {
+		$where= $key=~m{^([^\:]+\:(.+))}
+		      ? do { $ukey->[0]= $primary->[0]= $2; "$2 $1 ?" }: "$key = ?";
+	}
+	$data ||= $_[0] ? ($_[1] ? ($ukey->[0] ? {$ukey->[0], @_}: {@_}): $_[0])
+		            : die q{ I want update data };
+	if (my $key= $ukey->[0]) {
+		$unique{$key}= exists($data->{$key}) ? $data->{$key}: undef;
+	}
+	for my $key (@{$ukey}[1..$#{$ukey}]) {
+		if (ref($key) eq 'HASH') {
+			my $tmp;
+			while (my($cond, $kname)= each %$key) {
+				__ukey_line($cond, \$kname, \$where);
+				$tmp= $kname;
+				last;
+			}
+			$key= $tmp;
+		} else {
+			__ukey_line('and', \$key, \$where);
+		}
+		$unique{$key}= exists($data->{$key})
+		    ? $data->{$key} : die qq{ I want '$key' data. };
+	}
+	bless {
+	  primary=> $primary,
+	  ukey   => $ukey,
+	  unique => \%unique,
+	  data   => $data,
+	  where  => $where,
+	  }, $class;
+}
+sub insert_items {
+	my($self)= @_;
+	if (my $pkey= $self->{primary}) {
+		delete($self->{data}{$pkey}) for @$pkey;
+	}
+	tie my %items, 'Tie::Hash::Indexed';
+	while (my($item, $value)= each %{$self->{data}}) {
+		$items{$item}= defined($value)
+		  ? (ref($value) eq 'SCALAR' ? $$value: $value): undef;
+	}
+	\%items;
+}
+sub update_items {
+	my $self= shift;
+	my $data= shift || $self->{data};
+	my $ukey= shift || (ref($self) ? $self->{unique}: {});
+	tie my %items, 'Tie::Hash::Indexed';
+	while (my($item, $value)= each %$data) {
+		next if exists($ukey->{$item});
+		if (defined($value)) {
+			if (ref($value) eq 'SCALAR') {
+				$items{"$item = $item + ?"}= $$value;
+			} else {
+				$items{"$item = ?"}= $value;
+			}
+		} else {
+			$items{"$item = ?"}= undef;
+		}
+	}
+	\%items;
+}
+sub __ukey_line {
+	my($cond, $kname, $where, $key)= @_;
+	$$where.= $$kname=~m{^([^\:]+\:(.+))}
+	  ? do { $$kname= $2; " $cond $2 $1 ?" }
+	  : " $cond $$kname = ?";
 }
 
 =head1 SEE ALSO

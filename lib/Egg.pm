@@ -11,7 +11,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.05';
+our $VERSION= '2.06';
 
 =head1 NAME
 
@@ -825,6 +825,8 @@ is undefined, $e-E<gt>view-E<gt>output is done.
 =cut
 sub _dispatch_action {
 	return $_[0] if $_[0]->{finished};
+	return $_[0]->view->output
+	if ($_[0]->template and ! $_[0]->{finished} and ! $_[0]->response->body);
 	$_[0]->dispatch->_action unless $_[0]->response->body;
 	$_[0]->view->output if (! $_[0]->{finished} and ! $_[0]->response->body);
 	$_[0];

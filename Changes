@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+2.21  2007/08/12
+	- Bug fixed and fixed for Egg::Plugin::DBI::Easy.
+	- Bug fixed for Egg::_dispatch_action.
+
 2.20  2007/08/08
 	- Sending content_length was decided by setting no_content_length_regex in Egg::Response.
 	- The method of no_content_length is added to Egg::Response.
