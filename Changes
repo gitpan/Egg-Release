@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+2.22  2007/08/13
+	- The method of noentry_insert is added to Egg::Plugin::DBI::Easy.
+	- Bug fixed for Egg::Plugin::DBI::Easy.
+
 2.21  2007/08/12
 	- Bug fixed and fixed for Egg::Plugin::DBI::Easy.
 	- Bug fixed for Egg::_dispatch_action.

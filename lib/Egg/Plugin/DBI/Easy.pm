@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Time::Piece::MySQL;
 
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 
 =head1 NAME
 
@@ -526,13 +526,36 @@ sub update_insert {
 	@{$args->{ukey}} || croak q{ I want  };
 	my $pkey= $args->{primary}
 	        ? $args->{primary}[0]: (keys %{$args->{unique}})[0];
-	my($sql, $true)= qq{SELECT $pkey FROM $db->{dbname} WHERE $args->{where} };
-	$db->{e}->debug_out("# + update_insert : $sql");
-	my $sth= $db->{e}->dbh->prepare($sql);
-	$sth->execute( values %{$args->{unique}} );
-	$sth->bind_columns(\$true);
-	$sth->fetch; $sth->finish;
-	defined($true) ? $db->update($args): $db->insert($args);
+	$db->{e}->dbh_scalarref(
+	  qq{SELECT $pkey FROM $db->{dbname} WHERE $args->{where} },
+	  values %{$args->{unique}}
+	  ) ? $db->update($args): $db->insert($args);
+}
+
+=head2 noentry_insert ( [WHERE_COLUMNS], [DATA_HASH] )
+
+If the data of WHERE_COLUMNS doesn't exist, insert is done.
+
+Update_insert of the method of specifying the argument is similar.
+
+  $e->db->my_table->noentry_insert(
+    user_name => 'hoge',
+    email     => 'hoge@domain',
+    );
+
+* When data already exists and insert is not done, false is restored.
+
+=cut
+sub noentry_insert {
+	my $db= shift;
+	my $args= Egg::Plugin::DBI::Easy::args->new(@_);
+	@{$args->{ukey}} || croak q{ I want  };
+	my $pkey= $args->{primary}
+	        ? $args->{primary}[0]: (keys %{$args->{unique}})[0];
+	$db->{e}->dbh_scalarref(
+	  qq{SELECT $pkey FROM $db->{dbname} WHERE $args->{where} },
+	  values %{$args->{unique}}
+	  ) ? 0: $db->insert($args);
 }
 
 =head2 upgrade ( [DATA_HASH] )
@@ -610,8 +633,9 @@ sub new {
 		$where= $key=~m{^([^\:]+\:(.+))}
 		      ? do { $ukey->[0]= $primary->[0]= $2; "$2 $1 ?" }: "$key = ?";
 	}
-	$data ||= $_[0] ? ($_[1] ? ($ukey->[0] ? {$ukey->[0], @_}: {@_}): $_[0])
-		            : die q{ I want update data };
+	$data ||= $_[0]
+	  ? (ref($_[0]) eq 'HASH' ? $_[0]: ($ukey->[0] ? {$ukey->[0], @_}: {@_}))
+	  : die q{ I want update data };
 	if (my $key= $ukey->[0]) {
 		$unique{$key}= exists($data->{$key}) ? $data->{$key}: undef;
 	}

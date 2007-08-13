@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.21
+version: 2.22
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -102,7 +102,7 @@ provides:
     version: 2.00
   Egg::Plugin::DBI::Easy:
     file: lib/Egg/Plugin/DBI/Easy.pm
-    version: 2.05
+    version: 2.06
   Egg::Plugin::DBI::Easy::accessors:
     file: lib/Egg/Plugin/DBI/Easy.pm
   Egg::Plugin::DBI::Easy::args:
@@ -217,7 +217,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.21
+    version: 2.22
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
