@@ -10,7 +10,7 @@ use URI::Escape;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.06';
+our $VERSION = '2.07';
 
 =head1 NAME
 
@@ -150,20 +150,23 @@ sub call {
 
 The result of L<Digest::SHA1>::sha1_hex is returned.
 
-=over 4
+=head2 md5_hex ( [DATA] )
 
-=item * Alias: md5_hex
-
-=back
+The result of L<Digest::MD5>::md5_hex is returned.
 
 =cut
-*md5_hex= \&sha1_hex;
-sub sha1_hex {
-	require Digest::SHA1;
-	my $e   = shift;
-	my $data= ref($_[0]) eq 'SCALAR' ? $_[0]: \$_[0];
-	Digest::SHA1::sha1_hex($$data);
-}
+{
+	no strict 'refs';  ## no critic.
+	no warnings 'redefine';
+	for my $accessor (qw/sha1 md5/) {
+		my $pkg= "Digest::". uc($accessor);
+		*{__PACKAGE__."::${accessor}_hex"}= sub {
+			$pkg->require;
+			&{"${pkg}::${accessor}_hex"}
+			  (ref($_[1]) eq 'SCALAR' ? ${$_[1]}: $_[1]);
+		  };
+	}
+  };
 
 =head2 comma ( [NUMBER] )
 

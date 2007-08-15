@@ -11,7 +11,7 @@ use Data::Dumper;
 use Carp qw/croak/;
 use base qw/Egg::Helper/;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 =head1 NAME
 
@@ -383,9 +383,7 @@ The object of a virtual project of the '_prepare_model' and '_prepare_view'
 sub egg_pcomp_context {
 	my $self= shift;
 	my $e= $self->egg_context;
-	   $e->_prepare_model;
-	   $e->_prepare_view;
-	   $e->_prepare;
+	$e->prepare_engine;
 	$e;
 }
 

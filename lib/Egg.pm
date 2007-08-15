@@ -11,7 +11,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.06';
+our $VERSION= '2.07';
 
 =head1 NAME
 
@@ -733,6 +733,26 @@ Nothing is done usually.
 
 =cut
 sub debug_out { }
+
+=head2 prepare_engine
+
+Each prepare of Egg is put into the state that a function called all can be 
+operated.
+
+* This method is not called in a usual operation.
+
+* When Egg such as cron is moved in the place far apart from WEB, it uses it.
+
+* I think that the error occurs at least in MODEL and VIEW if this method is
+  not called.
+
+=cut
+sub prepare_engine {
+	my($e)= @_;
+	$e->_prepare_model;
+	$e->_prepare_view;
+	$e->_prepare;
+}
 
 =head1 OPERATION METHODS
 
