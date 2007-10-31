@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 185 2007-08-07 15:42:16Z lushe $
+# $Id: Egg.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Egg::Response;
 use base qw/Egg::Base/;
 use Carp qw/croak confess/;
 
-our $VERSION= '2.07';
+our $VERSION= '2.08';
 
 =head1 NAME
 
@@ -324,6 +324,7 @@ END_INFO
 
 	# Check on base configuration.
 	$conf->{title} ||= $project;
+	$conf->{project_name}= $project;
 	$conf->{content_type} ||= 'text/html';
 	$conf->{template_extention} ||= 'tt';
 	$conf->{template_extention}=~s{^\.+} [];

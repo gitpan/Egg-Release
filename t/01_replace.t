@@ -30,5 +30,5 @@ isnt ref($param{zoo}{z1}), 'HASH';
 like $param{zoo}{z1}, qr{^HASH\(0x[a-f0-9]+\)};
 isa_ok $param{zoo}{z2}, 'HASH';
 is   $param{zoo}{z2}{ok}, 'test';
-like $param{bad}, qr{^<\$e\.foo>$};
+like $param{bad}, qr{^<\$?e\.foo>$};
 

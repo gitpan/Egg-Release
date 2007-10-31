@@ -2,14 +2,14 @@ package Egg::Plugin::Filter;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Filter.pm 182 2007-08-05 17:25:44Z lushe $
+# $Id: Filter.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use HTML::Entities;
 
-our $VERSION= '2.02';
+our $VERSION= '2.03';
 
 =head1 NAME
 
@@ -275,8 +275,10 @@ our %Filters= (
    },
  url=> sub {
    return 0 unless ${$_[$VAL]};
+   require URI;
    ${$_[$VAL]}=~s{\s+} []sg;
-   ${$_[$VAL]}=~s{^(https?\://)([^/]+)(.*)} [$1. lc($2). $3]e;
+   my $uri= URI->new(${$_[$VAL]});
+   ${$_[$VAL]}= $uri->canonical;
    },
  );
 

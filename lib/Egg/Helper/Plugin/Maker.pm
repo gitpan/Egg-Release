@@ -2,8 +2,12 @@ package Egg::Helper::Plugin::Maker;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Maker.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Maker.pm 200 2007-10-31 04:30:14Z lushe $
 #
+use strict;
+use warnings;
+
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -48,11 +52,20 @@ by the specified name.
 The output destination can be specified by '-o' option and output to the
 current directory when omitting it.
 
-=cut
-use strict;
-use warnings;
+=head1 METHODS
 
-our $VERSION = '2.00';
+=head2 out
+
+The module generation script is output to STDOUT.
+
+Please do as follows and develop with the file.
+
+  % perl -MEgg::Helper::Plugin::Maker \
+       -e "Egg::Helper::Plugin::Maker-out" > /path/to/egg_makemaker.pl
+
+* It might be convenient to grant the execution permission arbitrarily.
+
+=cut
 
 sub _setup_get_options {
 	shift->SUPER::_setup_get_options(" v-module_version= ");
@@ -113,21 +126,6 @@ Usage: ${cmdline}
 
 END_HELP
 }
-
-=head1 METHODS
-
-=head2 out
-
-The module generation script is output to STDOUT.
-
-Please do as follows and develop with the file.
-
-  % perl -MEgg::Helper::Plugin::Maker \
-       -e "Egg::Helper::Plugin::Maker-out" > /path/to/egg_makemaker.pl
-
-* It might be convenient to grant the execution permission arbitrarily.
-
-=cut
 sub out {
 	require Egg::Helper;
 	my $perlpath= Egg::Helper->perl_path;
@@ -466,6 +464,10 @@ value: |
   decide whether fixes for the module are worth downloading.
   
   INSTALLATION
+  
+     * Module::Install is used.
+  
+     perl -MCPAN -e 'install Module::Install'
   
   To install this module type the following:
   

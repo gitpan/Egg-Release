@@ -2,8 +2,16 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 111 2007-05-09 21:31:43Z lushe $
+# $Id: Base.pm 200 2007-10-31 04:30:14Z lushe $
 #
+use strict;
+use warnings;
+use Class::C3;
+use UNIVERSAL::require;
+use base qw/Class::Data::Inheritable/;
+use Carp qw/croak/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -37,16 +45,6 @@ Egg::Base - General-purpose base class for Egg.
 
 Some methods of the fixed form are offered to the class that succeeds to this
 module.
-
-=cut
-use strict;
-use warnings;
-use Class::C3;
-use UNIVERSAL::require;
-use base qw/Class::Data::Inheritable/;
-use Carp qw/croak/;
-
-our $VERSION = '2.01';
 
 =head1 METHODS
 
@@ -295,8 +293,8 @@ sub replace {
 		$text= \$str;
 	}
 	return "" unless defined($$text);
-	$$text=~s{([\\]?)< *\$e\.([\w\d\.]+) *>}
-	   [ $1 ? "<\$e.$2>": __replace($2, $self, $param, @_) ]sge;
+	$$text=~s{([\\]?)< *\$?e\.([\w\d\.]+) *>}
+	   [ $1 ? "<e.$2>": __replace($2, $self, $param, @_) ]sge;
 	$$text;
 }
 sub __replace {

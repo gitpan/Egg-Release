@@ -2,13 +2,13 @@ package Egg::Plugin::DBI::Easy;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Easy.pm 182 2007-08-05 17:25:44Z lushe $
+# $Id: Easy.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
 use Time::Piece::MySQL;
 
-our $VERSION = '2.06';
+our $VERSION = '2.08';
 
 =head1 NAME
 
@@ -121,13 +121,20 @@ sub dbh_hashref {
 	my $key = shift || return 0;
 	my $sql = shift || return 0;
 	my($args)= &__args(@_);
+	$e->debug_out("# + dbh_hashref: $sql");
 	my %bind;
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
 	$sth->bind_columns(\(@bind{map{$_}@{$sth->{NAME_lc}}}));
 	$sth->fetch; $sth->finish;
-	$e->debug_out("# + dbh_hashref: $sql");
 	$bind{$key} ? \%bind: 0;
+}
+
+=head2 jdb ([dbname], [primary key])
+
+=cut
+sub jdb {
+	Egg::Plugin::DBI::Easy::joindb->new(@_);
 }
 
 =head2 dbh_arrayref ( [SQL], [EXECUTE_ARGS], [CODE_REF] )
@@ -178,13 +185,13 @@ sub dbh_arrayref {
 		my($array, %hash)= @_;
 		push @$array, \%hash
 	  };
+	$e->debug_out("# + dbh_arrayref: $sql");
 	my(@array, %bind);
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
 	$sth->bind_columns(\(@bind{map{$_}@{$sth->{NAME_lc}}}));
 	while ($sth->fetch) { $code->(\@array, %bind) }
 	$sth->finish;
-	$e->debug_out("# + dbh_arrayref: $sql");
 	scalar(@array) ? \@array: 0;
 }
 
@@ -205,12 +212,12 @@ sub dbh_scalarref {
 	my $e   = shift;
 	my $sql = shift || return 0;
 	my($args)= &__args(@_);
+	$e->debug_out("# + dbh_scalarref: $sql");
 	my $result;
 	my $sth= $e->dbh->prepare($sql);
 	@$args ? $sth->execute(@$args): $sth->execute;
 	$sth->bind_columns(\$result);
 	$sth->fetch; $sth->finish;
-	$e->debug_out("# + dbh_scalarref: $sql");
 	$result ? \$result: 0;
 }
 
@@ -523,13 +530,12 @@ done by using a double ARRAY reference when there is an unpalatable column.
 sub update_insert {
 	my $db= shift;
 	my $args= Egg::Plugin::DBI::Easy::args->new(@_);
-	@{$args->{ukey}} || croak q{ I want  };
-	my $pkey= $args->{primary}
-	        ? $args->{primary}[0]: (keys %{$args->{unique}})[0];
-	$db->{e}->dbh_scalarref(
-	  qq{SELECT $pkey FROM $db->{dbname} WHERE $args->{where} },
-	  values %{$args->{unique}}
-	  ) ? $db->update($args): $db->insert($args);
+	my $result;
+	if ($result= $db->update($args) and $result > 0) {
+		return $result;
+	} else {
+		return $db->insert($args);
+	}
 }
 
 =head2 noentry_insert ( [WHERE_COLUMNS], [DATA_HASH] )
@@ -635,7 +641,7 @@ sub new {
 	}
 	$data ||= $_[0]
 	  ? (ref($_[0]) eq 'HASH' ? $_[0]: ($ukey->[0] ? {$ukey->[0], @_}: {@_}))
-	  : die q{ I want update data };
+	  : die q{ I want insert or update data value. };
 	if (my $key= $ukey->[0]) {
 		$unique{$key}= exists($data->{$key}) ? $data->{$key}: undef;
 	}
@@ -698,6 +704,78 @@ sub __ukey_line {
 	$$where.= $$kname=~m{^([^\:]+\:(.+))}
 	  ? do { $$kname= $2; " $cond $2 $1 ?" }
 	  : " $cond $$kname = ?";
+}
+
+package Egg::Plugin::DBI::Easy::joindb;
+use strict;
+use Tie::Hash::Indexed;
+
+my %ixnames;
+{
+	my @ixnames= ('a'..'z');
+	tie %ixnames, 'Tie::Hash::Indexed';
+	%ixnames= map{ $_=> $ixnames[$_] }(0..$#ixnames);
+  };
+
+sub new {
+	my($class, $e)= splice @_, 0, 2;
+	my $dbname= __table_alias($e, shift);
+	my $pkey= shift || die q{ I want primary key. };
+	my $ix= $ixnames{0};
+	bless { e=> $e, dbnames=> [["$dbname $ix","$ix.$pkey"]] }, $class;
+}
+sub join {
+	my($self, $dbname, $pkey, $ix)= __arg(@_);
+	push @{$self->{dbnames}},
+	["join $dbname $ix", (ref($pkey) eq 'SCALAR' ? $pkey: "$ix.$pkey")];
+	$self;
+}
+sub left {
+	my($self, $dbname, $pkey, $ix)= __arg(@_);
+	push @{$self->{dbnames}},
+	["left join $dbname $ix", (ref($pkey) eq 'SCALAR' ? $pkey: "$ix.$pkey")];
+	$self;
+}
+sub right {
+	my($self, $dbname, $pkey, $ix)= __arg(@_);
+	push @{$self->{dbnames}},
+	["right join $dbname $ix", (ref($pkey) eq 'SCALAR' ? $pkey: "$ix.$pkey")];
+	$self;
+}
+sub hashref {
+	my($self, $pkey, $sql)= shift->__fetch(shift);
+	$self->{e}->dbh_hashref($pkey, $sql, @_);
+}
+sub arrayref {
+	my($self, $pkey, $sql)= shift->__fetch(shift);
+	$self->{e}->dbh_arrayref($sql, @_);
+}
+sub __fetch {
+	my $self= shift;
+	my $more= shift || "";
+	my $base= shift(@{$self->{dbnames}});
+	my $pkey= $base->[1];
+	my $key = $pkey; $key=~s{^[^\.]+\.} [];
+	my $part= $base->[0];
+	for my $q (@{$self->{dbnames}}) {
+		$part.= " $q->[0] on "
+		. (ref($pkey) eq 'SCALAR' ? ${$q->[1]}: "$pkey = $q->[1]");
+	}
+	$more= ref($more) eq 'ARRAY'
+	       ? (CORE::join(' ', @$more) || ""): qq{where $more};
+	($self, $key, qq{select * from $part $more});
+}
+sub __table_alias {
+	my $e= shift;
+	my $dbname= shift || die q{ I want dbname. };
+	$e->config->{plugin_dbi_easy}{table_alias}{$dbname} || $dbname;
+}
+sub __arg {
+	my $self= shift;
+	my $dbname= __table_alias($self->{e}, shift);
+	my $pkey  = shift || die q{ I want primary key. };
+	my $ix= $ixnames{scalar(@{$self->{dbnames}})};
+	($self, $dbname, $pkey, $ix);
 }
 
 =head1 SEE ALSO

@@ -2,13 +2,13 @@ package Egg::Helper::Project::Build;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 185 2007-08-07 15:42:16Z lushe $
+# $Id: Build.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '2.03';
+our $VERSION= '2.04';
 
 =head1 NAME
 
@@ -534,6 +534,10 @@ value: |
   decide whether fixes for the module are worth downloading.
   
   INSTALLATION
+  
+  * Module::Install is used.
+  
+    perl -MCPAN -e 'install Module::Install'
   
   To install this module type the following:
   

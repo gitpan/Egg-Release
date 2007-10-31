@@ -2,15 +2,13 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 184 2007-08-06 19:59:01Z lushe $
+# $Id: Tools.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
-use URI::Escape;
-use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION = '2.07';
+our $VERSION = '2.09';
 
 =head1 NAME
 
@@ -39,6 +37,9 @@ This plugin offers the method of various functions.
 
 =cut
 {
+	require URI::Escape;
+	require HTML::Entities;
+
 	no warnings 'redefine';
 
 =head2 encode_entities ( [HTML_TEXT], [ARGS] )
@@ -162,8 +163,8 @@ The result of L<Digest::MD5>::md5_hex is returned.
 		my $pkg= "Digest::". uc($accessor);
 		*{__PACKAGE__."::${accessor}_hex"}= sub {
 			$pkg->require;
-			&{"${pkg}::${accessor}_hex"}
-			  (ref($_[1]) eq 'SCALAR' ? ${$_[1]}: $_[1]);
+			shift;
+			&{"${pkg}::${accessor}_hex"}(ref($_[0]) ? ${$_[0]}: @_);
 		  };
 	}
   };

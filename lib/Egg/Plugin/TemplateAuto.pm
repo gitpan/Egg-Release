@@ -2,12 +2,12 @@ package Egg::Plugin::TemplateAuto;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: TemplateAuto.pm 168 2007-05-28 09:07:49Z lushe $
+# $Id: TemplateAuto.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -95,7 +95,8 @@ always used.
 sub _setup {
 	my($e)= @_;
 	my $path= $e->config->{template_path};
-	my $ext = $e->config->{template_extension};
+	my $ext = $e->config->{template_extension} ||= 'tt';
+	   $ext =~s{\.} [];
 	my $conf= $e->config->{plugin_template_auto} ||= {};
 	my $list;
 	my $ignore= ($list= $conf->{ignore_names}) ? do {

@@ -30,6 +30,7 @@ my $builder = Module::Build->new(
     'HTML::Parser'          => 3.56,
     'HTML::Prototype'       => 1.48,
     'HTML::Template'        => 2.9,
+    'HTTP::BrowserDetect'   => 0.99,
     'Jcode'                 => 2.06,
     'Tie::Hash::Indexed'    => 0.04,
     'Tie::RefHash'          => 1.35,

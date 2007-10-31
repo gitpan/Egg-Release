@@ -28,6 +28,7 @@ requires 'HTML::Mason'           => 1.35;
 requires 'HTML::Parser'          => 3.56;
 requires 'HTML::Prototype'       => 1.48;
 requires 'HTML::Template'        => 2.9;
+requires 'HTTP::BrowserDetect'   => 0.99;
 requires 'Jcode'                 => 2.06;
 requires 'ModPerl::VersionUtil'  => 0.03;
 requires 'Tie::Hash::Indexed'    => 0.04;

@@ -56,6 +56,7 @@ lib/Egg/Plugin/Filter/Plugin/Japanese/EUC.pm
 lib/Egg/Plugin/Filter/Plugin/Japanese/Shift_JIS.pm
 lib/Egg/Plugin/Filter/Plugin/Japanese/UTF8.pm
 lib/Egg/Plugin/FormValidator/Simple.pm
+lib/Egg/Plugin/HTTP/BrowserDetect.pm
 lib/Egg/Plugin/HTTP/HeadParser.pm
 lib/Egg/Plugin/Log.pm
 lib/Egg/Plugin/Pod/HTML.pm

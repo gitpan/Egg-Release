@@ -1,5 +1,15 @@
 Revision history for Perl extension .
 
+2.24  2007/10/13
+	- HTTP::BrowserDetect plugin is added.
+	- fixed for Egg::Plugin::DBI::Easy.
+	- fixed for Egg::Helper::Project::Build.
+	- fixed for Egg::Plugin::TemplateAuto.
+	- The method of p3p is added to Egg::Response.
+	- fixed for Egg::Plugin::Tools.
+	- fixed for Egg::Plugin::Filter.
+	- fixed for Egg::Helper::Plugin::Maker.
+
 2.23  2007/08/15
 	- The method of prepare_engine is added to Egg.
 	- fixed for Egg::Helper::VirtualTest.

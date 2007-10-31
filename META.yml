@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 2.23
+version: 2.24
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: Version of Egg WEB Application Framework.
@@ -24,6 +24,7 @@ requires:
   HTML::Parser: 3.56
   HTML::Prototype: 1.48
   HTML::Template: 2.9
+  HTTP::BrowserDetect: 0.99
   Jcode: 2.06
   MIME::Base64: 3.07
   ModPerl::VersionUtil: 0.03
@@ -41,10 +42,10 @@ requires:
 provides:
   Egg:
     file: lib/Egg.pm
-    version: 2.07
+    version: 2.08
   Egg::Base:
     file: lib/Egg/Base.pm
-    version: 2.01
+    version: 2.02
   Egg::Const:
     file: lib/Egg/Const.pm
     version: 2.00
@@ -63,7 +64,7 @@ provides:
     version: 2.00
   Egg::Helper::Plugin::Maker:
     file: lib/Egg/Helper/Plugin/Maker.pm
-    version: 2.00
+    version: 2.01
   Egg::Helper::Plugin::Prototype:
     file: lib/Egg/Helper/Plugin/Prototype.pm
     version: 2.00
@@ -72,7 +73,7 @@ provides:
     version: 2.01
   Egg::Helper::Project::Build:
     file: lib/Egg/Helper/Project/Build.pm
-    version: 2.03
+    version: 2.04
   Egg::Helper::Project::Test:
     file: lib/Egg/Helper/Project/Test.pm
     version: 2.00
@@ -102,12 +103,14 @@ provides:
     version: 2.00
   Egg::Plugin::DBI::Easy:
     file: lib/Egg/Plugin/DBI/Easy.pm
-    version: 2.06
+    version: 2.08
   Egg::Plugin::DBI::Easy::accessors:
     file: lib/Egg/Plugin/DBI/Easy.pm
   Egg::Plugin::DBI::Easy::args:
     file: lib/Egg/Plugin/DBI/Easy.pm
   Egg::Plugin::DBI::Easy::handler:
+    file: lib/Egg/Plugin/DBI/Easy.pm
+  Egg::Plugin::DBI::Easy::joindb:
     file: lib/Egg/Plugin/DBI/Easy.pm
   Egg::Plugin::DBI::Transaction:
     file: lib/Egg/Plugin/DBI/Transaction.pm
@@ -154,7 +157,7 @@ provides:
     version: 2.00
   Egg::Plugin::Filter:
     file: lib/Egg/Plugin/Filter.pm
-    version: 2.02
+    version: 2.03
   Egg::Plugin::Filter::Plugin::Japanese:
     file: lib/Egg/Plugin/Filter/Plugin/Japanese.pm
     version: 2.01
@@ -169,6 +172,9 @@ provides:
     version: 2.00
   Egg::Plugin::FormValidator::Simple:
     file: lib/Egg/Plugin/FormValidator/Simple.pm
+    version: 2.00
+  Egg::Plugin::HTTP::BrowserDetect:
+    file: lib/Egg/Plugin/HTTP/BrowserDetect.pm
     version: 2.00
   Egg::Plugin::HTTP::HeadParser:
     file: lib/Egg/Plugin/HTTP/HeadParser.pm
@@ -194,10 +200,10 @@ provides:
     version: 2.00
   Egg::Plugin::TemplateAuto:
     file: lib/Egg/Plugin/TemplateAuto.pm
-    version: 2.00
+    version: 2.01
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
-    version: 2.07
+    version: 2.09
   Egg::Plugin::Upload:
     file: lib/Egg/Plugin/Upload.pm
     version: 2.00
@@ -217,7 +223,7 @@ provides:
     version: 2.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 2.23
+    version: 2.24
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 2.01
@@ -243,7 +249,7 @@ provides:
     version: 2.00
   Egg::Response:
     file: lib/Egg/Response.pm
-    version: 2.08
+    version: 2.09
   Egg::Response::FetchCookie:
     file: lib/Egg/Response.pm
   Egg::Response::Headers:

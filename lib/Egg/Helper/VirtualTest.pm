@@ -2,7 +2,7 @@ package Egg::Helper::VirtualTest;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: VirtualTest.pm 156 2007-05-21 03:39:31Z lushe $
+# $Id: VirtualTest.pm 200 2007-10-31 04:30:14Z lushe $
 #
 use strict;
 use warnings;
