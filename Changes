@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+2.25  2007/11/03
+	- fixed for Egg::Helper::Project::Build.
+
 2.24  2007/10/13
 	- HTTP::BrowserDetect plugin is added.
 	- fixed for Egg::Plugin::DBI::Easy.
