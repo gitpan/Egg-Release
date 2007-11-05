@@ -2,12 +2,12 @@ package Egg::Helper::Plugin::Maker;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Maker.pm 200 2007-10-31 04:30:14Z lushe $
+# $Id: Maker.pm 213 2007-11-05 12:18:10Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -333,13 +333,14 @@ filename: Makefile.PL
 value: |
   use inc::Module::Install;
   
-  name         '<$e.module_name>';
-  all_from     'lib/<$e.module_filename>';
-  version_from 'lib/<$e.module_filename>';
-  author       '<$e.author>';
-  license      '<$e.license>';
+  name          '<$e.module_name>';
+  all_from      'lib/<$e.module_filename>';
+  version_from  'lib/<$e.module_filename>';
+  abstract_from 'lib/<$e.module_filename>';
+  author        '<$e.author>';
+  license       '<$e.license>';
   
-  requires 'Egg::Release' => 2.00;
+  requires 'Egg::Release' => < $e.egg_release_version >;
   
   build_requires 'Test::More';
   build_requires 'Test::Pod';
@@ -359,12 +360,13 @@ value: |
   
     module_name       => '<$e.module_distname>',
     dist_version_from => 'lib/<$e.module_filename>',
+    dist_abstract     => 'lib/<$e.module_filename>',
     dist_author       => '<$e.author>',
     license           => '<$e.license>',
   
     requires => {
   
-      'Egg::Release'         => 2.00,
+      'Egg::Release'         => < $e.egg_release_version >,
   
       'Test::More'           => 0,
       'Test::Pod'            => 0,
@@ -501,7 +503,6 @@ filename: MANIFEST.SKIP
 value: |
   \bRCS\b
   \bCVS\b
-  ^inc/
   ^blib/
   ^_build/
   ^MANIFEST\.

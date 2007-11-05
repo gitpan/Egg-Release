@@ -2,13 +2,13 @@ package Egg::Helper::Project::Build;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Build.pm 204 2007-11-03 12:57:12Z lushe $
+# $Id: Build.pm 213 2007-11-05 12:18:10Z lushe $
 #
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION= '2.05';
+our $VERSION= '2.06';
 
 =head1 NAME
 
@@ -303,11 +303,12 @@ filetype: script
 value: |
   use inc::Module::Install;
   
-  name         '< $e.project_name >';
-  all_from     'lib/< $e.project_name >.pm';
-  version_from 'lib/< $e.project_name >.pm';
-  author       '< $e.author >';
-  license      '< $e.license >';
+  name          '< $e.project_name >';
+  all_from      'lib/< $e.project_name >.pm';
+  abstract_from 'lib/< $e.project_name >.pm';
+  version_from  'lib/< $e.project_name >.pm';
+  author        '< $e.author >';
+  license       '< $e.license >';
   
   requires 'Egg::Release' => < $e.egg_release_version >;
   
@@ -329,6 +330,7 @@ value: |
   
     module_name       => '< $e.project_name >',
     dist_version_from => 'lib/< $e.project_name >.pm',
+    dist_abstract     => 'lib/< $e.project_name >.pm',
     dist_author       => '< $e.author >',
     license           => '< $e.license >',
   
