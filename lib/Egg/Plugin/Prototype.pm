@@ -2,8 +2,27 @@ package Egg::Plugin::Prototype;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Prototype.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Prototype.pm 226 2008-01-27 10:23:16Z lushe $
 #
+use strict;
+use warnings;
+use base 'Class::Data::Inheritable';
+use HTML::Prototype;
+
+our $VERSION = '3.00';
+
+__PACKAGE__->mk_classdata('prototype');
+eval { require HTML::Prototype::Useful; };
+
+if ( $@ ) {
+    __PACKAGE__->prototype( HTML::Prototype->new );
+} else {
+    __PACKAGE__->prototype( HTML::Prototype::Useful->new );
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -29,44 +48,25 @@ Some stuff to make Prototype fun.
 
 This plugin replaces L<Egg::Helper::Plugin::Prototype>.
 
-=cut
-use strict;
-use warnings;
-use base 'Class::Data::Inheritable';
-use HTML::Prototype;
+=head1 METHODS
 
-our $VERSION = '2.00';
-
-__PACKAGE__->mk_classdata('prototype');
-eval { require HTML::Prototype::Useful; };
-
-=head2 METHODS
-
-=head3 prototype
+=head2 prototype
 
 Returns a ready to use L<HTML::Prototype> object.
 
-=cut
-
-if ( $@ ) {
-    __PACKAGE__->prototype( HTML::Prototype->new );
-} else {
-    __PACKAGE__->prototype( HTML::Prototype::Useful->new );
-}
-
 =head1 SEE ALSO
 
-L<Catalyst::Plugin::Prototype>,
-L<Egg::Helper::Plugin::Prototype>,
 L<Egg::Release>,
+L<Egg::Helper::Plugin::Prototype>,
+L<Catalyst::Plugin::Prototype>,
 
 =head1 AUTHOR
 
 This code is a transplant of 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
- of the code of 'L<Catalyst::Plugin::Prototype>'.
+of the code of 'L<Catalyst::Plugin::Prototype>'.
 
 Therefore, the copyright of this code is assumed to be the one that belongs
- to 'Sebastian Riedel, C<sri@oook.de>'.
+to 'Sebastian Riedel, C<sri@oook.de>'.
 
 =head1 LICENSE
 
@@ -75,4 +75,3 @@ the same terms as perl itself.
 
 =cut
 
-1;

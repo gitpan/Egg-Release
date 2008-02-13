@@ -2,165 +2,190 @@ package Egg::Plugin::Encode;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Encode.pm 226 2008-01-27 10:23:16Z lushe $
 #
+use strict;
+use warnings;
+
+our $VERSION= '3.00';
+
+sub _setup {
+	my($e)= @_;
+	no warnings 'redefine';
+	if (my $icode= $e->config->{character_in}) {
+		my $class= $e->global->{request_class};
+		my $code = $class->can('parameters') || \&Egg::Request::parameters;
+		no strict 'refs';  ## no critic.
+		no warnings 'redefine';
+		*{"${class}::parameters"}= sub {
+			$_[0]->{parameters} ||= do {
+				tie my %param,
+				'Egg::Plugin::Encode::TieHash', $e, $icode, $code->(@_);
+				\%param;
+			  };
+		  };
+		*{"${class}::params"}= $class->can('parameters');
+	}
+	my $encode= $e->create_encode;
+	no warnings 'redefine';
+	*encode= sub { $encode };
+	$e->next::method;
+}
+
+sub create_encode {
+	require Jcode;
+	Jcode->new('jcode context.');
+}
+sub utf8_conv { shift->encode->set(@_)->utf8 }
+sub sjis_conv { shift->encode->set(@_)->sjis }
+sub euc_conv  { shift->encode->set(@_)->euc  }
+
+package Egg::Plugin::Encode::TieHash;
+use strict;
+use warnings;
+use Tie::Hash;
+
+our @ISA= 'Tie::ExtraHash';
+
+my $conv;
+
+sub TIEHASH {
+	my($class, $e, $icode, $param)= @_;
+	$conv= "${icode}_conv";
+	bless [$param, $e, {}], $class;
+}
+sub FETCH {
+	my($self, $key)= @_;
+	return "" unless exists($self->[0]{$key});
+	return $self->[0]{$key} if $self->[2]{$key};
+	$self->[2]{$key}= 1;
+	if (ref($self->[0]{$key}) eq 'ARRAY') {
+		for (@{$self->[0]{$key}}) { tr/\r//d; $self->[1]->$conv(\$_) }
+		return $self->[0]{$key};
+	} else {
+		$self->[0]{$key}=~tr/\r//d;
+		return $self->[0]{$key}= $self->[1]->$conv(\$self->[0]{$key});
+	}
+}
+sub STORE {
+	my($self, $key)= splice @_, 0, 2;
+	$self->[2]{$key}= 1 unless $self->[2]{$key};
+	$self->[0]{$key}= shift;
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
-Egg::Plugin::Encode - Plugin to treat character code.
+Egg::Plugin::Encode - Conversion function of character.
 
 =head1 SYNOPSIS
 
   use Egg qw/ Encode /;
-
-  $e->encode->set(\$text)->utf8;
   
-  $e->utf8_conv(\$text);
-  $e->euc_conv (\$text);
-  $e->sjis_conv(\$text);
+  my $utf8= $e->utf_conv($text);
+  my $sjis= $e->sjis_conv($text);
+  my $euc = $e->euc_conv($text);
 
 =head1 DESCRIPTION
 
-This plug-in adds some methods to treat the character code conveniently.
+Plugin that offers method of converting character-code.
 
-If $e-E<gt>config-E<gt>{character_in} is set, it sets it up so that
-Egg::Request::parameters may unite character-codes of the request query.
+The character-code is converted with L<Jcode>.
 
-It is "[in_code]_conv" as for the character-code set in $e-E<gt>config-E<gt>{character_in}. 
-Specifying it becomes either of 'utf8' and 'euc' and 'sjis' because it develops
-with the method name.
+The supported character-code is 'euc', 'sjis', 'utf8'.
 
-If it wants to make the code excluding this treated, the method is made for the 
-controller from the name of "[in_code]_conv", and the code name is set to
-$e-E<gt>config-E<gt>{character_in}.
+Please make the 'create_encode' method in the project, and return the object that
+does the code conversion from the method when converting it excluding L<Jcode>.
 
-=cut
-use strict;
-use warnings;
+  sub create_encode {
+     AnyComvert->new;
+  }
 
-our $VERSION = '2.00';
+It sets it up so that all the input received with L<Egg::Request> is united by
+the character-code when 'character_in' is defined by the configuration of Egg.
 
-sub _setup {
-	my($e)= @_;
+If it wants to treat the code not supported by this plugin, the code conversion
+can be done in that making the method in which '[code_name]_conv' in the project.
+And, when the [code_name] is set to 'character_in', the input united by a target
+code comes to be received.
 
-	if (my $icode= $e->config->{character_in}) {
-		my $enc_method= "${icode}_conv";
-		my $r_class= $e->global->{REQUEST_PACKAGE};
-		my $get_param;
-		if (my $code= $r_class->can('_prepare_params')) {
-			$get_param= sub {
-				my $egg  = $_[0]->e;
-				my $param= $code->($_[0]);
-				while (my($key, $value)= each %$param) {
-					if (ref($value) eq 'ARRAY') {
-						for (@$value) { $egg->$enc_method(\$_) }
-						$param->{$key}= $value;
-					} else {
-						$param->{$key}= $egg->$enc_method(\$value);
-					}
-				}
-				$param;
-			  };
-		} else {
-			$get_param= sub {
-				my($req)= @_; my $egg= $req->e;
-				my %param;
-				for ($req->r->param) {
-					my $value= $req->r->param($_);
-					if (ref($value) eq 'ARRAY') {
-						for (@$value) { $egg->$enc_method(\$_) }
-						$param{$_}= $value;
-					} else {
-						$param{$_}= $egg->$enc_method(\$value);
-					}
-				}
-				\%param;
-			  };
-		}
-		no warnings 'redefine';
-		*Egg::Request::parameters=
-		   sub { $_[0]->{parameters} ||= $get_param->($_[0]) };
-
-	}
+  sub anyname_conv {
+    shift->encode->set(@_)->anyname;
+  }
+  
+  # Egg configuration.
+  
+  character_in => 'anyname',
 
 =head1 METHODS
 
 =head2 encode
 
-The object for the character-code conversion acquired with $e->create_encode
-is returned.
+The object obtained by the 'create_encode' method is returned.
 
-* Does the problem occur according to the module used because it is Closure
-  No be known.
-
-=cut
-	{
-		no warnings 'redefine';
-		my $encode= $e->create_encode;
-		*encode= sub { $encode };
-	  };
-
-	$e->next::method;
-}
+  my $conv_text= $e->encode->set(\$text)->utf8;
 
 =head2 create_encode
 
-The object for the character-code conversion is returned.
+The object to convert the character-code is returned.
 
-It is possible to make the object of the favor Orbaraid this method as a 
-controller, and returned.
+L<Jcode> is restored in default.
 
-Default is Jcode.
+If the object that treats the character-code is changed, this method is overwrited
+as a controller etc.
 
-=cut
-sub create_encode {
-	require Jcode;
-	Jcode->new('jcode object.');
-}
+=head2 utf8_conv ([TEXT])
 
-=head2 utf8_conv ( [TEXT], [ARGS] )
+The character-code is converted into utf8.
 
-Shift-E<gt>encode-E<gt>set(@_)-E<gt>utf8 is done.
+  my $utf8= $e->utf_conv(\$text);
 
-* When create_encode is Orbaraided, necessary to Orbaraid this method.
-  It might be.
+=head2 sjis_conv ([TEXT]);
 
-=cut
-sub utf8_conv { shift->encode->set(@_)->utf8 }
+The character-code is converted into Shift_JIS.
 
-=head2 euc_conv ( [TEXT], [ARGS] )
+  my $sjis= $e->sjis_conv(\$text);
 
-Shift-E<gt>encode-E<gt>set(@_)-E<gt>euc is done.
+=head2 euc_conv ([TEXT]);
 
-* When create_encode is Orbaraided, necessary to Orbaraid this method.
-  It might be.
+The character-code is converted into EUC-JP.
 
-=cut
-sub euc_conv  { shift->encode->set(@_)->euc }
+  my $euc= $e->euc_conv(\$text);
 
-=head2 sjis_conv ( [TEXT], [ARGS] )
+=head1 BUGS
 
-Shift-E<gt>encode-E<gt>set(@_)-E<gt>sjis is done.
+Jcode.pm is used and note the point that is always utf8 about the content, please
+if you do not receive the conversion result when the character to be converted
+into the method of *_ conv is passed by the SCALAR reference though it is not
+a translation of bug.
+This is because of being internally processed with utf8 in the specification of 
+Jcode.
 
-* When create_encode is Orbaraided, necessary to Orbaraid this method.
-  It might be.
+  my $text= 'test'; # For shift_jis.
+  $e->euc_conv(\$text);        # The content of $text is utf8.
+  $text= $e->euc_conv(\$text); # The content of $text is euc.
+  
+  $e->utf8_conv(\$text);       # This is untouched utf8.
 
-=cut
-sub sjis_conv { shift->encode->set(@_)->sjis }
-
+Perhaps, I think that it is a peculiar problem when L<Jcode> operates as Wrapper
+of L<Encode> module.
 
 =head1 SEE ALSO
 
-L<Jcode>,
 L<Egg::Release>,
+L<Egg::Request>,
+L<Jcode>,
 
 =head1 AUTHOR
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -168,4 +193,3 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
-1;

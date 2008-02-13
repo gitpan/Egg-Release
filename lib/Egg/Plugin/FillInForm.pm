@@ -2,8 +2,57 @@ package Egg::Plugin::FillInForm;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: FillInForm.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: FillInForm.pm 226 2008-01-27 10:23:16Z lushe $
 #
+use strict;
+use warnings;
+use HTML::FillInForm;
+
+our $VERSION = '3.00';
+
+sub _setup {
+	my($e)= @_;
+	$e->mk_accessors('fillin_ok');
+	$e->config->{plugin_fillinform} ||= {};
+	if ($e->isa('Egg::Plugin::FormValidator::Simple')) {
+		no warnings 'redefine';
+		*_valid_error= sub {
+			my($egg)= @_;
+			return ( $egg->stash->{error}
+			      || $egg->form->has_missing
+			      || $egg->form->has_invalid ) ? 1: 0;
+		  };
+	} else {
+		*_valid_error= sub { 0 };
+	}
+	$e->next::method;
+}
+sub fillform_render {
+	my $e   = shift;
+	my $body= shift || $e->response->body || return 0;
+	   $body= \$body unless ref($body);
+	my $fdat= $_[0] ? ($_[1] ? {@_}: $_[0]): $e->request->params;
+	return 0 unless %$fdat;
+	$$body= HTML::FillInForm->new->fill(
+	  scalarref => $body, fdat => $fdat,
+	  %{$e->config->{plugin_fillinform}},
+	  );
+	$body;
+}
+sub fillform {
+	my $e= shift;
+	my $body= $e->fillform_render(@_) || return 0;
+	$e->response->body($body);
+}
+sub _finalize {
+	my($e)= @_;
+	$e->fillform if ( $e->fillin_ok or $e->_valid_error );
+	$e->next::method;
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -22,99 +71,59 @@ Egg::Plugin::FillInForm - HTML::FillInForm for Egg.
       },
   
   );
-
-  # When outputting it, HTML::FillInForm is processed.
+  
   $e->fillin_ok(1);
+  
+  my $output= $e->fillform_render(\$html, $hash);
+  
+  $e->fillform;
 
 =head1 DESCRIPTION
 
-It is a plugin to use L<HTML::FillInForm>.
-
-The setting is defined in 'Plugin_fillinform' with HASH.
-
-All set values extend to L<HTML::FillInForm>.
-
-Please refer to the document of L<HTML::FillInForm> for details.
-
-=cut
-use strict;
-use warnings;
-use HTML::FillInForm;
-use base qw/Class::Accessor::Fast/;
-
-our $VERSION = '2.00';
+L<HTML::FillInForm> It is a plugin to use.
 
 =head1 METHODS
 
+=head2 fillform_render ([HTML_TEXT], [HASH])
+
+It is L<HTML::FillInForm> as for the argument. Is passed and the result is 
+returned.
+
+When HTML_TEXT is omitted, $e->response->body is used.
+
+When HASH is omitted, $e-E<gt>request-E<gt>params is used.
+
+  my $output= $e->fillform_render(\$html, $hash);
+
+=head2 fillform ([HTML_TAXT], [HASH])
+
+The result of 'fillform_render' is set in $e-E<gt>response-E<gt>body.
+
+  $e->fillform_render(\$html, $hash);
+
 =head2 fillin_ok ( [BOOL] )
 
-$e-E<gt>fillform is called immediately before the output of contents when an 
-effective value is set.
+Fillform comes to be done by '_finalize' when keeping effective.
 
-* The call of $e-E<gt>fillform becomes effective at the Validate error if
-  L<Egg::Plugin::FormValidator::Simple > is read at the same time.
+When the check error of this plugin occurs when L<Egg::Plugin::FormValidator::Simple>
+is loaded, fillform is always done.
 
   $e->fillin_ok(1);
 
-=cut
-__PACKAGE__->mk_accessors(qw/ fillin_ok /);
-
-sub _setup {
-	my($e)= @_;
-	if ($e->isa('Egg::Plugin::FormValidator::Simple')) {
-		no warnings 'redefine';
-		*_valid_error= sub {
-			my($egg)= @_;
-			return ( $egg->stash->{error}
-			      || $egg->form->has_missing
-			      || $egg->form->has_invalid ) ? 1: 0;
-		  };
-	}
-	$e->next::method;
-}
-
-=head2 fillform ( [CONTENT_REF], [PARAM_HASH] )
-
-L<HTML::FillInForm > is processed for CONTENT_REF.
-
-CONTENT_REF is SCALAR always reference. 
-
-When PARAM_HASH is omitted, $e-E<gt>request-E<gt>params is used.
-
-  $e->fillform( \$content, \%param );
-
-=cut
-sub fillform {
-	my $e   = shift;
-	my $body= shift || $e->response->body || return 0;
-	my $fdat= @_ ? ($_[1] ? {@_}: $_[0]): $e->request->params;
-	return 0 unless %$fdat;
-	$e->response->body( HTML::FillInForm->new->fill(
-	  scalarref => $body, fdat => $fdat,
-	  %{$e->config->{plugin_fillinform}},
-	  ) );
-}
-sub _finalize {
-	my($e)= @_;
-	$e->fillform if ( $e->fillin_ok or $e->_valid_error );
-	$e->next::method;
-}
-sub _valid_error { 0 }
-
 =head1 SEE ALSO
 
-L<HTML::FillInForm>,
-L<Catalyst::Plugin::FillInForm>,
-L<Egg::Plugin::FormValidator::Simple>,
 L<Egg::Release>,
+L<HTML::FillInForm>,
+L<Egg::Plugin::FormValidator::Simple>,
+L<Catalyst::Plugin::FillInForm>,
 
 =head1 AUTHOR
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -122,4 +131,3 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
-1;

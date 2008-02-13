@@ -2,57 +2,14 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 200 2007-10-31 04:30:14Z lushe $
+# $Id: Response.pm 240 2008-02-13 03:21:40Z lushe $
 #
 use strict;
 use warnings;
-use CGI::Cookie;
-use CGI::Util qw/expires/;
-use base qw/Class::Accessor::Fast/;
-use Carp qw/croak/;
 
-our $VERSION = '2.09';
+our $VERSION = '3.00';
 
-=head1 NAME
-
-Egg::Response - HTTP response processing for Egg.
-
-=head1 SYNOPSIS
-
-  # The response object is obtained.
-  my $res= $e->response;
-  
-  # An original response header is set.
-  $res->headers->header( 'X-ORIGN' => 'OK' );
-  
-  # Set Cookie is setup.
-  $res->cookie( new_cookie => 'set_value' );
-    or
-  $res->cookies->{new_cookie}= 'set_value';
-  
-  # Refer to set Cookie.
-  print $res->cookies->{new_cookie}->value;
-  
-  # The cash control is setup.
-  $res->no_cache(1);
-  
-  # Redirect it.
-  $res->redirect('/redirect_uri');
-  
-  # ...etc.
-
-=head1 DESCRIPTION
-
-This module offers processing and the function that relates to the HTTP 
-response.
-
-=cut
-
-__PACKAGE__->mk_accessors(qw/ e request nph no_content_length
-  is_expires last_modified content_type content_language location /);
-
-our $CRLF    = "\015\012";
-our $AUTOLOAD;
+our $CRLF= "\015\012";
 
 our %Status= (
   200 => 'OK',
@@ -69,7 +26,49 @@ our %Status= (
   500 => 'Internal Server Error',
   );
 
-sub _startup { @_ }
+sub response { $_[0]->{response} ||= Egg::Response::handler->new(@_) }
+
+*res= \&response;
+
+package Egg::Response::handler;
+use strict;
+use warnings;
+use Egg::Response::Headers;
+use Egg::Response::TieCookie;
+use CGI::Cookie;
+use CGI::Util qw/ expires /;
+use Carp qw/ croak /;
+use base qw/ Egg::Base /;
+
+{
+	no strict 'refs';  ## no critic.
+	no warnings 'redefine';
+	for (['Window-Target'], ['Content-Encoding'],
+	     ['Content-Disposition', sub { qq{attachment; filename=$_[0]} }],
+	     ['P3P', sub { qq{policyref="/w3c/p3p.xml", CP="$_[0]"} }, sub {
+			$_[1] ? join(' ', @_)
+			: ref($_[0]) eq 'ARRAY' ? join(' ', @{$_[0]}) : ($_[0] || "");
+	       } ] ) {
+		my $name  = $_->[0];
+		my $tcode = $_->[1] || sub { $_[0] };
+		my $acode = $_->[2] || sub { $_[0] };
+		my $lcname= lc($name); $lcname=~s{\-} [_]g;
+		*{__PACKAGE__."::$lcname"}= sub {
+			my $head= shift->headers;
+			if (@_) {
+				my $value= $acode->(@_);
+				delete($head->{$name}) if $head->{$name};
+				return $_[0] ? $head->{$name}= $tcode->($value): "";
+			}
+			my $a= $head->{$name} || return "";
+			$a->[1];
+		  };
+	}
+	*attachment= \&content_disposition;
+  };
+
+__PACKAGE__->mk_accessors(qw/ nph no_content_length 
+  is_expires last_modified content_type content_language location /);
 
 sub new {
 	my($class, $e)= @_;
@@ -78,81 +77,58 @@ sub new {
 	  body=> undef,
 	  status=> 0,
 	  location => "",
+	  parameters=> {},
 	  content_type => "",
 	  content_language => "",
 	  no_content_length => 0,
-	  no_content_length_regex=>
-	  ($e->config->{no_content_length_regex} || qr{(?:^text/|/(?:rss\+)?xml)}),
 	  set_modified => ($e->config->{set_modified_constant} || 0),
 	  }, $class;
 }
-sub request {
-	$_[0]->{request} ||= $_[0]->e->request;
-}
 sub body {
 	my $res= shift;
-	return $res->{body} || 0 unless @_;
-	$res->{body}= $_[0] ? (ref($_[0]) ? $_[0]: \$_[0]): return 0;
+	return ($res->{body} || undef) unless @_;
+	$res->{body}= $_[0] ? (ref($_[0]) ? $_[0]: \$_[0]): undef;
 }
 sub headers {
 	$_[0]->{__headers} ||= Egg::Response::Headers->new($_[0]);
 }
 sub header {
 	my $res = shift;
-#	return \$res->{header} if $res->{header};
-	my $body= shift || undef;
+	my $body= shift || $res->body;
+	my $e   = $res->e;
 	my $header;
-
-	my $e= $res->e;
 	my $headers= $res->{__headers} || {};
 	my($status, $content_type);
 	if ($res->nph) {
-		$header.= ($res->request->protocol || 'HTTP/1.0')
-		       .  ($res->status || '200 OK'). $CRLF
-		       .  'Server: '. $res->request->server_software
+		$header.= ($e->request->protocol || 'HTTP/1.0')
+		       .  ' '. ($res->status || '200 OK'). $CRLF
+		       .  'Server: '. $e->request->server_software
 		       .  $CRLF;
 	}
 	if ($status= $res->status) {
-		$header = 'Status: '
-		       . $res->status. $res->status_string. $CRLF;
+		$header = "Status: ${status}". $res->status_string. $CRLF;
 		$header.= 'Location: '
 		       . $res->location. $CRLF if $status=~/^30[1237]/;
 		if ($content_type= $res->content_type || "") {
-			$header.= "Content-Type: $content_type$CRLF";
+			$header.= "Content-Type: "
+			       .  "@{[ $res->_ctype_check($content_type) ]}$CRLF";
 		}
 	} else {
-		$content_type= $res->content_type
-		  || $res->content_type($e->config->{content_type} || 'text/html');
-		$header.= "Content-Type: $content_type$CRLF";
+		$content_type= $res->_ctype_check( $res->content_type
+		  || $res->content_type($e->config->{content_type} || 'text/html') );
+		$header.= "Content-Type: ${content_type}$CRLF";
 	}
-	my $regext= $res->{no_content_length_regex};
+	my $regext= $e->config->{no_content_length_regex}
+	         || qr{(?:^text/|/(?:rss\+)?xml)};
 	if ($content_type=~m{$regext}i) {
 		if (my $language= $res->content_language) {
-			$header.= "Content-Language: $language$CRLF";
+			$header.= "Content-Language: ${language}$CRLF";
 		}
-	} elsif (! $res->request->is_head
-	     and ! $res->no_content_length and $body and $$body) {
+	} elsif ($body and
+	  ! $e->request->is_head and ! $res->no_content_length) {
 		$header.= "Content-Length: ". length($$body). $CRLF;
 	}
-
-	for my $h (values %$headers) {
-		$header.= "$h->[0]\: $_$CRLF"
-		  for (ref($h->[1]) eq 'ARRAY' ? @{$h->[1]}: $h->[1]);
-	}
-
-	$header.= 'Date: '. expires(0,'http'). $CRLF
-	    if ($res->{Cookies} or $res->is_expires or $res->nph);
-
-	$header.= 'Expires: '. expires($res->is_expires). $CRLF
-	    if $res->is_expires;
-
-	$header.= 'Last-Modified: '. expires($res->last_modified). $CRLF
-	    if $res->last_modified;
-
-	if ($res->no_cache) {
-		$header.= "Pragma: no-cache$CRLF"
-		. "Cache-Control: no-cache, no-store, must-revalidate$CRLF";
-	}
+	my $cookie_ok;
 	if (my $cookies= $res->{Cookies}) {
 		while (my($name, $hash)= each %$cookies) {
 			if (ref($hash) eq 'ARRAY') {
@@ -171,29 +147,69 @@ sub header {
 				  ) || next;
 				$header.= "Set-Cookie: ". $cookie->as_string. $CRLF;
 			}
+			++$cookie_ok;
 		}
+		if ($cookie_ok and ! $headers->{P3P}
+		    and my $p3p= $e->config->{p3p_policy}) {
+			$res->p3p($p3p);
+		}
+	}
+	$header.= 'Date: '. expires(0,'http'). $CRLF
+	    if ($cookie_ok or $res->is_expires or $res->nph);
+	$header.= 'Expires: '. expires($res->is_expires). $CRLF
+	    if $res->is_expires;
+	$header.= 'Last-Modified: '. expires($res->last_modified). $CRLF
+	    if $res->last_modified;
+	$header.= "Pragma: no-cache$CRLF"
+	       .  "Cache-Control: no-cache, no-store, must-revalidate$CRLF"
+	    if $res->no_cache;
+
+	for my $h (values %$headers) {
+		$header.= "$h->[0]\: $_$CRLF"
+		  for (ref($h->[1]) eq 'ARRAY' ? @{$h->[1]}: $h->[1]);
 	}
 	$res->{header}= $header
 	  . 'X-Egg-'. $e->namespace. ': '. $e->VERSION. $CRLF. $CRLF;
 	\$res->{header};
 }
-sub cookie {
-	my $res= shift;
-	return keys %{$res->cookies} if @_< 1;
-	my $key= shift || return 0;
-	@_ ? $res->cookies->{$key}= shift : $res->cookies->{$key};
+sub _ctype_check {
+	return $_[1] unless $_[1]=~m{^text/};
+	return $_[1] if $_[1]=~m{\;\s+charset=}i;
+	my $charset= $_[0]->charset || return $_[1];
+	qq{$_[1]; charset="${charset}"};
+}
+sub charset {
+	my $e= $_[0]->e;
+	$e->stash->{charset_out} || $e->config->{charset_out} || (undef);
 }
 sub cookies {
 	my($res)= @_;
 	$res->{Cookies} ||= do {
-		$res->{cookies_ok}= 1;
-		if (my $p3p= $res->e->config->{p3p_policy} and ! $res->p3p) {
+##		$res->{cookies_ok}= 1;
+		my $p3p;
+		if (! $res->p3p and $p3p= $res->e->config->{p3p_policy}) {
 			$res->p3p($p3p);
 		}
 		my %cookies;
 		tie %cookies, 'Egg::Response::TieCookie', $res->e;
 		\%cookies;
 	  };
+}
+sub cookie {
+	my $res= shift;
+	return keys %{$res->cookies} if @_< 1;
+	my $key= shift || return 0;
+	if (@_) {
+		if (scalar(@_)== 1) {
+			$res->cookies->{$key}= shift;
+		} else {
+			my $hash= { $key, @_ };
+			$key= $hash->{name} || croak q{I want param name.};
+			$res->cookies->{$key}= $hash;
+		}
+	} else {
+		$res->cookies->{$key};
+	}
 }
 sub no_cache {
 	my $res= shift;
@@ -210,542 +226,389 @@ sub no_cache {
 		$res->{no_cache}= 0;
 	}
 }
-sub attachment {
-	my $res= shift;
-	$res->headers->{'Content-Disposition'}=
-	           "attachment; filename=$_[0]" if $_[0];
-}
-sub p3p {
-	my $res= shift;
-	return ($res->headers->{P3P} || "") unless @_;
-	my $p3p= $_[1] ? join(' ', @_)
-	       : ref($_[0]) eq 'ARRAY' ? join(' ', @{$_[0]})
-	       : $_[0];
-	$res->headers->{P3P}= qq{policyref="/w3c/p3p.xml", CP="$p3p"};
-}
-sub window_target {
-	my $res= shift;
-	@_ ? $res->headers->{'Window-Target'}= shift
-	   : ($res->headers->{'Window-Target'} || "");
-}
-sub content_encoding {
-	my $res= shift;
-	@_ ? $res->headers->{'Content-Encoding'}= shift
-	   : ($res->headers->{'Content-Encoding'} || "");
-}
 sub status {
-	my $e= shift;
-	return $e->{status} unless @_;
-	my $status= shift || 0;
-	$e->{status_string}= shift || "";
-	$e->{status}= $status=~/^(\d+) +(.+)/
-	   ? do { $e->{status_string} ||= $2; $1 }: $status;
+	my $res= shift;
+	return $res->{status} unless @_;
+	if (my $status= shift) {
+		my($state, $string)=
+		   $status=~/^(\d+)(?: +(.+))?/ ? ($1, ($2 || 0)): (200, 0);
+		$res->{status_string}= $string || $Status{$state} || "";
+		return $res->{status}= $state;
+	} else {
+		$res->{status}= $res->{status_string}= "";
+		return 0;
+	}
 }
 sub status_string {
-	return " $_[0]->{status_string}" if $_[0]->{status_string};
-	my $status= $_[0]->status || return " $Status{200}";
-	my $string= $Status{$status} || return "";
-	" $string";
+	$_[0]->{status_string} ? " $_[0]->{status_string}": "";
 }
 sub redirect {
 	my $res= shift;
-	return ($res->location ? 1: 0) unless @_;
-	my $location= shift || '/';
-	my $status  = shift || 302;
-	my $option  = ref($_[0]) eq 'HASH' ? $_[0]: {@_};
-	$res->location($location);
-	$res->window_target($option->{target}) if $option->{target};
-	if ($option->{template}) {
-		$res->e->template($option->{template});
-		return $res->status($status);
-	} else {
-		return $res->e->finished($res->status($status));
-	}
+	return ($res->location || undef) unless @_;
+	return $_[0] ? do {
+		$res->location( shift || '/' );
+		my $status= shift || 302;
+		my $o= $_[1] ? {@_}: $_[0];
+		$res->window_target($o->{target}) if $o->{target};
+		$res->e->finished($status);
+	  }: do {
+		$res->status(0);
+		$res->window_target(0);
+		$res->location("");
+		$res->e->finished(0);
+	  };
 }
 sub clear_body {
 	my($res)= @_;
-	${$res->{body}}= undef if $res->{body};
+	$res->{body}= undef if $res->{body};
 }
 sub clear_cookies {
-	tied(%{$_[0]->{Cookies}})->_clear if $_[0]->{Cookies};
+	return 0 unless $_[0]->{Cookies};
+	my($res)= @_;
+	tied(%{$res->{Cookies}})->_clear;
+	delete($res->headers->{P3P}) if $res->headers->{P3P};
+	1;
 }
 sub clear {
 	my($res)= @_;
-	$res->{content_type}= $res->{content_language}= "";
-	$res->is_expires(0);
-	$res->last_modified(0);
+	$res->$_(0) for (qw/ redirect
+	   no_cache no_content_length content_type content_language nph /);
 	$res->headers->clear if $res->{__headers};
-	$res->clear_cookies;
 	undef($res->{header});
+	$res->clear_cookies;
 	1;
-}
-sub result  {
-	my $code= $_[0]->status || return 0;
-	$code== 200 ? 0: $code;
 }
 sub DESTROY {
 	my($res)= @_;
 	untie %{$res->{Cookies}} if $res->{Cookies};
 }
 
-package Egg::Response::Headers;
-use strict;
+1;
 
-sub new {
-	my $class= shift;
-	tie my %headers, 'Egg::Response::Headers::TieHash', @_;
-	bless \%headers, $class;
-}
-sub header {
-	my $self= shift;
-	return $self->{$_[0]} if @_< 2;
-	$self->{$_[0]}= $_[1];
-}
-sub clear {
-	my $self= shift;
-	%{$self}= ();
-}
+__END__
 
-package Egg::Response::Headers::TieHash;
-use strict;
-use Tie::Hash::Indexed;
-use Tie::Hash;
+=head1 NAME
 
-our @ISA = 'Tie::ExtraHash';
+Egg::Response - WEB response processing for Egg.
 
-my $ForwardRegex= qr{^(?:content_type|content_language|location|status)$};
+=head1 SYNOPSIS
 
-sub TIEHASH {
-	my($class, $response)= @_;
-	tie my %param, 'Tie::Hash::Indexed';
-	bless [\%param, $response], $class;
-}
-sub FETCH {
-	my($self, $key, $org)= &_getkey;
-	return $self->[1]->$key if $key=~m{$ForwardRegex};
-	$self->[0]{$key};
-}
-sub STORE {
-	my($self, $key, $org, $value)= &_getkey;
-	return $self->[1]->$key($value) if $key=~m{$ForwardRegex};
-	if (defined($value)) {
-		if ($self->[0]{$key}) {
-			ref($self->[0]{$key}) eq 'ARRAY'
-			  ? do { push @{$self->[0]{$key}}, [$org, $value] }
-			  : do { $self->[0]{$key}= [$self->[0]{$key}, [$org, $value]] };
-		} else {
-			$self->[0]{$key}= [$org, $value];
-		}
-	} else {
-		delete($self->[0]{$key}) if exists($self->[0]{$key});
-	}
-}
-sub DELETE {
-	my($self, $key)= &_getkey;
-	delete($self->[0]{$key});
-}
-sub EXISTS {
-	my($self, $key)= &_getkey;
-	exists($self->[0]{$key});
-}
-sub _getkey {
-	my($self, $org)= splice @_, 0, 2;
-	   $org=~s{_} [-]g;
-	my $key= lc($org);
-	   $key=~s{-} [_]g;
-	($self, $key, $org, @_);
-}
+  # The object is acquired.
+  my $res= $e->response;
+  
+  # The contents type is set.
+  $res->content_type('text/plain');
+   
+  # The cache control is set.
+  $res->no_cache(1);
+    
+  # The output contents are set.
+  $res->body('Hell world !!');
+  
+  # The enhancing header is set.
+  $res->headers->{'My-Header'}= 'OK';
+  
+  # Cookie is set.
+  $res->cookie( hoge => 'boo' );
+  
+  # It redirects it.
+  $res->redirect('http://ho.com/hellow.html', '302');
+  
+  # The response header is generated.
+  my $scalar_ref= $res->header;
 
+=head1 DESCRIPTION
 
-package Egg::Response::TieCookie;
-use strict;
-use Tie::Hash;
-
-our @ISA = 'Tie::ExtraHash';
-
-my $COOKIE  = 0;
-my $SECURE  = 1;
-my $DEFAULT = 2;
-
-sub TIEHASH {
-	my($class, $e)= @_;
-	bless [{}, $e->request->secure,
-	  ($e->config->{cookie_default} || {}) ], $class;
-}
-sub STORE {
-	my $self= shift;
-	my $key = shift || return 0;
-	my $hash= $_[0] ? do {
-		ref($_[0]) ? do {
-			ref($_[0]) eq 'HASH' ? $_[0]: return do {
-				my $add= { obj=> $_[0] };
-				if (my $tmp= $self->[$COOKIE]{$key}) {
-					ref($tmp) eq 'ARRAY' ? do { push @$tmp, $add }
-					  : do { $self->[$COOKIE]{$key}= [$tmp, $add] };
-				} else {
-					$self->[$COOKIE]{$key}= $add;
-				}
-			  };
-		  }: { value=> $_[0] };
-	  }: { value => 0 };
-
-	exists($hash->{value}) or die q{ I want cookie 'value'. };
-	$hash->{name} ||= $key;
-
-	$hash->{$_} ||= $self->[$DEFAULT]{$_} || undef
-	  for qw/ domain expires path /;
-
-	if (! defined($hash->{secure}) and $self->[$SECURE]) {
-		$hash->{secure}= defined($self->[$DEFAULT]{secure})
-		   ? $self->[$DEFAULT]{secure}: 1;
-	}
-	$self->[$COOKIE]{$key}= Egg::Response::FetchCookie->new($hash);
-}
-sub _clear { $_[0]->[$COOKIE]= {} }
-
-
-package Egg::Response::FetchCookie;
-use strict;
-use base qw/Class::Accessor/;
-
-__PACKAGE__->mk_accessors(qw/name value path domain expires secure/);
-
-sub new { bless $_[1], $_[0] }
-
-
-=head1 CONFIGURATION
-
-=head2 content_type
-
-Content_type is undefined contents type.
-
-Deafult is 'text/html'.
-
-* Please define it together if the setting of the character set is necessary.
-
-  content_type => 'text/html; charset=UTF-8',
-
-=head2 no_content_length_regex
-
-The pattern of Content-Type that doesn't send Conetnt-Length is set by the regular 
-expression.
-
-Deafult is '(?:^text/|/(?:rss\+)?xml)'.
-
-=head2 cookie
-
-The default of cookie can be setup.
-
-  cookie => {
-    domain  => 'mydomain',
-    path    => '/',
-    expires => '+3M',
-    secure  => 0,
-    },
-
-=over 4
-
-=item * domain
-
-Domain that can be referred.
-
-=item * path
-
-PATH that can be referred.
-
-=item * expires
-
-Validity term.
-
-=item * secure
-
-Secure flag.
-
-Warning: Cookie cannot be referred to from the connection of usual http.
-
-=back
+The WEB response processing for the Egg framework is done. 
 
 =head1 METHODS
 
-=head2 new
+The main body of this module is built into the component of the project.
 
-Constructor. When the project is usually started, this is called.
+=head2 response
 
-* It is not necessary to call it specifying it.
+The handler object of this module is returned.
 
 =over 4
 
-=item * BEGIN
+=item * res
 
 =back
 
-=head2 request
+=head1 HANDLER METHODS
 
-Accessor to $e-E<gt>request.
+=head2 new
 
-=head2 body ( [RESPONSE_CONTENT_BODY] )
+Constructor. It is not necessary to call from the application.
 
-The output contents are maintained by the SCALAR reference.
+  my $res= $e->response;
+
+=head2 body ([BODY_STRING])
+
+Output contents are maintained.
+
+The maintained data is always done by the SCALAR reference.
+
+Undef is set when 0 is given to BODY_STRING and it initializes it.
+
+  my $scalar_ref= $res->body(<<END_BODY);
+  Hellow world !!
+  END_BODY
 
 =head2 headers
 
-Egg::Response::Headers object is returned.
+L<Egg::Response::Headers> object is returned.
 
-=head2 header ( [CONTENT_BODY] )
+The response header not supported by this module can be set by this.
 
-The HTTP response header is assembled and it returns it by the SCALAR reference.
+  $res->headers->{'X-MyHader'}= 'hoge';
 
-When CONTENT_BODY is given, 'Content-Length' header is added.
+=head2 header ([BODY_SCALAR_REF])
 
-=head2 cookie ( [KEY], [VALUE] )
+It returns it making the response header.
+Egg calls this by a series of processing. It is not necessary to call it from
+the project.
 
-Set Cookie is set.
+To measure Content-Length, BODY_SCALAR_REF is passed.
+$res-E<gt>body is used when omitted.
 
-If VALUE is a usual character string, it is considered the value value.
-The following details can be set by giving the HASH reference.
+The returned value is SCALAR always reference.
 
-  value   ... value of cookie.
-  path    ... Reference PATH.  - Default is '/'.
-  domain  ... Reference domain.
-  expires ... Validity term.
-  secure  ... Secure flag. - It starts making it to true at the SSL connection.
+=head2 content_type ([STRING])
 
-  $response->cookie( 'cookie_name' => {
-    value   => 'cookie_value',
-    path    => '/active',
-    domain  => 'mydomain.name',
-    expires => '+3H',
-    secure  => 1,
-    });
+To generate the Content-Type header by the header method, it sets it.
 
-=head2 cookies
+It can be overwrited that content_type is set to the configuration though default
+is 'text/html'.
 
-The content of set Cookie is returned by the HASH reference.
+Moreover, when the contents type of default is output, it is not necessary to
+call 'content_type'.
 
-* If the configuration named p3p_policy is set, the p3p method is called.
+  $res->content_type('text/javascript');
 
-=head2 no_cache ( [BOOL], [EXPIRES], [LAST_MODIFIED] )
+=head2 content_language ([STRING])
 
-The cash control is set.
+To generate the Content-Language header by the header method, it sets it.
 
-When EXPIRES is given, $response-E<gt>expires is set at the same time.
-If $response-E<gt>expires is undefined, it defaults and '-1d' is set.
+The Content-Language header is not usually output because there is no default.
 
-When LAST_MODIFIED is given, $response-E<gt>last_modified is set at the same time.
-If $response-E<gt>expires is undefined, it defaults and '-1d' is set.
+  $res->content_language('ja');
 
-0 Becomes invalid if it gives it.
-Moreover, please note that $response-E<gt>last_modified and $response-E<gt>is_expires
-also set 0 at the same time.
+=head2 no_cache ([BOOL])
 
-  $response-E<gt>no_cache(1, '-3d', '-3d');
+It is a flag to generate the header for the cash control by the header method.
 
-=head2 attachment ( [FILE_NAME] )
+  $res->no_cache(1);
 
-The download file name is set.
+=head2 nph ([BOOL])
 
-As 'Content-disposition: attachment; filename=[FILE_NAME]' result, a is added
-to the response header.
+It is a flag to generate the header of NPH scripting by the header method.
 
-  $response-E<gt>attachment('download.file');
+  $res->nph(1);
 
-=head2 p3p ( [COMPACT_POLICY] )
+* However, please note the thing not behaving like the NPH script in usual
+ processing about Egg.
 
-P3P policy is specified.
+=head2 no_content_length ([BOOL])
 
-=head2 window_target ( [TARGET_NAME] )
+It is a flag so as not to output the Content-Length header.
 
-Window taget is specified.
+  $e->no_content_length(1);
 
-=head2 content_encoding ( [ENCODING] )
-
-content_encoding is specified.
-
-=head2 status ( [STATUS_CODE] )
-
-The status code is setup.
-
-STATUS_CODE sets the figure of the treble that can surely be recognized with
-the HTTP response header.
-
-When STATUS_STRING is omitted, acquisition is tried from %Egg::Response::Status.
-
-  $response-E<gt>status(400);
-
-%Egg::Response::Status is as follows.
-
-  200 ... OK
-  301 ... Moved Permanently
-  302 ... Moved Temporarily
-  303 ... See Other
-  304 ... Not Modified
-  307 ... Temporarily Redirect
-  400 ... Bad Request
-  401 ... Unauthorized
-  403 ... Forbidden
-  404 ... Not Found
-  405 ... Method Not Allowed
-  500 ... Internal Server Error
-
-The above-mentioned content is revokable from the controller etc.
-
-  %Egg::Response::Status= (
-    200 => 'OK',
-    302 => 'Found',
-    403 => 'Forbidden',
-    404 => 'Not Found',
-    500 => 'Internal Error',
-    );
-
-=head2 status_string
-
-STATUS_STRING set with $response-E<gt>status is returned.
-
-Half angle space is sure to be included in the head if it has defined it.
-
-=head2 redirect ( [LOCATION_URI], [STATUS], [REDIRECT_OPTION])
-
-Redirecting is setup.
-
-When STATUS is omitted, 302 is set.
-
-The following options can be passed.
+The Content-Length header is not output at the following time.
 
 =over 4
 
-=item * target => [TARGET_STRING]
+=item * It is possible to overwrite in 'no_content_length_regex' of the
+ configuration though default is qr{(?:^text/|/(?:rss\+)?xml)} when matching
+ it to the putter of $res-E<gt>{no_content_length_regex}.
 
-=item * template => [TEMPLATE_PATH]
+=item * When $e-E<gt>request-E<gt>is_head returns ture. 
 
-When this option is given, $e-E<gt>finished is not set.
-
-And, it outputs it to the screen by processing the given template.
+=item * When $res-E<gt>body returns undefined.
 
 =back
 
-  $response->redirect(
-    '/redirect', '307 Temporarily Redirect',
-    { target=> '_parent', template=> 'redirect.tt' }
-    );
+=head2 is_expires ([ARGS])
+
+To generate the Expires header by the header method, it sets it.
+
+ARGS is a value passed to the expires function of L<CGI::Util>.
+
+  $res->is_expires('+1D');
+
+=head2 last_modified ([ARGS])
+
+To generate the Last-Modified header by the header method, it sets it.
+
+ARGS is a value passed to the expires function of L<CGI::Util>.
+
+  $res->last_modified('+1D');
+
+=head2 cookies
+
+The HASH reference to set Cookie is returned.
+
+Returned HASH is the one having made it by L<Egg::Response::TieCookie>.
+
+  $res->cookies->{'Hoo'}= '123';
+
+When 'p3p_policy' of the configuration is defined, the value is set if the p3p
+method is still undefined.
+Please set 'p3p_policy' to the configuration when you want to transmit the P3P
+header when Cookie is output.
+
+  package MyApp::config;
+  sub out { {
+    .............
+    ........
+    p3p_policy => 'UNI CUR OUR',
+    ........
+  } }
+
+=head2 cookie ([KEY], [VALUE])
+
+The list of the key to the data that has been set to omit the argument is 
+returned.
+
+The content of Cookie that corresponds more than the data set to give KEY is 
+returned.
+
+When VALUE is given, Cookie is set.
+
+  my @key_list= $res->cookie;
+  
+  my $hoo= $res->cookie('Hoo');
+  
+  $res->cookie( Boo => '456' );
+
+=head2 status ([STATUS])
+
+The response status is set.
+
+The following forms are accepted.
+
+  $res->status(403);
+  $res->status('403 Forbiden');
+  $res->status(403, 'Forbiden');
+
+When the text part is omitted, the value corresponding to status is set from
+%Egg::Response::Status. The response code not supported by this module can be
+customized by adding it to %Egg::Response::Status.
+
+0 Is initialized when giving it. 
+
+=head2 status_string
+
+The text defined by the status method is returned. When the returned value exists,
+half angle space is sure to be included in the head.
+
+  my $status= 'Status: '. $res->status. $res->status_string;
+
+=head2 redirect ([URI], [STATUS_CODE], [OPTION_HASH])
+
+It is prepared to generate Ridairectoheddar.
+
+URL is concretely set in the location method, and STATUS_CODE is set in the
+status method.  And, the result of $e->finished is returned at the end.
+
+There is no default of URL. Please specify it.
+
+The default of STATUS_CODE is 302.
+
+The window target can be specified with OPTION_HASH.
+
+  $res->redirect('/hoge', 302, target=> '_top' );
+
+0 Is canceled when giving it.
+
+=head2 location ([URI])
+
+To generate the Location header with the header, it sets it.
+
+This is usually called in the redirect method and set.
+
+Please note no desire as redirecting even if only this method is set.
+
+The value that has already been set is returned at the URI unspecification.
+
+=head2 window_target ([TARGET_STRING])
+
+Window-Target is set.
+
+  $res->window_target('foo');
+
+* Because it is the one set in the response header, this is evaluated depending
+on a browser of the client.  Especially, this header might been deleted as for
+the client that is via the proxy. I do not think that it is in certain target
+specification.
+
+=head2 content_encoding ([ENCODING_STRING])
+
+Content-Encoding is set.
+
+  $res->content_encoding('identity');
+
+=head2 content_disposition ([FILE_NAME])
+
+Content-Disposition is set.
+
+This is used to specify the file name when it is made to download.
+
+  $res->content_disposition('myname.txt');
+  
+  # It is output to the header as follows. 
+  Content-Disposition: attachment; filename=myname.txt
+
+=over 4
+
+=item * Alias = attachment
+
+=back
+
+=head2 p3p ([SIMPLE_POLICY])
+
+P3P is set.
+
+SIMPLE_POLICY gives the character string of the ARRAY reference or the half angle
+space district switching off.
+
+  $res->p3p('UNI CUR OUR');
+  
+  # It is output to the header as follows.
+  P3P: policyref="/w3c/p3p.xml", CP="UNI CUR OUR"
 
 =head2 clear_body
 
-The content of $response-E<gt>body is deleted.
+Undef is set in the value of body and it initializes it. 
 
 =head2 clear_cookies
 
-The content of $response-E<gt>cookies is initialized.
+The set Cookie data is annulled. And, if the P3P header is set, it also initializes it.
 
 =head2 clear
 
-The main variable of the response object is initialized.
+no_cache, no_content_length, content_type, content_language, nph, headers, and
+clear_cookies are done in this method.
 
-=head2 result
-
-The result code corresponding to $response-E<gt>status is returned.
-
-* Because this method is called from Egg by the automatic operation, it is
-  not necessary to call it specifying it.
-
-=head2 content_type ( [CONTENT_TYPE] )
-
-The type of the output contents is setup.
-
-As for default, 'content_type' of configuration or 'text/html' is used.
-
-  $response-E<gt>content_type('image/png');
-
-* The character set is not set by the automatic operation for the text system.
-  Please include it in a set value.
-
-  $response-E<gt>content_type('text/plain; charset=utf-8');
-
-=head2 content_language ( [CONTENT_LANGUAGE] )
-
-The language of contents is specified.
-
-It defaults if 'content_language' of configuration is set and it is used.
-
-  $response-E<gt>content_language('ja');
-
-=head2 nph ( [BOOL] )
-
-The flag to assemble the response header of NPH scripting is hoisted.
-
-* As for this method, debugging is not completed.
-
-=head2 is_expires ( [EXPIRES_VER] )
-
-The Expires header is set.
-
-  $response-E<gt>is_expires('+7d');
-
-=head2 last_modified ( [LAST_MODIFIED_VAR] )
-
-The last-Modified header is set.
-
-  $response-E<gt>last_modified('+1H');
-
-=head2 no_content_length ( [BOOL] )
-
-The content_length header is not temporarily sent.
-
-=head1 Egg::Response::Headers METHODS
-
-=head2 new ([ EGG::Response context ])
-
-The object is returned.
-
-* The object is HASH reference of the set header.
-
-* The key is a name that lc is done for recognition.
-
-* The content is ARRAY reference and [ "ORIGINAL NAME", "VALUE" ].
-
-  my $headers= $e->response->headers;
-  $headers->{X_AnyName}= 'any header.';
-
-Reference to content.
-
-  $headers->{X_AnyName}[1];
-
-Refer to all data.
-
-  for my $head (values %headers) {
-    print "$head->[0]: $head->[1]\r\n";
-  }
-
-*  The value is returned in order set by L<Tie::Hash::Indexed>.
-
-=head2 header ([HEAD_NAME], [VALUE])
-
-The value set in [HEAD_NAME] is returned.
-
-When [VALUE] is given, the value is set.
-
-* If [VALUE] is undef, the data that relates to the key is deleted.
-
-  $header->header( X_AnyName => 'any_header' );
-
-=head2 clear
-
-The set value is initialized and data is initialized.
-
-  $header->clear;
-
+Please note that body is not cleared.
 
 =head1 SEE ALSO
 
+L<Egg::Release>
+L<Egg::Response::Headers>,
+L<Egg::Response::TieCookie>,
 L<CGI::Cookie>,
-L<Egg::Release>,
+L<CGI::Util>,
+L<Egg::Base>,
 
 =head1 AUTHOR
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -753,4 +616,3 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
-1;

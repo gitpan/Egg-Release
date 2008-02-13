@@ -2,8 +2,31 @@ package Egg::Request::Apache::MP19;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: MP19.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: MP19.pm 226 2008-01-27 10:23:16Z lushe $
 #
+use strict;
+use warnings;
+use Apache2             ();
+use Apache::Request     ();
+use Apache::RequestRec  ();
+use Apache::RequestIO   ();
+use Apache::RequestUtil ();
+use Apache::Compat      ();
+use base qw/ Egg::Request::Apache /;
+
+our $VERSION= '3.00';
+
+sub new {
+	my($class, $e, $r)= @_;
+	my $req = $class->SUPER::new($e);
+	my $conf= $req->e->config->{request} ||= {};
+	$req->r( Apache::Request->new($r, %$conf) );
+	$req;
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -17,33 +40,12 @@ This module is read by the automatic operation if L<Egg::Request> investigates
 the environment and it is necessary. Therefore, it is not necessary to read
 specifying it.
 
-=cut
-use strict;
-use warnings;
-use Apache2             ();
-use Apache::Request     ();
-use Apache::RequestRec  ();
-use Apache::RequestIO   ();
-use Apache::RequestUtil ();
-use Apache::Compat      ();
-use base qw/Egg::Request::Apache/;
-
-our $VERSION= '2.00';
-
 =head1 METHODS
 
 =head2 new
 
 The object is received from the constructor of the succession class, 
 and L<Apache::Request> object is defined in 'r' method.
-
-=cut
-sub new {
-	my $req = shift->SUPER::new(@_);
-	my $conf= $req->e->config->{request} ||= {};
-	$req->r( Apache::Request->new($req->r, %$conf) );
-	$req;
-}
 
 =head1 SEE ALSO
 
@@ -65,5 +67,3 @@ it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
-
-1;

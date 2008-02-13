@@ -2,8 +2,52 @@ package Egg::Plugin::FormValidator::Simple;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Simple.pm 96 2007-05-07 21:31:53Z lushe $
+# $Id: Simple.pm 226 2008-01-27 10:23:16Z lushe $
 #
+use strict;
+use warnings;
+use FormValidator::Simple;
+
+our $VERSION = '3.00';
+
+sub _setup {
+	my($e)= @_;
+	my $conf= $e->config->{plugin_validator} ||= {};
+	if (my $plugins= $conf->{plugins}) {
+		FormValidator::Simple->import(@$plugins);
+	}
+	if (my $messages= $conf->{messages}) {
+		FormValidator::Simple->set_messages($messages);
+	}
+	if (my $options= $conf->{options}) {
+		FormValidator::Simple->set_option(%$options);
+	}
+	if (my $format= $conf->{message_format}) {
+		FormValidator::Simple->set_message_format($format);
+	}
+	$e->next::method;
+}
+
+sub form {
+	my $e= shift;
+	$e->{form} ||= FormValidator::Simple->new;
+	if (@_) {
+		my($form, $param)= ref($_[0]) eq 'ARRAY'
+		  ? ($_[0], ($_[1] || $e->request)): ([@_], $e->request);
+		return $e->{form}->check($param, $form);
+	}
+	$e->{form}->results;
+}
+sub set_invalid_form {
+	my $e= shift;
+	$e->{form} ||= FormValidator::Simple->new;
+	$e->{form}->set_invalid(@_);
+	$e->{form}->results;
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -66,54 +110,9 @@ This behaves like as L<Catalyst::Plugin::FormValidator>.
 
 =head2 METHODS
 
-=cut
-use strict;
-use warnings;
-use FormValidator::Simple;
-
-our $VERSION = '2.00';
-
-sub _setup {
-	my($e)= @_;
-	my $conf= $e->config->{plugin_validator} ||= {};
-	if (my $plugins= $conf->{plugins}) {
-		FormValidator::Simple->import(@$plugins);
-	}
-	if (my $messages= $conf->{messages}) {
-		FormValidator::Simple->set_messages($messages);
-	}
-	if (my $options= $conf->{options}) {
-		FormValidator::Simple->set_option(%$options);
-	}
-	if (my $format= $conf->{message_format}) {
-		FormValidator::Simple->set_message_format($format);
-	}
-	$e->next::method;
-}
-
 =head2 form
 
-=cut
-sub form {
-	my $e= shift;
-	$e->{form} ||= FormValidator::Simple->new;
-	if (@_) {
-		my($form, $param)= ref($_[0]) eq 'ARRAY'
-		  ? ($_[0], ($_[1] || $e->request)): ([@_], $e->request);
-		return $e->{form}->check($param, $form);
-	}
-	$e->{form}->results;
-}
-
 =head2 set_invalid_form
-
-=cut
-sub set_invalid_form {
-	my $e= shift;
-	$e->{form} ||= FormValidator::Simple->new;
-	$e->{form}->set_invalid(@_);
-	$e->{form}->results;
-}
 
 =head1 CONFIGURATION
 
@@ -409,10 +408,10 @@ L<Egg::Release>,
 =head1 AUTHOR
 
 This code is a transplant of 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
- of the code of 'L<Catalyst::Plugin::FormValidator::Simple>'.
+of the code of 'L<Catalyst::Plugin::FormValidator::Simple>'.
 
 Therefore, the copyright of this code is assumed to be the one that belongs
- to 'Lyo Kato E<lt>lyo.kato@gmail.comE<gt>'.
+to 'Lyo Kato E<lt>lyo.kato@gmail.comE<gt>'.
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -422,5 +421,3 @@ This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 =cut
-
-1;
