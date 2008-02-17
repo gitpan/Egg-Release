@@ -4,7 +4,7 @@ use Egg::Helper;
 
 eval{ require FormValidator::Simple };
 
-if (@_) { plan skip_all=> "FormValidator::Simple is not installed." } else {
+if ($@) { plan skip_all=> "FormValidator::Simple is not installed." } else {
 
 plan tests=> 5;
 

@@ -2,7 +2,7 @@ package Egg::Helper::Util::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 235 2008-02-03 05:19:13Z lushe $
+# $Id: Base.pm 263 2008-02-17 17:47:51Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use UNIVERSAL::require;
 use Egg::Exception;
 use Cwd;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _start_helper {
 	die q{ There is no method of '_start_helper'. };
@@ -339,6 +339,11 @@ sub _helper_execute_makemaker {
 	my($self)= @_;
 	return unless ($self->helper_is_unix
 	   or (exists($ENV{EGG_MAKEMAKER}) and $ENV{EGG_MAKEMAKER}) );
+	Module::Install->require;
+	if ($@ and $@=~m{^Can\'t\s+locate\s+(?:inc[/\:]+)?Module[/\:]+Install(?:\.pm)?\s+} ) {
+		warn "\nWarning: Module::Install is not installed !!\n";
+		return 1;
+	}
 	eval{
 		system('perl Makefile.PL') and die $!;
 		system('make manifest')    and die $!;
@@ -689,6 +694,9 @@ error to STOUT.
 
 Moreover, helper_is_unix returns false and if environment variable EGG_MAKEMAKER
 is also undefined, it returns it without doing anything.
+
+When L<Module::Install> is not installed, only warning is vomited and nothing is
+ done.
 
 =head2 _helper_help ([MSG])
 

@@ -2,14 +2,14 @@ package Egg::Helper;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Helper.pm 235 2008-02-03 05:19:13Z lushe $
+# $Id: Helper.pm 262 2008-02-17 17:29:15Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Egg::Helper::Util::Base /;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 $SIG{__DIE__}= sub { Egg::Error->throw(@_) };
 
@@ -106,6 +106,7 @@ use warnings;
 require Egg;
 
 our @ISA= qw/ Egg::Helper::Util::Base /;
+our $START_DIR;
 
 sub __import {
 	my($class, $pkg, $plugins, $attr)= @_;
@@ -117,11 +118,10 @@ sub __import {
 	no warnings 'redefine';
 	*{"${class}::namespace"}= sub { $_[0]->config->{project_name} };
 	*{"${class}::project_name"}= $class->can('namespace');
-
-	END { chdir($attr->{start_dir}) if $attr->{start_dir} };
-
+	$START_DIR= $attr->{start_dir} || "";
 	$class;
 }
+END { chdir($START_DIR) if $START_DIR };  ## no critic.
 
 package Egg::Helper::Dummy;
 

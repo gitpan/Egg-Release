@@ -2,14 +2,14 @@ package Egg::Manager;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Manager.pm 240 2008-02-13 03:21:40Z lushe $
+# $Id: Manager.pm 261 2008-02-17 17:11:18Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Egg::Component Egg::Base /;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub initialize {
 	my($class, $myname)= @_;
@@ -107,6 +107,20 @@ sub add_register {
 }
 *register= \&add_register;
 
+sub any_hook {
+	my $self= shift;
+	my $base= shift || croak 'I want name of component';
+	my $hook= shift || croak 'I want name of hook.';
+	$base= $self->e->project_name. "::$base";
+	$base->can('labels')
+	     || die qq{The labels method is not prepared in '$base'};
+	for my $label (keys %{$base->labels}) {
+		my $handle= $self->{"$label.0"} || $self->{"$label.1"} || next;
+		$handle->$hook($self->e);
+	}
+	$self;
+}
+
 1;
 
 __END__
@@ -184,6 +198,25 @@ The main of this method is add_register method of L<Egg::Component>.
 =item * Alias = register 
 
 =back
+
+=head2 any_hook ([CLASS_NAME], [CALL_HOOK])
+
+The CALL_HOOK method of the component managed by 'labels' method of the CLASS_NAME
+ class is continuously called.
+
+The project name is added to the head of CLASS_NAME. Therefore, the name since 
+the project name is passed.
+
+CALL_HOOK is a name of the method of wanting the call of the hook.
+
+  # If it is MyApp::Model::Hooo.
+  $e->model_manager->any_hook(qw/ Model::Hooo _finish /);
+
+Nothing is done if there is no 'labels' method in the CLASS_NAME class.
+
+The data obtained by the 'labels' method should be HASH reference.
+Moreover, the label name and the content of the called component should be the
+structures of object of the component in the key to the HASH.
 
 =head1 SEE ALSO
 

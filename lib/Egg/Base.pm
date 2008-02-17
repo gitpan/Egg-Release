@@ -2,7 +2,7 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Base.pm 242 2008-02-13 16:53:01Z lushe $
 #
 use strict;
 use warnings;

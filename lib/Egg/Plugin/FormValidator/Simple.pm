@@ -2,7 +2,7 @@ package Egg::Plugin::FormValidator::Simple;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Simple.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Simple.pm 261 2008-02-17 17:11:18Z lushe $
 #
 use strict;
 use warnings;

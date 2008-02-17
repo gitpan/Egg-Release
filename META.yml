@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 3.00
+version: 3.01
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: lib/Egg/Release.pm
@@ -20,14 +20,22 @@ requires:
   File::Spec: 3.27
   File::Temp: 0.20
   File::Which: 0.05
+  FormValidator::Simple: 0.22
   Getopt::Easy: 0.10
+  HTML::FillInForm: 2.00
   HTML::Mason: 1.38
   HTML::Parser: 3.56
+  HTML::Prototype: 1.48
   HTML::Template: 2.90
+  HTTP::BrowserDetect: 0.99
   IO::Scalar: 2.11
   Jcode: 2.06
   LWP: 5.80
   MIME::Base64: 3.07
+  ModPerl::VersionUtil: 0.03
+  Module::Install: 0
+  Module::Refresh: 0.13
+  PersistentPerl: 2.22
   Test::More: 0
   Test::Perl::Critic: 0
   Test::Pod: 0
@@ -47,7 +55,7 @@ provides:
     file: lib/Egg/Base.pm
   Egg::Component:
     file: lib/Egg/Component.pm
-    version: 3.00
+    version: 3.01
   Egg::Component::Base:
     file: lib/Egg/Component/Base.pm
     version: 3.00
@@ -74,7 +82,7 @@ provides:
     version: 3.00
   Egg::Helper:
     file: lib/Egg/Helper.pm
-    version: 3.00
+    version: 3.01
   Egg::Helper::Build::Module:
     file: lib/Egg/Helper/Build/Module.pm
     version: 3.00
@@ -96,7 +104,7 @@ provides:
     file: lib/Egg/Helper.pm
   Egg::Helper::Util::Base:
     file: lib/Egg/Helper/Util/Base.pm
-    version: 3.00
+    version: 3.01
   Egg::Helper::Util::Tester:
     file: lib/Egg/Helper/Util/Tester.pm
     version: 3.00
@@ -108,7 +116,7 @@ provides:
     version: 3.00
   Egg::Manager:
     file: lib/Egg/Manager.pm
-    version: 3.00
+    version: 3.01
   Egg::Manager::Model:
     file: lib/Egg/Manager/Model.pm
     version: 3.00
@@ -201,7 +209,7 @@ provides:
     version: 3.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 3.00
+    version: 3.01
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 3.00

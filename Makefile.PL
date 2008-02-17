@@ -26,6 +26,7 @@ requires 'HTML::Parser'             => '3.56';
 requires 'HTML::Template'           => '2.90';
 requires 'IO::Scalar'               => '2.11';
 requires 'Jcode'                    => '2.06';
+requires 'Module::Install'          => '0';
 requires 'MIME::Base64'             => '3.07';
 requires 'Tie::Hash::Indexed'       => '0.05';
 requires 'Tie::RefHash'             => '1.38';
@@ -36,13 +37,13 @@ requires 'URI'                      => '1.35';
 requires 'YAML'                     => '0.66';
 requires 'LWP'                      => '5.80';
 
-# requires 'FormValidator::Simple'    => '0.22';
-# requires 'HTML::FillInForm'         => '2.00';
-# requires 'HTML::Prototype'          => '1.48';
-# requires 'HTTP::BrowserDetect'      => '0.99';
-# requires 'ModPerl::VersionUtil'     => '0.03';
-# requires 'Module::Refresh'          => '0.13';
-# requires 'PersistentPerl'           => '2.22';
+requires 'FormValidator::Simple'    => '0.22';
+requires 'HTML::FillInForm'         => '2.00';
+requires 'HTML::Prototype'          => '1.48';
+requires 'HTTP::BrowserDetect'      => '0.99';
+requires 'ModPerl::VersionUtil'     => '0.03';
+requires 'Module::Refresh'          => '0.13';
+requires 'PersistentPerl'           => '2.22';
 
 build_requires 'Test::More';
 build_requires 'Test::Pod';

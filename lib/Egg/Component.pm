@@ -2,7 +2,7 @@ package Egg::Component;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Component.pm 240 2008-02-13 03:21:40Z lushe $
+# $Id: Component.pm 261 2008-02-17 17:11:18Z lushe $
 #
 use strict;
 use warnings;
@@ -13,27 +13,40 @@ use Carp qw/ croak /;
 use base qw/ Class::Data::Inheritable /;
 use Egg::Component::Base;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub initialize {
-	my $proto= ref($_[0]) || $_[0];
+	my $class= ref($_[0]) || $_[0];
 	for my $method (qw/ namespace regists config /) {
-		next if $proto->can($method);
-		$proto->mk_classdata($method);
+		next if $class->can($method);
+		$class->mk_classdata($method);
 	}
-	unless ($proto->namespace) {
-		$proto->namespace($proto);
-		$proto->regists($proto->ixhash);
-		$proto->config({});
+	unless ($class->namespace) {
+		$class->namespace($class);
+		$class->regists($class->ixhash);
+##		$class->config({}) unless $class->config;
 	}
-	$proto;
+	no strict 'refs';  ## no critic.
+	no warnings 'redefine';
+	*{"${class}::___add_regists"}= sub {
+		my $self = shift;
+		my $label= shift || die q{I want label name.};
+		my $pkg  = shift || die q{I want package name.};
+		my $conf = shift || undef;
+		$self->regists->{$label}= [$pkg, ($pkg->VERSION || '0.00'), $conf];
+	  };
+	$class;
 }
 sub isa_register {
 	my($proto, $label, $pkg)= _get_args(@_);
 	$proto= ref($proto) if ref($proto);
 	no strict 'refs';  ## no critic.
 	push @{"${proto}::ISA"}, $pkg;
-	$proto->regists->{$label}= [$pkg, ($pkg->VERSION || '0.00')];
+	$proto->___add_regists($label, $pkg);
+}
+sub add_register {
+	my($proto, $label, $pkg, $conf)= _get_args(@_);
+	$proto->___add_regists($label, $pkg, $conf);
 }
 sub isa_terminator {
 	my $proto= shift;
@@ -50,9 +63,11 @@ sub isa_terminator {
 	push @$isa, 'Egg::Component::Base';
 	$proto;
 }
-sub add_register {
-	my($proto, $label, $pkg, $config)= _get_args(@_);
-	$proto->regists->{$label}= [$pkg, ($pkg->VERSION || '0.00'), $config];
+sub ixhash {
+	shift;
+	tie my %hash, 'Tie::Hash::Indexed';
+	%hash= @_ if @_;
+	\%hash;
 }
 sub _get_args {
 	my $proto = shift;
@@ -65,12 +80,7 @@ sub _get_args {
 	$pkg->config($config) if ($config and $pkg->can('config'));
 	($proto, lc($label), $pkg, $config, @_);
 }
-sub ixhash {
-	shift;
-	tie my %hash, 'Tie::Hash::Indexed';
-	%hash= @_ if @_;
-	\%hash;
-}
+sub ___add_regists { $_[0] }
 
 1;
 
