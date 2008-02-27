@@ -2,7 +2,7 @@ package Egg::Response::TieCookie;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: TieCookie.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: TieCookie.pm 274 2008-02-27 00:37:59Z lushe $
 #
 use strict;
 use Tie::Hash;
@@ -37,7 +37,7 @@ sub STORE {
 		  }: { value=> $_[0] };
 	  }: { value => 0 };
 
-	exists($hash->{value}) or die q{ I want cookie 'value'. };
+	$hash->{value}= "" unless exists($hash->{value});
 	$hash->{name} ||= $key;
 
 	$hash->{$_} ||= $self->[$DEFAULT]{$_} || undef

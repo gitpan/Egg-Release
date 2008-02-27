@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+3.02  2008/02/27
+	- fixed for Egg::Component.
+	- fixed for Egg::Base.
+
 3.01  2008/02/18
 	- fixed for Egg::Component.
 	- The method of 'any_hook' is added to Egg::Manager.

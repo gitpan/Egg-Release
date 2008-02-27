@@ -2,12 +2,14 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 242 2008-02-13 16:53:01Z lushe $
+# $Id: Base.pm 274 2008-02-27 00:37:59Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Class::Data::Inheritable /;
+
+our $VERSION= '3.01';
 
 {
 	no strict 'refs';  ## no critic.
@@ -65,7 +67,7 @@ sub config {
 		}
 		$self->_config($_[0] ? ($_[1] ? {@_}: $_[0]): {});
 	  }: do {
-		eval{ $self->_config };
+		$self->can('_config') ? $self->_config: (undef);
 	  };
 }
 

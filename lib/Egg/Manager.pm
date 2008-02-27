@@ -2,14 +2,14 @@ package Egg::Manager;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Manager.pm 261 2008-02-17 17:11:18Z lushe $
+# $Id: Manager.pm 274 2008-02-27 00:37:59Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Egg::Component Egg::Base /;
 
-our $VERSION= '3.01';
+our $VERSION= '3.02';
 
 sub initialize {
 	my($class, $myname)= @_;
@@ -41,17 +41,29 @@ sub setup_manager {
 			$pkg= "Egg::${myname}::$v->[0]";
 			$label ||= lc($v->[0]);
 		}
-		$class->isa_register(1, $label, $pkg, $v->[1]);
-		my $handler= "${pkg}::handler";
-##		$handler->config($v->[1]) if $handler->can('config');
 		my $p_class= "${p}::${myname}::$v->[0]";
-		unless ($p_class->can('config')) {
-			*{"${p_class}::config"}= sub {
-				my $proto= shift;
-				@_ ? $v->[1]= shift : $v->[1];
-			  };
-		}
-		($handler->can('new') or $pkg->can('ACCEPT_CONTEXT'))
+		my $p_path = $p->path_to('lib_project', "${myname}/$v->[0].pm");
+		my $handler;
+		my $load= -e $p_path ? do {
+			$p_class->require or die $@;
+			$pkg= $p_class;
+			$handler= "${pkg}::handler";
+			0;
+		  }: do {
+			$handler= "${pkg}::handler";
+			if (%{$v->[1]}
+			   and $handler->can('config') and ! $handler->config ) {
+				$handler->config($v->[1]);
+			} elsif (! $p_class->can('config')) {
+				*{"${p_class}::config"}= sub {
+					my $proto= shift;
+					@_ ? $v->[1]= shift : $v->[1];
+				  };
+			}
+			1;
+		  };
+		$class->isa_register($load, $label, $pkg, $v->[1]);
+		$handler->can('new')
 		  || die qq{$class - Constructor of '${handler}' is not found. };
 	}
 	$class->isa_terminator;
