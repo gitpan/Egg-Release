@@ -1,7 +1,11 @@
 Revision history for Perl extension .
 
+3.03  2008/02/27
+	- fixed for Egg::Manager.
+	- The method of 'config_to' is added to Egg::Base.
+
 3.02  2008/02/27
-	- fixed for Egg::Component.
+	- fixed for Egg::Manager.
 	- fixed for Egg::Base.
 
 3.01  2008/02/18

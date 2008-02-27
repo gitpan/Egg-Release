@@ -2,7 +2,7 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 274 2008-02-27 00:37:59Z lushe $
+# $Id: Base.pm 276 2008-02-27 01:38:31Z lushe $
 #
 use strict;
 use warnings;
@@ -70,6 +70,11 @@ sub config {
 		$self->can('_config') ? $self->_config: (undef);
 	  };
 }
+sub config_to {
+	my $self= shift;
+	my $p_class= join '::', ($self->e->project_name, @_);
+	$p_class->can('config') ? $p_class->config : (undef);
+}
 
 1;
 
@@ -112,14 +117,14 @@ Parameters is set at the same time as giving PARAM_HASH_REF.
 
 It is an accessor to the project object.
 
-  $hoge->e;
+  $app->e;
 
 =head2 parameters
 
 It is an accessor to the parameter. It is the one that relates to PARAM_HASH_REF
 passed to the constructor.
 
-  my $param= $hoge->parameters;
+  my $param= $app->parameters;
   print $param->{zoo};
 
 =over 4
@@ -137,11 +142,11 @@ When KEY is given, the value of parameters-E<gt>{KEY} is returned.
 
 When VALUE is given, the value is set in parameters-E<gt>{KEY}.
 
-  my @key_list= $hoge->param;
+  my @key_list= $app->param;
   
-  print $hoge->param('zoo');
+  print $app->param('zoo');
   
-  $hoge->param('boo' => 'abc');
+  $app->param('boo' => 'abc');
 
 =head2 config ([CONFIG])
 
@@ -155,6 +160,14 @@ When CONFIG is omitted, the content of the method of '_config' is returned.
     .....
     });
 
+=head2 config_to ([NAME_LIST])
+
+The content of 'Config' of the class that generates it with the project name and 
+NAME_LIST is returned.
+
+  # MyApp::Model::ComponentName->config is acquired.
+  my $config= $app->config_to(qw/ Model ComponentName /);
+
 =head2 error ([MESSAGE])
 
 MESSAGE is set in errstr. 
@@ -163,7 +176,7 @@ This method always returns 0.
 
 Even if ARRAY is given to MESSAGE, it is treatable well.
 
-   $e->error('Internal Error');
+   $app->error('Internal Error');
 
 =head2 errstr
 

@@ -2,14 +2,14 @@ package Egg::Manager;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Manager.pm 274 2008-02-27 00:37:59Z lushe $
+# $Id: Manager.pm 275 2008-02-27 01:30:44Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Egg::Component Egg::Base /;
 
-our $VERSION= '3.02';
+our $VERSION= '3.03';
 
 sub initialize {
 	my($class, $myname)= @_;
@@ -28,12 +28,9 @@ sub setup_manager {
 	no strict 'refs';  ## no critic.
 	no warnings 'redefine';
 	for my $v (@$c) {
-		$v= [$v, {}] unless ref($v);
+		$v= [$v, undef] unless ref($v);
 		next if (! $v->[0] or $v->[0]=~m{^\-});
 		my($label, $pkg);
-#		if (my $label_name= $v->[1]{label_name}) {
-#			$label= $label_name;
-#		}
 		if ($v->[0]=~m{^\+(.+)}) {
 			$pkg= $1;
 			$label ||= lc($pkg);
@@ -46,20 +43,14 @@ sub setup_manager {
 		my $handler;
 		my $load= -e $p_path ? do {
 			$p_class->require or die $@;
-			$pkg= $p_class;
-			$handler= "${pkg}::handler";
+			($pkg, $handler)= ($p_class, "${p_class}::handler");
 			0;
 		  }: do {
+			*{"${p_class}::config"}= sub {
+				my $proto= shift;
+				@_ ? $v->[1]= shift : ($v->[1] || {});
+			  };
 			$handler= "${pkg}::handler";
-			if (%{$v->[1]}
-			   and $handler->can('config') and ! $handler->config ) {
-				$handler->config($v->[1]);
-			} elsif (! $p_class->can('config')) {
-				*{"${p_class}::config"}= sub {
-					my $proto= shift;
-					@_ ? $v->[1]= shift : $v->[1];
-				  };
-			}
 			1;
 		  };
 		$class->isa_register($load, $label, $pkg, $v->[1]);
