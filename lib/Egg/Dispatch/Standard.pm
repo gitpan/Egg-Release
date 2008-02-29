@@ -2,14 +2,14 @@ package Egg::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 227 2008-01-29 12:26:27Z lushe $
+# $Id: Standard.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
 use Tie::RefHash;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 {
 	no strict 'refs';  ## no critic
@@ -27,22 +27,29 @@ our $VERSION= '3.00';
 	}
   };
 
-sub _import {
+sub import {
 	my($class)= @_;
+	no strict 'refs';  ## no critic
+	my $p_class= caller(0);
+	$p_class=~s{\:+Dispatch$} [];
 	if ( Tie::RefHash->require ) {
 		my $refhash= sub {
 			my %refhash;
 			tie %refhash, 'Tie::RefHash', @_;
 			\%refhash;
 		  };
-		no strict 'refs';  ## no critic
 		no warnings 'redefine';
-		*{"${class}::refhash"}= $refhash;
-		*{"${class}::Dispatch::refhash"}= $refhash;
+		if ($p_class eq 'Egg' or $p_class->can('project_name')) {
+			*{"${p_class}::refhash"}= $refhash;
+		} elsif ($p_class ne __PACKAGE__) {
+			push @{"${p_class}::ISA"}, __PACKAGE__;
+			*{"${p_class}::refhash"}= $refhash;
+			*{"${p_class}::Dispatch::refhash"}= $refhash;
+		}
 	} else {
 		warn q{ 'Tie::RefHash' is not installed. };
 	}
-	$class->next::method;
+	$class;
 }
 sub dispatch {
 	$_[0]->{Dispatch} ||= Egg::Dispatch::Standard::handler->new(@_);
@@ -266,7 +273,7 @@ Egg::Dispatch::Standard - Dispatch of Egg standard.
 =head1 SYNOPSIS
 
   package MyApp::Dispatch;
-  use base qw/ Dispatch::Standard /;
+  use Dispatch::Standard;
   
   # If HASH is used for the key, the refhash function is used.
   Egg->dispatch_map( refhash(

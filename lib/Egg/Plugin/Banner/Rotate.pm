@@ -2,12 +2,12 @@ package Egg::Plugin::Banner::Rotate;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Rotate.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Rotate.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _setup {
 	my($e)= @_;
@@ -38,7 +38,7 @@ sub banners {
 	$cache->{$key} ||= do {
 		my $pm  = $self->params;
 		my $yaml= "$pm->{base_dir}/$key.$pm->{extention}";
-		my $list= YAML::LoadFile($yaml);
+		my $list= [ YAML::LoadFile($yaml) ];
 		@$list || warn qq{ Banners is not found - $yaml. };
 		{
 		  num     => 0,
@@ -97,10 +97,12 @@ registered beforehand in every case is offered.
 Please make a suitable data file for advertising data beforehand by the YAML format.
 This advertising data is a thing composed of ARRAY without fail.
 
-  - url: http://banner/redirect/hoo.html
-    img_url: http://banner/images/hoo.gif
-  - url: http://banner/redirect/hoge.html
-    img_url: http://banner/images/hoge.gif
+  ---
+  url: http://banner/redirect/hoo.html
+  img_url: http://banner/images/hoo.gif
+  ---
+  url: http://banner/redirect/hoge.html
+  img_url: http://banner/images/hoge.gif
 
 The element in ARRAY is not very cared about.
 It only has to make data a convenient at the time of receipt format.

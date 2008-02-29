@@ -61,9 +61,12 @@ can_ok $br, 'clear_cache';
 __DATA__
 filename: etc/banners/hoge.yaml
 value: |
-  - url: http://banner/01
-    name: banner1
-  - url: http://banner/02
-    name: banner2
-  - url: http://banner/03
-    name: banner3
+  ---
+  url: http://banner/01
+  name: banner1
+  ---
+  url: http://banner/02
+  name: banner2
+  ---
+  url: http://banner/03
+  name: banner3

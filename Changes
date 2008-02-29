@@ -1,5 +1,14 @@
 Revision history for Perl extension .
 
+3.04  2008/02/29
+	- fixed for Egg.
+	- fixed for Egg::Request.
+	- fixed for Egg::Helper::Build::Project.
+	- fixed for Egg::Dispatch::Fast.
+	- fixed for Egg::Dispatch::Standard.
+	- fixed for Egg::Component::Base.
+	- fixed for Egg::Plugin::Banner::Rotate.
+
 3.03  2008/02/27
 	- fixed for Egg::Manager.
 	- The method of 'config_to' is added to Egg::Base.

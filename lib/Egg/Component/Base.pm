@@ -2,16 +2,17 @@ package Egg::Component::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 239 2008-02-04 05:09:10Z lushe $
+# $Id: Base.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _import         { @_ }
 sub _startup        { @_ }
 sub _setup          { @_ }
+sub _setup_comp     { @_ }
 sub _prepare        { @_ }
 sub _dispatch       { @_ }
 sub _action_start   { @_ }

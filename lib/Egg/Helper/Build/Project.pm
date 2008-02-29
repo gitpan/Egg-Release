@@ -2,7 +2,7 @@ package Egg::Helper::Build::Project;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Project.pm 229 2008-01-30 07:40:31Z lushe $
+# $Id: Project.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
@@ -27,16 +27,16 @@ sub _start_helper {
 
 	my $c= $self->config;
 	$c->{project_name}= $project_name;
-	$c->{root} = $o->{output_path} if $o->{output_path};
+	$c->{root} = $o->{output_path} || '.';
 	$c->{root}.= "/${project_name}";
 	-e $c->{root}
 	  and return $self->_helper_help(qq{'$c->{root}' already exists.});
-
 	my $files= [$self->helper_yaml_load(join '', <DATA>)];
 	my $param= $self->helper_prepare_param({ module_version => $version });
+	$self->helper_chdir($c->{root}, 1);
+	$param->{project_root}= $self->helper_current_dir;
 	$self->helper_generate_files(
 	  param        => $param,
-	  chdir        => [$c->{root}, 1],
 	  create_files => $files,
 	  create_dirs  => [qw/ bin root comp etc t htdocs cache tmp /],
 	  makemaker_ok => ($o->{unmake} ? 0: 1),
@@ -151,7 +151,7 @@ value: |
   #
   use strict;
   use warnings;<e.egg_inc>
-  use base qw/ Egg::Dispatch::Standard /;
+  use Egg::Dispatch::Standard;
   
   our $VERSION= '0.01';
   
@@ -228,6 +228,9 @@ value: |
   
   # Upper bound of request directory hierarchy.
   #  max_snip_deep => 10,
+  
+  # Regular expression in part that wants to be erased from Request PATH always.
+  #  request_path_trim => qr{^/?speedy\.cgi},
   
   # Accessor to stash. * Do not overwrite a regular method.
   #  accessor_names => [qw/hoge/],

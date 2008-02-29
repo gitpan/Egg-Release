@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 235 2008-02-03 05:19:13Z lushe $
+# $Id: Egg.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
@@ -18,6 +18,8 @@ use base qw/
  /;
 
 *egg_startup= \&_startup;
+
+our $VERSION= '3.02';
 
 sub import {
 	shift;
@@ -69,6 +71,7 @@ sub _startup {
 	my $class= shift;
 	my $c= $class->config($class->_load_config(@_));
 	my $e= $class->_egg_context( egg_startup=> 1 );
+	$e->_setup_comp;
 	$e->setup_model;
 	$e->setup_view;
 	my $report= $e->_setup_methods;

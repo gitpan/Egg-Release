@@ -2,12 +2,12 @@ package Egg::Request;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Request.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Request.pm 295 2008-02-29 07:32:26Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 our $MP_VERSION= 0;
 
@@ -104,6 +104,29 @@ sub is_post {
 sub is_head {
 	$_[0]->method=~m{^HEAD}i ? 1: 0;
 }
+sub _setup_request {
+	my($class, $e)= @_;
+	my $pname= $e->project_name;
+	no strict 'refs';  ## no critic.
+	no warnings 'redefine';
+	if (my $max= $e->config->{max_snip_deep}) {
+		*{"${pname}::___request_max_snip_deep"}= sub {
+			my($egg, $snip)= @_;
+			$egg->finished('403 Forbidden') if $max < scalar(@$snip);
+		  };
+	} else {
+		*{"${pname}::___request_max_snip_deep"}= sub { };
+	}
+	if (my $regexp= $e->config->{request_path_trim}) {
+		*{"${pname}::___request_path_trim"}= sub {
+			my($egg, $path)= @_;
+			$$path=~s{$regexp} [];
+		  };
+	} else {
+		*{"${pname}::___request_path_trim"}= sub { };
+	}
+	@_;
+}
 sub new {
 	my($class, $e)= @_;
 	my $req= bless { e=> $e }, $class;
@@ -115,15 +138,11 @@ sub new {
 		$path =~s{/+$} [];
 		$path.= $ENV{PATH_INFO} if $ENV{PATH_INFO};
 	}
+	$e->___request_path_trim(\$path);
 	$req->path( $path=~m{^/} ? $path: "/$path" );
 	# Request parts are generated.
 	$path=~s{\s+} []g; $path=~s{^/+} []; $path=~s{/+$} [];
-	$e->snip([ split /\/+/, $path ]);
-	my $max;
-	if ($max= $e->config->{max_snip_deep}
-	    and $max< scalar(@{$req->{snip}})) {
-		$e->finished('403 Forbidden');
-	}
+	$e->___request_max_snip_deep( $e->snip([ split /\/+/, $path ]) );
 	$e->debug_out("# + Request Path : /$path");
 	$req;
 }
@@ -205,7 +224,6 @@ sub result  {
 	my $code= $req->e->response->status || return 0;
 	$code== 200 ? 0: $code;
 }
-sub _setup_request { @_ }
 
 1;
 
