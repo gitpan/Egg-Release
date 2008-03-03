@@ -46,7 +46,7 @@ my $builder = Module::Build->new(
     'HTTP::BrowserDetect'      => '0.99',
     'ModPerl::VersionUtil'     => '0.03',
     'Module::Refresh'          => '0.13',
-    'PersistentPerl'           => '2.22',
+    'PersistentPerl'           => '2.21',
 
     'Test::More'          => '0',
     'Test::Pod'           => '0',

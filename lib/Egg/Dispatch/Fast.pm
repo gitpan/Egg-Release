@@ -2,21 +2,14 @@ package Egg::Dispatch::Fast;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Fast.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Fast.pm 296 2008-03-03 05:02:29Z lushe $
 #
 use strict;
 use warnings;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.01';
+our $VERSION= '3.02';
 
-sub import {
-	my($class)= @_;
-	my $p_class= caller(0);
-	return $class if ($p_class eq 'Egg' or $p_class->can('project_name'));
-	no strict 'refs';  ## no critic
-	push @{"${p_class}::ISA"}, __PACKAGE__;
-}
 sub dispatch {
 	$_[0]->{Dispatch} ||= Egg::Dispatch::Fast::handler->new(@_);
 }

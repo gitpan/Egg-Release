@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Egg.pm 296 2008-03-03 05:02:29Z lushe $
 #
 use strict;
 use warnings;
@@ -51,19 +51,14 @@ sub import {
 	no warnings 'redefine';
 	*{"${p}::project_name"}= $p->can('namespace');
 	$p->isa_register(@$_) for @plugins;
-	@$isa= grep !/^Egg$/, @$isa;
 	my $name= "${name_uc}_DISPATCH_CLASS";
 	if (my $d_class= defined($ENV{$name}) ? $ENV{$name}: "${p}::Dispatch") {
-		push @$isa, $d_class;
-		$d_class->require or die $@;
-		$d_class->import if $d_class->can('import');
+		$p->isa_register(2, $d_class);
 		$g->{dispatch_class}= $d_class;
-	}
-	push @$isa, 'Egg';
-	if (! $g->{dispatch_class} and ! $p->can('dispatch_map')) {
+	} elsif(! $p->can('dispatch_map')) {
 		$p->mk_classdata('dispatch_map');
 	}
-	$p->isa_terminator;
+	$p->isa_terminator(__PACKAGE__);
 	$p->_import;
 }
 sub _startup {

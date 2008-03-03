@@ -1,5 +1,12 @@
 Revision history for Perl extension .
 
+3.05  2008/03/03
+	- bugfix for Egg::Dispatch::Standard.
+	- bugfix for Egg;
+	- fixed  for Egg::Component.
+	- fixed  for Egg::Dispatch::Standard.
+	- fixed  for Egg::Dispatch::Fast.
+
 3.04  2008/02/29
 	- fixed for Egg.
 	- fixed for Egg::Request.

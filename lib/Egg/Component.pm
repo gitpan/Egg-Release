@@ -2,7 +2,7 @@ package Egg::Component;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Component.pm 261 2008-02-17 17:11:18Z lushe $
+# $Id: Component.pm 296 2008-03-03 05:02:29Z lushe $
 #
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Carp qw/ croak /;
 use base qw/ Class::Data::Inheritable /;
 use Egg::Component::Base;
 
-our $VERSION= '3.01';
+our $VERSION= '3.02';
 
 sub initialize {
 	my $class= ref($_[0]) || $_[0];
@@ -76,7 +76,10 @@ sub _get_args {
 	my $label = shift || croak q{ I want label name. };
 	my $pkg   = shift || $label;
 	my $config= shift || undef;
-	if ($load) { $pkg->require or croak "$proto - $@" }
+	if ($load) {
+		$load > 1 ? do { $pkg->use     or croak "$proto - $@" }
+		          : do { $pkg->require or croak "$proto - $@" };
+	}
 	$pkg->config($config) if ($config and $pkg->can('config'));
 	($proto, lc($label), $pkg, $config, @_);
 }

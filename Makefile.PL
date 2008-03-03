@@ -43,7 +43,7 @@ requires 'HTML::Prototype'          => '1.48';
 requires 'HTTP::BrowserDetect'      => '0.99';
 requires 'ModPerl::VersionUtil'     => '0.03';
 requires 'Module::Refresh'          => '0.13';
-requires 'PersistentPerl'           => '2.22';
+requires 'PersistentPerl'           => '2.21';
 
 build_requires 'Test::More';
 build_requires 'Test::Pod';

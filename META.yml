@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 3.04
+version: 3.05
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: lib/Egg/Release.pm
@@ -35,7 +35,7 @@ requires:
   ModPerl::VersionUtil: 0.03
   Module::Install: 0
   Module::Refresh: 0.13
-  PersistentPerl: 2.22
+  PersistentPerl: 2.21
   Test::More: 0
   Test::Perl::Critic: 0
   Test::Pod: 0
@@ -57,7 +57,7 @@ provides:
     version: 3.01
   Egg::Component:
     file: lib/Egg/Component.pm
-    version: 3.01
+    version: 3.02
   Egg::Component::Base:
     file: lib/Egg/Component/Base.pm
     version: 3.01
@@ -66,13 +66,13 @@ provides:
     version: 3.00
   Egg::Dispatch::Fast:
     file: lib/Egg/Dispatch/Fast.pm
-    version: 3.01
+    version: 3.02
   Egg::Dispatch::Fast::handler:
     file: lib/Egg/Dispatch/Fast.pm
     version: 0.01
   Egg::Dispatch::Standard:
     file: lib/Egg/Dispatch/Standard.pm
-    version: 3.01
+    version: 3.03
   Egg::Dispatch::Standard::handler:
     file: lib/Egg/Dispatch/Standard.pm
   Egg::Dispatch::handler:
@@ -211,7 +211,7 @@ provides:
     version: 3.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 3.04
+    version: 3.05
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 3.01

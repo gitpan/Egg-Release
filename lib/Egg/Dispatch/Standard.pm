@@ -2,14 +2,14 @@ package Egg::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Standard.pm 296 2008-03-03 05:02:29Z lushe $
 #
 use strict;
 use warnings;
 use Tie::RefHash;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.01';
+our $VERSION= '3.03';
 
 {
 	no strict 'refs';  ## no critic
@@ -31,7 +31,7 @@ sub import {
 	my($class)= @_;
 	no strict 'refs';  ## no critic
 	my $p_class= caller(0);
-	$p_class=~s{\:+Dispatch$} [];
+	my($p_name)= $p_class=~m{(.+?)\:+Dispatch$};
 	if ( Tie::RefHash->require ) {
 		my $refhash= sub {
 			my %refhash;
@@ -39,12 +39,12 @@ sub import {
 			\%refhash;
 		  };
 		no warnings 'redefine';
-		if ($p_class eq 'Egg' or $p_class->can('project_name')) {
-			*{"${p_class}::refhash"}= $refhash;
+		if (($p_name and $p_name eq 'Egg')
+		             or $p_class->can('project_name')) {
+			*{"${p_name}::refhash"}= $refhash;
 		} elsif ($p_class ne __PACKAGE__) {
-			push @{"${p_class}::ISA"}, __PACKAGE__;
+			*{"${p_name}::refhash"}= $refhash if $p_name;
 			*{"${p_class}::refhash"}= $refhash;
-			*{"${p_class}::Dispatch::refhash"}= $refhash;
 		}
 	} else {
 		warn q{ 'Tie::RefHash' is not installed. };

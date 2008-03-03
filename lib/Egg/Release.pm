@@ -7,7 +7,7 @@ package Egg::Release;
 use strict;
 use warnings;
 
-our $VERSION = '3.04';
+our $VERSION = '3.05';
 
 our $DISTURL = 'http://egg.bomcity.com/';
 
