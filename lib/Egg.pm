@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 296 2008-03-03 05:02:29Z lushe $
+# $Id: Egg.pm 300 2008-03-04 04:56:12Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use base qw/
 
 *egg_startup= \&_startup;
 
-our $VERSION= '3.02';
+our $VERSION= '3.03';
 
 sub import {
 	shift;
@@ -52,12 +52,16 @@ sub import {
 	*{"${p}::project_name"}= $p->can('namespace');
 	$p->isa_register(@$_) for @plugins;
 	my $name= "${name_uc}_DISPATCH_CLASS";
-	if (my $d_class= defined($ENV{$name}) ? $ENV{$name}: "${p}::Dispatch") {
-		$p->isa_register(2, $d_class);
-		$g->{dispatch_class}= $d_class;
-	} elsif(! $p->can('dispatch_map')) {
-		$p->mk_classdata('dispatch_map');
+	my $d_class;
+	if (defined($ENV{$name})) {
+		if ($d_class= $ENV{$name}) { $p->isa_register(2, $d_class) }
+	} else {
+		$d_class= "${p}::Dispatch";
+		$p->isa_register(0, $d_class);
+		$d_class->use or die "$p - $@";
 	}
+	$g->{dispatch_class}= $d_class || "";
+	$p->mk_classdata('dispatch_map') unless $p->can('dispatch_map');
 	$p->isa_terminator(__PACKAGE__);
 	$p->_import;
 }
@@ -109,11 +113,9 @@ sub finished {
 	my $e= shift;
 	return $e->{finished} unless @_;
 	if (my $status= shift) {
-		my $status= $e->response->status($status)
-		   || croak q{ It tried to set illegal status. };
-		if (@_) {
-			if ($status== 500) { $e->log->error(@_) }
-		}
+		$status= $e->response->status($status)
+		      || croak q{ It tried to set illegal status. };
+		$e->log->error(@_) if (@_ and $status== 500);
 		return $e->{finished}= 1;
 	} else {
 		$e->response->status(0);

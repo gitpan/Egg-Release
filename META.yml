@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 3.05
+version: 3.06
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: lib/Egg/Release.pm
@@ -51,7 +51,7 @@ requires:
 provides:
   Egg:
     file: lib/Egg.pm
-    version: 3.02
+    version: 3.03
   Egg::Base:
     file: lib/Egg/Base.pm
     version: 3.01
@@ -93,7 +93,7 @@ provides:
     version: 3.00
   Egg::Helper::Build::Project:
     file: lib/Egg/Helper/Build/Project.pm
-    version: 3.00
+    version: 3.02
   Egg::Helper::Build::Prototype:
     file: lib/Egg/Helper/Build/Prototype.pm
     version: 3.00
@@ -211,7 +211,7 @@ provides:
     version: 3.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 3.05
+    version: 3.06
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 3.01

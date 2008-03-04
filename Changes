@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+3.06  2008/03/03
+	- bugfix  for Egg.
+	- fixed for Egg::Helper::Build::Project.
+
 3.05  2008/03/03
 	- bugfix for Egg::Dispatch::Standard.
 	- bugfix for Egg;

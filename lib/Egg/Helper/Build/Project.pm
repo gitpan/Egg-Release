@@ -2,12 +2,12 @@ package Egg::Helper::Build::Project;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Project.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Project.pm 299 2008-03-04 04:41:23Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.02';
 
 sub _start_helper {
 	my($self)= @_;
@@ -151,7 +151,7 @@ value: |
   #
   use strict;
   use warnings;<e.egg_inc>
-  use Egg::Dispatch::Standard;
+  use base qw/ Egg::Dispatch::Standard /;
   
   our $VERSION= '0.01';
   
