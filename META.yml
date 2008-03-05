@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 3.06
+version: 3.07
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: lib/Egg/Release.pm
@@ -72,7 +72,7 @@ provides:
     version: 0.01
   Egg::Dispatch::Standard:
     file: lib/Egg/Dispatch/Standard.pm
-    version: 3.03
+    version: 3.04
   Egg::Dispatch::Standard::handler:
     file: lib/Egg/Dispatch/Standard.pm
   Egg::Dispatch::handler:
@@ -194,7 +194,7 @@ provides:
     version: 3.00
   Egg::Plugin::Response::Redirect:
     file: lib/Egg/Plugin/Response/Redirect.pm
-    version: 3.00
+    version: 3.01
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
     version: 3.00
@@ -211,7 +211,7 @@ provides:
     version: 3.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 3.06
+    version: 3.07
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 3.01
@@ -276,7 +276,7 @@ provides:
     version: 3.00
   Egg::Util::Debug:
     file: lib/Egg/Util/Debug.pm
-    version: 3.00
+    version: 3.01
   Egg::Util::DebugScreen:
     file: lib/Egg/Util/DebugScreen.pm
     version: 3.00

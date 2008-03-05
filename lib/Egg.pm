@@ -2,20 +2,20 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 300 2008-03-04 04:56:12Z lushe $
+# $Id: Egg.pm 301 2008-03-05 07:38:27Z lushe $
 #
 use strict;
 use warnings;
 use Egg::Exception;
 use Carp qw/ croak /;
 use base qw/
- Egg::Request
- Egg::Response
- Egg::Util
- Egg::Manager::Model
- Egg::Manager::View
- Egg::Component
- /;
+  Egg::Util
+  Egg::Component
+  /;
+use Egg::Manager::View;
+use Egg::Manager::Model;
+use Egg::Request;
+use Egg::Response;
 
 *egg_startup= \&_startup;
 
@@ -39,7 +39,13 @@ sub import {
 	}
 	no strict 'refs';  ## no critic
 	my $isa= \@{"${p}::ISA"};
-	push @$isa, 'Egg';
+	push @{"${p}::ISA"}, $_ for qw/
+	  Egg::Manager::View
+	  Egg::Manager::Model
+	  Egg::Request
+	  Egg::Response
+	  Egg
+	  /;
 	$p->initialize;
 	$p->init_model;
 	$p->init_view;

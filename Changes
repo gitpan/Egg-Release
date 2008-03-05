@@ -1,6 +1,12 @@
 Revision history for Perl extension .
 
-3.06  2008/03/03
+3.07  2008/03/05
+	- bugfix for Egg::Dispatch::Standard.
+	- fixed for Egg::Util::Debug.
+	- bugfix for Egg.
+	- bugfix for Egg::Plugin::Response::Redirect.
+
+3.06  2008/03/04
 	- bugfix  for Egg.
 	- fixed for Egg::Helper::Build::Project.
 

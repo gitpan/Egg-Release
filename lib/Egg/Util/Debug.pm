@@ -2,12 +2,12 @@ package Egg::Util::Debug;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Debug.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Debug.pm 301 2008-03-05 07:38:27Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _setup {
 	my($class, $e, $p)= @_;
@@ -56,6 +56,7 @@ sub _start_engine_debug {
 	$e->_output;       $e->bench('output');
 	$e->_finish;       $e->bench('finish');
 	$e->{benchmark}->finish;
+	if (my $header= $e->response->{header}) { $e->debug_out($header) }
 	_debug_end($e);
 }
 sub _debug_out {

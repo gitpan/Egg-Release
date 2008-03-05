@@ -2,14 +2,14 @@ package Egg::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 296 2008-03-03 05:02:29Z lushe $
+# $Id: Standard.pm 301 2008-03-05 07:38:27Z lushe $
 #
 use strict;
 use warnings;
 use Tie::RefHash;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.03';
+our $VERSION= '3.04';
 
 {
 	no strict 'refs';  ## no critic
@@ -49,7 +49,7 @@ sub import {
 	} else {
 		warn q{ 'Tie::RefHash' is not installed. };
 	}
-	$class;
+	$class->SUPER::import;
 }
 sub dispatch {
 	$_[0]->{Dispatch} ||= Egg::Dispatch::Standard::handler->new(@_);

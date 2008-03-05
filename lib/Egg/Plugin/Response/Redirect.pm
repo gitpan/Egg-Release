@@ -7,11 +7,11 @@ package Egg::Plugin::Response::Redirect;
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 {
 	no warnings 'redefine';
-	*Egg::Response::redirect_body= sub { shift->e->redirect_body(@_) };
+	*Egg::Response::handler::redirect_body= sub { shift->e->redirect_body(@_) };
   };
 
 sub _setup {
