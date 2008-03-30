@@ -2,7 +2,7 @@ package Egg;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Egg.pm 301 2008-03-05 07:38:27Z lushe $
+# $Id: Egg.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Egg::Response;
 
 *egg_startup= \&_startup;
 
-our $VERSION= '3.03';
+our $VERSION= '3.04';
 
 sub import {
 	shift;
@@ -230,7 +230,7 @@ sub _setup_log {
 	my($e, $p)= @_;
 	my $l_class= $ENV{uc($p). '_LOG_CLASS'} || 'Egg::Log::STDERR';
 	$l_class->require or die $@;
-	my $log= $l_class->new($e->config->{log});
+	my $log= $l_class->new($e);
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
 	*{"${p}::log"}= sub { $log };

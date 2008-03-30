@@ -1,6 +1,6 @@
 ---
 name: Egg-Release
-version: 3.07
+version: 3.08
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: lib/Egg/Release.pm
@@ -51,10 +51,10 @@ requires:
 provides:
   Egg:
     file: lib/Egg.pm
-    version: 3.03
+    version: 3.04
   Egg::Base:
     file: lib/Egg/Base.pm
-    version: 3.01
+    version: 3.02
   Egg::Component:
     file: lib/Egg/Component.pm
     version: 3.02
@@ -115,7 +115,7 @@ provides:
     version: 3.00
   Egg::Log::STDERR:
     file: lib/Egg/Log/STDERR.pm
-    version: 3.00
+    version: 3.01
   Egg::Manager:
     file: lib/Egg/Manager.pm
     version: 3.03
@@ -168,9 +168,24 @@ provides:
     version: 3.00
   Egg::Plugin::Filter:
     file: lib/Egg/Plugin/Filter.pm
+    version: 3.01
+  Egg::Plugin::Filter::Plugin::Japanese:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese.pm
+    version: 3.00
+  Egg::Plugin::Filter::Plugin::Japanese::EUC:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/EUC.pm
+    version: 3.00
+  Egg::Plugin::Filter::Plugin::Japanese::Shift_JIS:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/Shift_JIS.pm
+    version: 3.00
+  Egg::Plugin::Filter::Plugin::Japanese::UTF8:
+    file: lib/Egg/Plugin/Filter/Plugin/Japanese/UTF8.pm
     version: 3.00
   Egg::Plugin::FormValidator::Simple:
     file: lib/Egg/Plugin/FormValidator/Simple.pm
+    version: 3.00
+  Egg::Plugin::HTML::TagCloud:
+    file: lib/Egg/Plugin/HTML/TagCloud.pm
     version: 3.00
   Egg::Plugin::HTTP::BrowserDetect:
     file: lib/Egg/Plugin/HTTP/BrowserDetect.pm
@@ -180,7 +195,7 @@ provides:
     version: 3.00
   Egg::Plugin::Mason:
     file: lib/Egg/Plugin/Mason.pm
-    version: 3.00
+    version: 3.01
   Egg::Plugin::Mason::handler:
     file: lib/Egg/Plugin/Mason.pm
   Egg::Plugin::Prototype:
@@ -197,7 +212,7 @@ provides:
     version: 3.01
   Egg::Plugin::Tools:
     file: lib/Egg/Plugin/Tools.pm
-    version: 3.00
+    version: 3.01
   Egg::Plugin::WYSIWYG::FCKeditor:
     file: lib/Egg/Plugin/WYSIWYG/FCKeditor.pm
     version: 3.00
@@ -211,7 +226,7 @@ provides:
     version: 3.00
   Egg::Release:
     file: lib/Egg/Release.pm
-    version: 3.07
+    version: 3.08
   Egg::Request:
     file: lib/Egg/Request.pm
     version: 3.01
@@ -279,7 +294,7 @@ provides:
     version: 3.01
   Egg::Util::DebugScreen:
     file: lib/Egg/Util/DebugScreen.pm
-    version: 3.00
+    version: 3.02
   Egg::Util::STDIO:
     file: lib/Egg/Util/STDIO.pm
     version: 3.00

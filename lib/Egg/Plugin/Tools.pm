@@ -2,13 +2,13 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Tools.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/croak/;
 
-our $VERSION = '3.00';
+our $VERSION = '3.01';
 
 {
 	require URI::Escape;
@@ -61,7 +61,7 @@ sub create_id {
 	my $len= shift || 32;
 	my $method= (lc(shift) || 'sha1'). '_hex';
 	substr( $e->$method(
-	  $e->$method( $$. $e->gettimeofday. rand(1000) ) ), $len );
+	  $e->$method( $$. $e->gettimeofday. rand(1000) ) ), 0, $len );
 }
 sub comma {
 	my $num= $_[1] || return 0;

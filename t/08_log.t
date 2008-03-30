@@ -13,4 +13,4 @@ can_ok $e, 'log';
 can_ok $log, 'error';
 can_ok $log, 'debug';
 can_ok $log, 'info';
-can_ok $log, 'notes';
+can_ok $log, 'notice';

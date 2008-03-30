@@ -2,7 +2,7 @@ package Egg::Plugin::Response::Redirect;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Redirect.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Redirect.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;

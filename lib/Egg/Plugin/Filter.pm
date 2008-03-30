@@ -2,14 +2,14 @@ package Egg::Plugin::Filter;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Filter.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Filter.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 use HTML::Entities;
 use Carp qw/croak/;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 my $EGG= 0;
 my $VAL= 1;
@@ -69,32 +69,32 @@ our %Filters= (
  integer=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/0-9+-//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/([\-\+]?\d+)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^([\-\+]?\d+)/ ? $1: undef;
    },
  pos_integer=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/0-9+//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/(\+?\d+)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^(\+?\d+)/ ? $1: undef;
    },
  neg_integer=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/0-9-//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/(\-?\d+)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^(\-?\d+)/ ? $1: undef;
    },
  decimal=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/,/./; ${$_[$VAL]}=~tr/0-9.+-//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/([\-\+]?\d+\.?\d*)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^([\-\+]?\d+\.?\d*)/ ? $1: undef;
    },
  pos_decimal=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/,/./; ${$_[$VAL]}=~tr/0-9.+//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/(\+?\d+\.?\d*)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^(\+?\d+\.?\d*)/ ? $1: undef;
    },
  neg_decimal=> sub {
    return 0 unless defined(${$_[$VAL]});
    ${$_[$VAL]}=~tr/,/./; ${$_[$VAL]}=~tr/0-9.-//dc;
-   ${$_[$VAL]}= ${$_[$VAL]}=~/(\-?\d+\.?\d*)/ ? $1: undef;
+   ${$_[$VAL]}= ${$_[$VAL]}=~/^(\-?\d+\.?\d*)/ ? $1: undef;
    },
  dollars=> sub {
    return 0 unless defined(${$_[$VAL]});
@@ -141,6 +141,7 @@ $Filters{hold_space}  = $Filters{hold_blank};
 $Filters{strip_space} = $Filters{strip_blank};
 $Filters{url}         = $Filters{uri};
 $Filters{email}       = $Filters{lc_email};
+$Filters{int}         = $Filters{integer};
 
 sub _filters { \%Filters }
 

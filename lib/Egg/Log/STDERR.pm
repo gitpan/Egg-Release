@@ -2,19 +2,19 @@ package Egg::Log::STDERR;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: STDERR.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: STDERR.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub new { bless [], $_[0] }
 
-sub error { shift; _print('ERROR', @_) }
-sub debug { shift; _print('DEBUG', @_) }
-sub info  { shift; _print('INFO' , @_) }
-sub notes { shift; _print('NOTES', @_) }
+sub error  { shift; _print('ERROR' , @_) }
+sub debug  { shift; _print('DEBUG' , @_) }
+sub info   { shift; _print('INFO'  , @_) }
+sub notice { shift; _print('NOTICE', @_) }
 
 sub _print {
 	my $lebel= shift;
@@ -57,7 +57,7 @@ MESSAGE_STR is output putting up DEBUG to the head.
 
 MESSAGE_STR is output putting up INFO to the head. 
 
-=head2 notes ([MESSAGE_STR])
+=head2 notice ([MESSAGE_STR])
 
 MESSAGE_STR is output putting up NOTES to the head.
 

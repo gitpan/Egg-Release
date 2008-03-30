@@ -2,14 +2,14 @@ package Egg::Util::DebugScreen;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DebugScreen.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: DebugScreen.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 use Egg::Release;
 use HTML::Entities;
 
-our $VERSION = '3.00';
+our $VERSION = '3.02';
 
 sub _debug_screen {
 	my($e)= @_;
@@ -21,8 +21,9 @@ sub _debug_screen {
 sub _content {
 	my($e)= @_;
 	my $err= $e->errstr || 'Internal Error.';
-	   $err=~s{\n} [<br />\n]sg;
 	my($querys, $ignore, $param)= ('', q{'"&<>@});
+	$err= encode_entities($err, $ignore);
+	$err=~s{\n} [<br />\n]sg;
 	if ($param= $e->request->params and %$param) {
 		$querys = q{<div class="querys"><b>Request Querys:</b><table>};
 		while (my($key, $value)= each %$param) {
@@ -54,7 +55,7 @@ sub _content {
 <div id="content"> $err $querys </div>
 <div id="footer">
 <a href="$Egg::Release::DISTURL" target="_blank">
-Powered by <strong>$Egg::Release::VERSION</strong></a>
+Powered by Egg <strong>$Egg::Release::VERSION</strong></a>
 </div>
 </div>
 </body></html>

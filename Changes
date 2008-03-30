@@ -1,5 +1,18 @@
 Revision history for Perl extension .
 
+3.08  2008/03/30
+	- fixed for Egg::Util::DebugScreen
+	- fixed for Egg.
+	- fixed for Egg::Log::STDERR.
+	- fixed for Egg::Plugin::Filter.
+	- fixed for Egg::Plugin::Mason.
+	- bugfix for Egg::Plugin::Tools.
+	- Egg::Plugin::Filter::Plugin::Japanese is added.
+	- Egg::Plugin::Filter::Plugin::EUC is added.
+	- Egg::Plugin::Filter::Plugin::Shift_JIS is added.
+	- Egg::Plugin::Filter::Plugin::UTF8 is added.
+	- Egg::Plugin::HTML::TagCloud.
+
 3.07  2008/03/05
 	- bugfix for Egg::Dispatch::Standard.
 	- fixed for Egg::Util::Debug.

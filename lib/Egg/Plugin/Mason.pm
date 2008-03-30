@@ -2,12 +2,12 @@ package Egg::Plugin::Mason;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Mason.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Mason.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub mason {
 	$_[0]->{mason} ||= Egg::Plugin::Mason::handler->new(@_);
@@ -54,10 +54,10 @@ sub complete {
 sub error_complete {
 	my $ms= shift;
 	$ms->{complete_topic}= shift || q{Sorry !!};
-	$ms->{complete_info}= shift
+	$ms->{complete_info} = shift
 	     || q{<p class="info"><a href="/">Please click.</p>};
 	$ms->{is_error}= 1;
-	0;
+	shift || 0;
 }
 
 1;

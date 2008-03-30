@@ -2,14 +2,14 @@ package Egg::Base;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Base.pm 276 2008-02-27 01:38:31Z lushe $
+# $Id: Base.pm 309 2008-03-30 21:06:49Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 use base qw/ Class::Data::Inheritable /;
 
-our $VERSION= '3.01';
+our $VERSION= '3.02';
 
 {
 	no strict 'refs';  ## no critic.
@@ -33,7 +33,7 @@ __PACKAGE__->mk_accessors(qw/ e parameters /);
 sub new {
 	my $class= shift;
 	my $e    = shift || croak q{ I want egg context. };
-	my $param= shift || {};
+	my $param= shift || ($_[0] ? ($_[1] ? {@_}: $_[0]): {});
 	bless { e=> $e, parameters=> $param }, $class;
 }
 sub param {
