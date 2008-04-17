@@ -1,4 +1,4 @@
-use Test::More tests=> 44;
+use Test::More tests=> 43;
 use lib qw( ./lib ../lib );
 use Egg::Helper;
 

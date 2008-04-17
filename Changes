@@ -1,5 +1,10 @@
 Revision history for Perl extension .
 
+3.09  2008/04/17
+	- Build.PL is abolished.
+	- fixed for Egg::Helper::Build::Project.
+	- fixed for Egg::Helper::Build::Module.
+
 3.08  2008/03/30
 	- fixed for Egg::Util::DebugScreen
 	- fixed for Egg.

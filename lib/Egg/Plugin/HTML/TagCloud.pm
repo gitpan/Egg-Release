@@ -2,7 +2,7 @@ package Egg::Plugin::HTML::TagCloud;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: TagCloud.pm 309 2008-03-30 21:06:49Z lushe $
+# $Id: TagCloud.pm 310 2008-04-16 15:06:37Z lushe $
 #
 use strict;
 use warnings;

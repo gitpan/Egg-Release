@@ -2,12 +2,12 @@ package Egg::Helper::Build::Project;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Project.pm 299 2008-03-04 04:41:23Z lushe $
+# $Id: Project.pm 314 2008-04-17 11:12:17Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.02';
+our $VERSION= '3.03';
 
 sub _start_helper {
 	my($self)= @_;
@@ -313,33 +313,6 @@ value: |
   auto_include;
   WriteAll;
 ---
-filename: Build.PL
-filetype: text
-value: |
-  use Module::Build;
-  
-  my $builder = Module::Build->new(
-  
-    module_name       => '<e.project_name>',
-    dist_version_from => 'lib/<e.project_name>.pm',
-    dist_abstract     => 'lib/<e.project_name>.pm',
-    dist_author       => '<e.author>',
-    license           => '<e.license>',
-  
-    requires => {
-  
-      'Egg::Release' => <e.egg_release_version>,
-  
-      'Test::More'          => 0,
-      'Test::Pod'           => 0,
-  #    'Test::Perl::Critic'  => 0,
-  #    'Test::Pod::Coverage' => 0,
-      },
-  
-    );
-  
-  $builder->create_build_script();
----
 filename: bin/trigger.cgi
 filetype: script
 value: |
@@ -581,13 +554,6 @@ value: |
      make
      make test
      make install
-  
-     or
-  
-     perl Build.PL
-     ./Build
-     ./Build test
-     ./Build install
   
   AUTHOR
   

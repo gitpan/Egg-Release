@@ -2,13 +2,13 @@ package Egg::Helper::Build::Module;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Module.pm 235 2008-02-03 05:19:13Z lushe $
+# $Id: Module.pm 314 2008-04-17 11:12:17Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/ croak /;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub build_script {
 	require Egg::Helper::Util::Base;
@@ -216,34 +216,6 @@ value: |
   WriteAll;
   
 ---
-filename: Build.PL
-filetype: module
-value: |
-  use Module::Build;
-  
-  my $builder = Module::Build->new(
-  
-    module_name       => '<e.module_distname>',
-    dist_version_from => 'lib/<$e.module_filepath>',
-    dist_abstract     => 'lib/<$e.module_filepath>',
-    dist_author       => '<e.author>',
-    license           => '<e.license>',
-  
-    requires => {
-  
-      'Egg::Release'         => <e.egg_release_version>,
-  
-      'Test::More'           => 0,
-      'Test::Pod'            => 0,
-  #    'Test::Perl::Critic'  => 0,
-  #    'Test::Pod::Coverage' => 0,
-      },
-  
-    );
-  
-  $builder->create_build_script();
-  
----
 filename: t/00_use.t
 value: |
   # Before `make install' is performed this script should be runnable with
@@ -320,13 +292,6 @@ value: |
      make
      make test
      make install
-  
-     or
-  
-     perl Build.PL
-     ./Build
-     ./Build test
-     ./Build install
   
   AUTHOR
   

@@ -1,4 +1,4 @@
-use Test::More tests => 13;
+use Test::More tests => 12;
 use lib qw( ./lib ../lib );
 use Egg::Helper;
 
@@ -17,7 +17,6 @@ ok -e $mod_dir, qq{-e $mod_dir};
 for (qw{
   lib/Test/Test.pm
   Makefile.PL
-  Build.PL
   t/00_use.t
   t/89_pod.t
   t/98_perlcritic.t

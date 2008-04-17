@@ -28,13 +28,6 @@ INSTALLATION
   make test
   make install
   
-  or
-  
-  perl Build.PL
-  ./Build
-  ./Build test
-  ./Build install
-
   * Please set the following environment variables to complete the test.
   EGG_UPLOAD_TEST    ... When Plugin::Upload is tested, 1 is set.
   EGG_RC_NAME        ... For test of Plugin::rc.  default is 'egg_releaserc'.

@@ -2,7 +2,7 @@ package Egg::Log::STDERR;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: STDERR.pm 309 2008-03-30 21:06:49Z lushe $
+# $Id: STDERR.pm 310 2008-04-16 15:06:37Z lushe $
 #
 use strict;
 use warnings;

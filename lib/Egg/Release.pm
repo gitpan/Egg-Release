@@ -2,12 +2,12 @@ package Egg::Release;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Release.pm 301 2008-03-05 07:38:27Z lushe $
+# $Id: Release.pm 313 2008-04-17 10:58:55Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '3.08';
+our $VERSION = '3.09';
 
 our $DISTURL = 'http://egg.bomcity.com/';
 

@@ -1,23 +1,15 @@
-Build.PL
 Changes
 eg/egg_build_module.pl
 eg/egg_helper.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
-inc/Module/Install/Build.pm
 inc/Module/Install/Can.pm
 inc/Module/Install/Fetch.pm
 inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
-inc/Module/Install/TestBase.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
-inc/Spiffy.pm
-inc/Test/Base.pm
-inc/Test/Base/Filter.pm
-inc/Test/Builder.pm
-inc/Test/Builder/Module.pm
 inc/Test/More.pm
 inc/Test/Perl/Critic.pm
 inc/Test/Pod.pm
@@ -96,6 +88,7 @@ lib/Egg/View.pm
 lib/Egg/View/HT.pm
 lib/Egg/View/Mason.pm
 lib/Egg/View/Template/GlobalParam.pm
+licenses
 Makefile.PL
 MANIFEST			This list of files
 META.yml
