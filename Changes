@@ -1,5 +1,11 @@
 Revision history for Perl extension .
 
+3.10  2008/05/12
+	- The defective operation when 'P::Encode' and 'P::Request::Upload' are used
+	  at the same time is corrected. for Egg::Plugin::Encode.
+	- fixed for Egg::Request::Upload::CGI.
+	- fixed for Egg::Request::CGI.
+
 3.09  2008/04/17
 	- Build.PL is abolished.
 	- fixed for Egg::Helper::Build::Project.

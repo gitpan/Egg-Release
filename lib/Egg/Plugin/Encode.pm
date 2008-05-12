@@ -2,19 +2,21 @@ package Egg::Plugin::Encode;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Encode.pm 309 2008-03-30 21:06:49Z lushe $
+# $Id: Encode.pm 334 2008-05-12 03:51:26Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _setup {
 	my($e)= @_;
 	no warnings 'redefine';
 	if (my $icode= $e->config->{character_in}) {
 		my $class= $e->global->{request_class};
-		my $code = $class->can('parameters') || \&Egg::Request::parameters;
+##		my $code = $class->can('parameters')
+##		        || \&Egg::Request::handler::parameters;
+		my $code = \&Egg::Request::handler::parameters;
 		no strict 'refs';  ## no critic.
 		no warnings 'redefine';
 		*{"${class}::parameters"}= sub {
@@ -59,12 +61,15 @@ sub FETCH {
 	return "" unless exists($self->[0]{$key});
 	return $self->[0]{$key} if $self->[2]{$key};
 	$self->[2]{$key}= 1;
-	if (ref($self->[0]{$key}) eq 'ARRAY') {
-		for (@{$self->[0]{$key}}) { tr/\r//d; $self->[1]->$conv(\$_) }
-		return $self->[0]{$key};
-	} else {
-		$self->[0]{$key}=~tr/\r//d;
-		return $self->[0]{$key}= $self->[1]->$conv(\$self->[0]{$key});
+	my $value= \$self->[0]{$key};
+	if (ref($$value) eq 'Fh') {
+		return $$value;
+	} elsif (ref($$value) eq 'ARRAY') {
+		for (@$value) { tr/\r//d; $self->[1]->$conv(\$_) }
+		return wantarray ? @$value: $value;
+	}else {
+		$$value=~tr/\r//d;
+		return $$value= $self->[1]->$conv($value);
 	}
 }
 sub STORE {

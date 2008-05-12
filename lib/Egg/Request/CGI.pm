@@ -2,7 +2,7 @@ package Egg::Request::CGI;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: CGI.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: CGI.pm 334 2008-05-12 03:51:26Z lushe $
 #
 use strict;
 use warnings;
@@ -10,20 +10,22 @@ use CGI;
 use Carp 'croak';
 use base qw/ Egg::Request::handler /;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub _setup_request {
 	my($class, $e, $c, $g)= @_;
 	my $conf= $c->{request} || {};
-	if (my $max= $conf->{POST_MAX}) { $CGI::POST_MAX= $max }
+	if (my $max= $conf->{POST_MAX} || $ENV{POST_MAX}) { $CGI::POST_MAX= $max }
 	if (my $dup= $conf->{DISABLE_UPLOADS}) { $CGI::DISABLE_UPLOADS= $dup }
-	if (my $tmp= $conf->{TEMP_DIR}) { $CGITempFile::TMPDIRECTORY= $tmp }
+	if (my $tmp= $conf->{TMPDIR} || $conf->{TEMP_DIR}
+	   || $ENV{TMPDIR} || $ENV{TEMP_DIR}) { $CGITempFile::TMPDIRECTORY= $tmp }
 	$class->SUPER::_setup_request($e, $c, $g);
 }
 sub new {
 	my($class, $e, $r)= @_;
 	my $req= $class->SUPER::new($e, $r);
-	$req->r( Egg::Request::CGI::handler->new($r) );
+	$req->r( CGI->new($r) );
+#	$req->r( Egg::Request::CGI::handler->new($r) );
 	$req;
 }
 sub parameters {

@@ -2,12 +2,12 @@ package Egg::Request::Upload::CGI;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: CGI.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: CGI.pm 334 2008-05-12 03:51:26Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '3.00';
+our $VERSION = '3.01';
 
 sub upload {
 	Egg::Request::Upload::CGI::handler->new(@_) || (undef);
@@ -15,7 +15,6 @@ sub upload {
 
 package Egg::Request::Upload::CGI::handler;
 use strict;
-use CGI::Upload;
 use base qw/ Egg::Request::Upload /;
 
 sub filename { $_[0]->{r}->param( $_[0]->name ) }
