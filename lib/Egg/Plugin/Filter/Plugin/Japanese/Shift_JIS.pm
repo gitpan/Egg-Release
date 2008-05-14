@@ -2,7 +2,7 @@ package Egg::Plugin::Filter::Plugin::Japanese::Shift_JIS;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Shift_JIS.pm 309 2008-03-30 21:06:49Z lushe $
+# $Id: Shift_JIS.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Jcode;
 our $VERSION= '3.00';
 
 $Egg::Plugin::Filter::Plugin::Japanese::Zspace  = '\x81\x40';
-$Egg::Plugin::Filter::Plugin::Japanese::RZspace = Jcode->new('¡¡', 'euc')->sjis;
+$Egg::Plugin::Filter::Plugin::Japanese::RZspace = Jcode->new('@', 'euc')->sjis;
 
 1;
 
@@ -37,7 +37,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2007 by Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

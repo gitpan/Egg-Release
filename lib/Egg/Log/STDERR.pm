@@ -2,7 +2,7 @@ package Egg::Log::STDERR;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: STDERR.pm 310 2008-04-16 15:06:37Z lushe $
+# $Id: STDERR.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
@@ -71,7 +71,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

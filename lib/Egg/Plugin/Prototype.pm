@@ -2,7 +2,7 @@ package Egg::Plugin::Prototype;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Prototype.pm 226 2008-01-27 10:23:16Z lushe $
+# $Id: Prototype.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;

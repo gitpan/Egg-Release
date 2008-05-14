@@ -2,7 +2,7 @@ package Egg::Util;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Util.pm 240 2008-02-13 03:21:40Z lushe $
+# $Id: Util.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use Carp qw/ croak /;
 use base qw/ Egg::Base /;
 use URI;
 
-our $VERSION= '3.00';
+our $VERSION= '3.01';
 
 sub page_title {
 	my $e= shift;
@@ -22,9 +22,9 @@ sub debug {
 }
 sub flag {
 	my $e  = shift;
-	my $key= lc(shift) || return $e->global->{flag};
+	my $key= shift || return $e->global->{flag};
 	   $key=~s{^\-} [];
-	$e->global->{flag}{"-${key}"} || 0;
+	$e->global->{flag}{ '-'. lc $key } || 0;
 }
 sub snip {
 	my $e= shift;
@@ -357,7 +357,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head2 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

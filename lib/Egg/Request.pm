@@ -2,12 +2,12 @@ package Egg::Request;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Request.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Request.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.01';
+our $VERSION= '3.02';
 
 our $MP_VERSION= 0;
 
@@ -34,7 +34,9 @@ package Egg::Request::handler;
 use strict;
 use warnings;
 use CGI::Cookie;
+use CGI::Util qw/ unescape /;
 use base qw/ Egg::Base /;
+use Carp qw/ croak /;
 
 __PACKAGE__->mk_accessors(qw/ r path /);
 
@@ -173,6 +175,17 @@ sub cookie_value {
 	my $key= shift || return "";
 	my $cookie= $req->cookies->{$key} || return "";
 	$cookie->value || "";
+}
+sub cookie_more {
+	my $req= shift;
+	my $key= shift || croak 'I want cookie key.';
+	my $val= defined($_[0]) ? $_[0]: croak 'I want cookie value.';
+	if (ref($val) ne 'ARRAY') {
+		my @tmp= map{ unescape($_) }(split( /[&;]/, $val. '&dmy'));
+		pop @tmp;
+		$val= \@tmp;
+	}
+	$req->cookies->{$key}= CGI::Cookie->new( -name=> $key, -value=> $val );
 }
 sub secure {
 	$_[0]->{secure} ||= (
@@ -553,7 +566,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head2 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

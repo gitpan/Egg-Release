@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+3.11  2008/05/14
+	- fixed for Egg::Util.
+	- The method of 'cookie_more' is added to Egg::Request.
+
 3.10  2008/05/12
 	- The defective operation when 'P::Encode' and 'P::Request::Upload' are used
 	  at the same time is corrected. for Egg::Plugin::Encode.

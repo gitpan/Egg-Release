@@ -1,4 +1,4 @@
-use Test::More tests=> 91;
+use Test::More tests=> 96;
 use lib qw( ../lib ./lib );
 use Egg::Helper;
 
@@ -70,6 +70,13 @@ can_ok $req, 'cookies';
      q{$cookie->{test2}->value, $req->cookie('test2')->value};
   is $cookie->{test2}->value, $req->cookie_value('test2'),
      q{$cookie->{test2}->value, $req->cookie_value('test2')};
+
+  can_ok $req, 'cookie_more';
+  ok $req->cookie_more( test3=> 'test_ok' ), q{$req->cookie_more( test3 => 'test_ok' )};
+  ok $cookie->{test3}, q{$cookie->{test3}};
+  is $cookie->{test3}->value, 'test_ok', q{$cookie->{test3}->value, 'test_ok'};
+  is $cookie->{test3}->value, $req->cookie_value('test3'),
+     q{$cookie->{test3}->value, $req->cookie_value('test3')};
 
 can_ok $req, 'scheme';
   is $req->scheme, 'http', q{$req->scheme, 'http'};

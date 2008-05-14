@@ -2,7 +2,7 @@ package Egg::Plugin::Banner::Rotate;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Rotate.pm 295 2008-02-29 07:32:26Z lushe $
+# $Id: Rotate.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
@@ -222,7 +222,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,

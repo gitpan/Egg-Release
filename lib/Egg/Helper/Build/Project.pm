@@ -2,12 +2,12 @@ package Egg::Helper::Build::Project;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Project.pm 314 2008-04-17 11:12:17Z lushe $
+# $Id: Project.pm 337 2008-05-14 12:30:09Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION= '3.03';
+our $VERSION= '3.04';
 
 sub _start_helper {
 	my($self)= @_;
@@ -103,7 +103,7 @@ Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>, All Rights Reserved.
+Copyright (C) 2008 Bee Flag, Corp. E<lt>L<http://egg.bomcity.com/>E<gt>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
@@ -563,7 +563,7 @@ value: |
   
   Put the correct copyright and licence information here.
   
-  Copyright (C) <e.year> by <e.copyright>, All Rights Reserved.
+  Copyright (C) <e.year> by <e.copyright>.
   
   This library is free software; you can redistribute it and/or modify
   it under the same terms as Perl itself, either Perl version <e.perl_version> or,
@@ -755,7 +755,7 @@ value: |
   <% $s->{footer_content_right} %>
   </div>
   </div><!-- container end. -->
-  <div id="copyright">Copyright (C) <% $e->page_title %>, All Rights Reserved.</div>
+  <div id="copyright">Copyright (C) <% $e->page_title %>.</div>
 ---
 filename: comp/html-footer.tt
 filetype: text
