@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+3.13  2008/05/19
+	- bugfix for Egg::Dispatch::Standard.
+
 3.12  2008/05/15
 	- fixed for Egg::Response.
 	- fixed for Egg::Response::TieCookie.

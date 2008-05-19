@@ -19,6 +19,7 @@ can_ok $e, 'dispatch_map';
 	isa_ok $d, 'Egg::Dispatch::Standard::handler';
 	my($begin, $default);
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  _begin=> sub { $begin.= 1 },
 	  test=> {
 	    _begin=> sub { $begin.= 2 },
@@ -41,6 +42,7 @@ can_ok $d, 'parts';
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	my($begin, $default);
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  _begin=> sub { $begin.= 1 },
 	  test=> {
 	    _begin=> sub { $begin.= 2 },
@@ -62,6 +64,7 @@ can_ok $d, '_action';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	my $end;
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  _end=> sub { $end.= 1 },
 	  test=> {
 	    _end=> sub { $end.= 2 },
@@ -84,6 +87,7 @@ can_ok $d, '_finish';
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	my $end;
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  _end=> sub { $end.= 1 },
 	  test=> {
 	    _end=> sub { $end.= 2 },
@@ -103,6 +107,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  test=> {
 	    test=> {
 	      _default=> sub { $default= 1 },
@@ -119,6 +124,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map(
+	  _default=> sub {},
 	  test=> {
         _default=> sub { $default= 1 },
 	    },
@@ -157,6 +163,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default /]=> sub { $default= 1 },
         ),
@@ -171,6 +178,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         test=> $rhash->(
           [qw/ _default /]=> sub { $default= 1 },
@@ -188,6 +196,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 1 /]=> sub { $default= 1 },
         test=> $rhash->(
@@ -207,6 +216,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 1 /]=> sub { $default= 1 },
         test=> $rhash->(
@@ -227,6 +237,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 1 /]=> sub { $default= 1 },
         test=> $rhash->(
@@ -247,6 +258,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 2 /]=> sub { $default= 1 },
         test=> $rhash->(
@@ -267,6 +279,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 1 /]=> sub { $default= 1 },
         test=> $rhash->(
@@ -286,6 +299,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 0 /, 'TEST 1']=> sub { $default= 1 },
         test=> $rhash->(
@@ -303,6 +317,7 @@ can_ok $d, '_finish';
 	ok my $d= $e->dispatch, q{my $d= $e->dispatch};
 	ok $d->parts([qw/ test /]), q{$d->parts([qw/ test test /])};
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       test=> $rhash->(
         [qw/ _default 0 /, 'TEST 1']=> sub { $default= 1 },
         test=> $rhash->(
@@ -321,6 +336,7 @@ can_ok $d, '_finish';
 	ok $d->parts([qw/ Test1234 Test5678 /]), q{$d->_actions([qw/ test test /])};
 	my $match;
 	ok $e->dispatch_map(
+	  _default=> sub {},
       qr{^[A-Z][a-z]+([0-9]+)}=> {
         qr{^[A-Z]([a-z]+)([0-9]+)}=> sub {
           (my $egg, my $dipatch, $match)= @_;
@@ -347,6 +363,7 @@ can_ok $d, '_finish';
 	ok $d->parts([qw/ Test1234 Test5678 /]), q{$d->_actions([qw/ test test /])};
 	my $match;
 	ok $e->dispatch_map( $rhash->(
+	  _default=> sub {},
       [ qr{^[A-Z][a-z]+([0-9]+)} ]=> $rhash->(
         [ qr{^[A-Z]([a-z]+)([0-9]+)} ]=> sub {
           (my $egg, my $dipatch, $match)= @_;
