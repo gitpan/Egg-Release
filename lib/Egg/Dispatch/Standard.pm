@@ -2,14 +2,14 @@ package Egg::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 337 2008-05-14 12:30:09Z lushe $
+# $Id: Standard.pm 339 2008-05-19 11:37:57Z lushe $
 #
 use strict;
 use warnings;
 use Tie::RefHash;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.04';
+our $VERSION= '3.06';
 
 {
 	no strict 'refs';  ## no critic
@@ -54,35 +54,43 @@ sub import {
 sub dispatch {
 	$_[0]->{Dispatch} ||= Egg::Dispatch::Standard::handler->new(@_);
 }
+sub dispatch_map {
+	my $e= shift;
+	my $map= $e->SUPER::dispatch_map(@_);
+	$e->config->{deispath_default_name} ||= '_default';
+	$map->{$e->config->{deispath_default_name}} ||= sub {};
+	$map;
+}
 sub _dispatch_map_check {
 	my($self, $hash, $myname)= @_;
 	while (my($key, $value)= each %$hash) {
-		if (! ref($key) and $key=~/^HASH\(0x[0-9a-f]+\)/) {
+		if (! ref($key) and $key=~/^ARRAY\(0x[0-9a-f]+\)/) {
 			warn
 			  qq{ Please use the refhash function. '$myname' \n}
-			. qq{ The key not recognized as HASH is included. };
+			. qq{ The key not recognized as ARRAY is included. };
 		}
 		if (ref($value) eq 'HASH') {
-			my $name= ref($key) eq 'HASH' ? (
-			     $key->{A} || $key->{ANY} || $key->{P} || $key->{POST}
-			  || $key->{G} || $key->{GET} || $key->{LABEL} || 'none.'
-			  ): $key;
+			my $name= ref($key) eq 'ARRAY' ? do {
+				$key->[0] || die qq{It is a setting of '$myname'}
+				               . qq{ and there is an action name undefinition.};
+			  }: $key;
 			$self->_dispatch_map_check($value, $name);
 		}
 	}
 	$hash;
 }
 
+
 package Egg::Dispatch::Standard::handler;
 use strict;
 use base qw/ Egg::Dispatch::handler /;
 
-__PACKAGE__->mk_accessors(qw/ _snip _backup_action /);
+__PACKAGE__->mk_accessors(qw/ parts _backup_action /);
 
 sub _initialize {
-	my($self)= @_;
-	$self->_snip( $self->e->_get_mode || [@{$self->e->snip}] );
-	$self->SUPER::_initialize;
+	my $self= shift->SUPER::_initialize;
+	$self->parts( $self->e->_get_mode || [@{$self->e->snip}] );
+	$self;
 }
 sub mode_now {
 	my $self = shift;
@@ -96,94 +104,108 @@ sub label {
 	return $self->{label} unless @_;
 	$self->{label}->[$_[0]] || "";
 }
-
 sub _start {
 	my($self)= @_;
 	my $e= $self->e;
-	$self->_scan_mode( 0,
-	  $e->_dispatch_map, $self->default_mode,
-	  ($self->e->request->is_post || 0) );
-	my $begin= $self->_scan_mode_more || return 0;
-	$begin->($self->e, $self);
+	my $begins= [];
+	my $ends  = [];
+	$self->{__parts_num}= 0;
+	$self->_scan_mode(
+	   $e, $begins, $ends, $self->parts, 0,
+	   $e->_dispatch_map, $self->default_mode,
+	   ($self->e->request->is_post || 0),
+	   );
+	return 0 if $self->e->finished;
+	if (exists($self->{__parts_num})) {
+		$self->action([ @{$self->parts}[0..$self->{__parts_num}] ]);
+		for my $code (@$begins) {
+			last if $e->{finished};
+			$code->($e, $self);
+		}
+		if (my $title= $self->{label}[$#{$self->{label}}]) {
+			$self->page_title($title);
+		};
+	} else {
+#		$self->action([]);
+		$e->finished('404 Not Found');
+	}
+	$self->{_end_code}= $ends;
 	1;
 }
 sub _action {
 	my($self)= @_;
-	return 0 if $self->e->finished;
-	my $action= $self->{__action_code}
-	  || return $self->e->finished('404 Not Found');
-	$self->_backup_action( $self->{__backup_action} );
-	$action->[0]->($self->e, $self, ($action->[1] || []));
+	return 0 if $self->e->{finished};
+	my $action= tied($self->parts->[$self->{__parts_num}]);
+	$action->[1]->($self->e, $self, $action->[2]);
 	1;
 }
 sub _finish {
 	my($self)= @_;
-	my $end= $self->{__end_code} || return 0;
-	$end->($self->e, $self);
+	$_->($self->e, $self) for @{$self->{_end_code}};
 	1;
 }
 sub _scan_mode {
-	my($self, $num, $runmode, $default, $is_post)= @_;
-	my $snip  = $self->{_snip} || [];
-	my $wanted= $snip->[$num]  || "\0";
+	my($self, $e, $begins, $ends, $parts, $num, $map, $default, $is_post)= @_;
+	$self->{_action_now}= $num;
+	my $wanted= $parts->[$num] ||= "";
 	   $wanted=~s{\.[^\.]{1,4}$} [];
-	unshift @{$self->{__parts}}, $runmode;
-	my $d_code;
-	for my $key (keys %$runmode) {
-		my $value= $runmode->{$key} || next;
-		my $page_title;
-		if (ref($key) eq 'HASH') {
-			my $temp=      ($key->{A} || $key->{ANY}) || do {
-				$is_post ? ($key->{P} || $key->{POST} || next)
-				         : ($key->{G} || $key->{GET}  || next);
-			  };
-			$page_title= $key->{label} || $wanted;
-			$key= $temp;
-		}
-		my @piece;
-		if ($wanted and @piece= $wanted=~m{^$key$}) {
+	my $default_code;
+	for my $key (keys %$map) {
+		my $value= $map->{$key} || next;;
+		my $page_title= "";
+		my $point= ref($key) eq 'ARRAY' ? do {
+			if ($key->[1]) {
+				if ($is_post) {
+					if ($key->[1]< 2) {
+						$self->e->finished('405 Method Not Allowed.');
+						return 0;
+					}
+				} else {
+					if ($key->[1]> 1) {
+						$self->e->finished('405 Method Not Allowed.');
+						return 0;
+					}
+				}
+			}
+			$page_title= $key->[2] || "";
+			$key->[0] || next;
+		  }: $key;
+		if (my @piece= $wanted=~m{^$point$}) {
+			next if $point=~/^_/;
 			$page_title ||= $wanted;
 			push @{$self->{label}}, $page_title;
-			if (ref($value) eq 'HASH') {
-				$self->_scan_mode(($num+ 1), $value, $default, $is_post)
-				   and return 1;
+			if ($map->{_begin}) { push @$begins, $map->{_begin} }
+			if ($map->{_end})   { unshift @$ends, $map->{_end}  }
+			if (@piece) {
+				tie $parts->[$num],
+				    'Egg::Dispatch::Standard::TieScalar',
+				    $wanted, $value, \@piece;
 			} else {
-				next if $wanted=~/^_/;
+				$parts->[$num]= $wanted;
+			}
+			if (ref($value) eq 'HASH') {
+				return $self->_scan_mode($e, $begins, $ends, $parts,
+				      ($num+ 1), $value, $default, $is_post) ? 1: 0;
+			} else {
 				$self->page_title($page_title);
-				$self->action([@{$snip}[0..($num- 1)], $wanted]);
-				$self->stash->{_action_match}= \@piece;
-				$self->{__action_code}= [$value, \@piece];
+				$self->{__parts_num}= $num;
 				return 1;
 			}
-		} elsif ($key eq $default) {
-			$d_code= [$value, $page_title];
+		} elsif ($point eq $default) {
+			$default_code= [$value, $page_title];
 		}
 	}
-	return 0 unless $d_code;
-	$self->page_title( $d_code->[1]
-	  || $self->label->[$#{$self->{label}}]
-	  || $self->config->{title}
-	  || $self->default_name
-	  );
-	$self->action([@{$snip}[0..($num- 1)], $self->default_name]);
-	$self->{__action_code}= [$d_code->[0]];
-	$self->{__backup_action}= $wanted;
-	1;
-}
-sub _scan_mode_more {
-	my($self)= @_;
-	my $begin_code;
-	for (@{$self->{__parts}}) {
-		if (! $begin_code and (my $begin= $_->{_begin})) {
-			$begin_code= $begin;
-			last if $self->{__end_code};
-			$self->{__end_code}= $_->{_end} || next;
-		} elsif (! $self->{__end_code} and (my $end= $_->{_end})) {
-			$self->{__end_code}= $end;
-		}
-		last if ($begin_code and $self->{__end_code});
+	return 0 if $self->e->finished;
+	if (! $self->{__parts_num} and $default_code) {
+		if ($map->{_begin}) { push @$begins, $map->{_begin} }
+		if ($map->{_end})   { unshift @$ends, $map->{_end}  }
+		push @{$self->{label}}, ($default_code->[1] || $self->default_name);
+		tie $parts->[$num], 'Egg::Dispatch::Standard::TieScalar',
+		    $self->default_name, $default_code->[0], [];
+		$self->{__parts_num}= $num;
+		return 1;
 	}
-	$begin_code || 0;
+	0;
 }
 sub _example_code {
 	my($self)= @_;
@@ -262,75 +284,105 @@ $a->{project_name}-&gt;dispatch_map( refhash (
 END_OF_EXAMPLE
 }
 
+
+package Egg::Dispatch::Standard::TieScalar;
+use strict;
+
+sub TIESCALAR {
+	my($class, $orign)= splice @_, 0, 2;
+	bless [$orign, @_], $class;
+}
+sub FETCH { $_[0][0] }
+sub STORE { $_[0][0]= $_[1] }
+
 1;
 
 __END__
 
 =head1 NAME
 
-Egg::Dispatch::Standard - Dispatch of Egg standard. 
+Egg::Dispatch::Standard - Dispatch of Egg standard.
 
 =head1 SYNOPSIS
 
   package MyApp::Dispatch;
-  use Dispatch::Standard;
-  
-  # If HASH is used for the key, the refhash function is used.
+  use base qw/ Egg::Dispatch::Standard /;
+    
+  # If the attribute is applied to the key, it sets it with ARRAY by using the 
+  # refhash function.
   Egg->dispatch_map( refhash(
   
-  # 'ANY' matches to the method of requesting all.
-  # The value of label is used with page_title.
-  { ANY => '_default', label => 'index page.' }=> sub {
+  # The content of ARRAY of the key from the left. 'Action name', 'Permission 
+  # -method', 'Title name'
+  # * When 0 is set, the permission method passes everything.
+  [qw/ _default 0 /, 'index page.']=> sub {
     my($e, $dispatch)= @_;
     $e->template('document/default.tt');
     },
   
-  # Empty CODE decides the template from the mode name that becomes a hit.
-  # In this case, it is 'help.tt'.
-  help => sub { },
-  
-  # When the request method is only GET, 'GET' is matched.
-  { GET => 'bbs_view', label => 'BBS' } => sub {
+  # The second element of key ARRAY is set to one when permitting only at 'GET'
+  # request.
+  [qw/ bbs_view 1 /, 'BBS']=> sub {
     my($e, $dispatch)= @_;
     .... bbs view code.
     },
   
-  # When the request method is only POST, 'POST' is matched.
-  { POST => 'bbs_post', label => 'BBS Contribution.' } => sub {
-    my($e, $dispatch)= @_;
+  # The second element of key ARRAY is set to two when permitting only at 'POST'
+  # request.
+  [qw/ bbs_post 2 /, 'Contribution.']=> sub {
     .... bbs post code.
     },
   
-  # 'A' is an alias of 'ANY'.
-  { A => 'blog', label => 'My BLOG' }=>
+  # Empty CODE decides the template from the list of the action name that becomes
+  # a hit. In this case, it is 'help.tt'.
+  help => sub { },
   
-    # The refhash function for remembrance' sake when you use HASH for the key.
+  [qw/ blog 0 /, 'My BLOG']=>
+  
+    # The refhash function for remembrance' sake when you use ARRAY for the key.
     refhash(
   
-    # Prior processing can be defined.
+    # Prior processing can be defined by '_begin'.
     _begin => sub {
       my($e, $dispatch)= @_;
       ... blog begin code.
       },
   
-    # 'G' is an alias of 'GET'.
     # The regular expression can be used for the action. A rear reference is the
-    # third argument that extends to CODE.
-    { G => qr{^article_(\d{4}/\d{2}/\d{2})}, label => 'Article' } => sub {
+    # third argument over CODE.
+    [qr{^article_(\d{4}/\d{2}/\d{2})}, 0, 'Article']=> sub {
       my($e, $dispatch, $parts)= @_;
       ... data search ( $parts->[0] ).
       },
   
-    # 'P' is an alias of 'POST'.
-    { 'P' => 'edit', label => 'BLOG Edit Form.' } => sub {
+    # A rear reference for a shallower hierarchy extracts the value of
+    # $e->dispatch->parts with 'tied'.
+    qr{^[A-Z]([a-z0-9]+)}=> {
+      qr{^User([A-Z][a-z0-9_]+)}=> {
+      my($e, $dispatch, $match)= @_;
+      my $low_match= tied($dispatch->parts->[0])->[2];
+      ... other code.
+      },
+  
+    [qw/ edit 0 /, 'BLOG Edit Form.']=> sub {
       my($e, $dispatch)= @_;
       ... edit code.
       },
   
-    # Processing can be defined after the fact.
+    # Processing can be defined by '_end' after the fact.
     _end => sub {
       my($e, $dispatch)= @_;
       ... blog begin code.
+      },
+  
+    # Time when 11 dispatch is set can be saved if it combines with $e->snip2template.
+    # Refer to L<Egg::Util> for 'snip2template' method.
+    help => {
+      _default=> sub {},
+      qr{^[a-z][a-z0-9_]+}=> sub {
+        my($e, $dispatch)= @_;
+        $e->snip2template(1) || return $e->finished('404 Not Found.');
+        },
       },
   
     ),
@@ -341,58 +393,93 @@ Egg::Dispatch::Standard - Dispatch of Egg standard.
 
 It is dispatch of the Egg standard.
 
-Dipatti is processed according to the content defined in 'dispatch_map'.
+Dispatch is processed according to the content defined in 'dispatch_map'.
 
 Dipatti of the layered structure is treatable.
 
-The value of the point where the action the final reaches should be CODE reference.
+The value of the point where the action the final reaches should be CODE 
+reference.
 
 Objec of the project and the handler object of dispatch are passed for the CODE
 reference.
 
-Besides, when the key to the name of 'default_mode' exists in the retrieval hierarchy,
-it matches it to it if the matched action is not found. 
-
-It corresponds to the key to the HASH form by using the refhash function.
+It corresponds to the key to the ARRAY form by using the refhash function.
 see L<Tie::RefHash>.
 
-Label is set, and the request method can be limited and it match it to the request
-by using the key to the HASH form.
+Page title corresponding to the matched place is set, and the request method 
+can be limited and it match it by using the key to the ARRAY form.
 
-The regular expression can be used for the key.
-As a result, it is possible to correspond to a flexible request pattern. Moreover,
-it is passed to the third argument of the CODE reference by the list if there is
-a rear reference.
-However, a rear reference can obtain only the one that matched to oneself.
-In a word, what matched by a shallower hierarchy cannot be referred to.
+The regular expression can be used for the key. As a result, it is possible to 
+correspond to a flexible request pattern.
+Moreover, because a rear reference can be received, it is treatable in the CODE 
+reference.
 
-  qr{^baz_(.+)}=> { # <- This cannot be referred to.
-     # It only has to pull it out for oneself by using $e->request->path etc.
-  
-     qr{^boo_(.+)}=> sub {  # <- Naturally, this can be referred to.
+  # 1.
+  qr{^baz_(.+)}=> { 
+     # 2.
+     qr{^boo_(.+)}=> sub {
         my($d, $e, $p)= @_;
         },
     },
 
-When '_begin' key is defined, prior is processed.
+As for such dispatch, the rear reference obtained by '# 2' is passed to the third
+argument of the CODE reference.
+In a word, the value of $p is a rear reference corresponding to the regular 
+expression of '# 2' and the content is ARRAY reference.
+
+To process the rear reference obtained in the place of '# 1', tied is used and 
+extracted from the value of $e-E<gt>action.
+
+  # Because the key to '# 1' is a regular expression that picks up a rear reference,
+  # piece zero element of $e->dispatch->parts is set with Tie SCALAR.
+  # When the value is done in tied, and the ARRAY object is acquired, the second
+  # element is a value of a rear reference.
+  my $p1_array= tied($e->dispatch->parts->[0])->[2];
+  
+  # And, the element number of a rear reference wanting it is specified.
+  my $match= $p1_array->[0];
+  
+  # By the way, '# 2' can be similarly acquired from the first element.
+  #  my $p2_array= tied($e->dispatch->parts->[1])->[2];
+
+'_begin' is executed from the one of a shallower hierarchy. When $e->finished is
+set on the way, '_begin' of a hierarchy that is deeper than it is not processed.
 
 It processes it after the fact when '_end' key is defined.
+Even if it is executed from the one of the hierarchy with deeper matched action,
+and $e-E<gt>finished is set on the way, '_end' processes '_end' of a shallower
+hierarchy. Therefore, it is necessary to check $e-E<gt>finished on the code side.
 
-To the same hierarchy as the action that becomes a hit when neither '_begin' nor
-'_end' key are found.  It looks for the one of a shallower hierarchy.
-To make the search stopped on the way, an empty CODE reference is defined 
-somewhere of the hierarchy.
+=over 4
 
-  hoge => {
-     hoo => {
-        baa => {
-           match => sub {},
-           },
-        },
-        # It stops here.
-        _begin => sub {},
-        _end   => sub {},
-    },
+=item * mode_param, dispatch_map
+
+=back
+
+=head1 WARNING
+
+Some specifications have changed because of Egg::Response-3.12.
+
+The change part is as follows.
+
+=over 4
+
+=item * When a rear reference was obtained, the content of the action of the correspondence element was preserved with Tie Scalar.
+
+As a result, acquiring a rear reference for a shallower hierarchy became 
+possible.
+
+=item * It was made to do with ARRAY when the attribute was set to the key to dispatch.
+
+Because the referred attribute is few, it is not troublesomely seen to set it 
+with HASH easily.
+
+=item * The order of evaluating '_begin' reversed.
+
+Processing it from a deeper hierarchy before to a shallow hierarchy is still 
+strange.
+
+=back
 
 =head1 EXPORT FUNCTION
 
@@ -400,19 +487,25 @@ It is a function exported to the controller and the dispatch class of the projec
 
 =head2 refhash ([HASH])
 
-It is L<Tie::RefHash> as for received HASH.
-After Tie is done, the content is returned by the HASH reference.
+Received HASH is returned and after Tie is done with L<Tie::RefHash>, the content is 
+returned by the HASH reference.
 
-Whenever the key to the HASH form is set to 'dispatch_map',
-it is made by way of this function.
+When the key to the ARRAY form is set to 'dispatch_map', it is indispensable.
 
-It doesn't go well even if the HASH reference is passed to this function.
+It doesn't go well even if the reference is passed to this function.
 Please pass it by a usual HASH form.
 
- my $hashref = refhash (
-    { A => '_default', label=> 'index page.' } => sub {},
-    { A => 'help',     label=> 'help page.'  } => sub {},
-    );
+  # This is not good.
+  my $hashref = refhash ({
+     [qw/ _default 0 /, 'index page.']=> sub {},
+     [qw/ help     0 /, 'help page.' ]=> sub {},
+     });
+
+  # It is OK.
+  my $hashref = refhash (
+     [qw/ _default 0 /, 'index page.']=> sub {},
+     [qw/ help     0 /, 'help page.' ]=> sub {},
+     );
 
 =head1 METHODS
 
@@ -420,26 +513,18 @@ L<Egg::Dispatch> has been succeeded to.
 
 =head2 dispatch
 
-The Egg::Dispatch::Standard::handler object is returned.
+The 'Egg::Dispatch::Standard::handler' object is returned.
 
   my $d= $e->dispatch;
-
-=head2 mode_param
-
-The parameter name to decide the action of dispatch is setup.
-
-  Egg->mode_param('mode');
-
-If the access control of the URI base is done, it is not necessary to set it.
 
 =head1 HANDLER METHODS
 
 =head2 mode_now
 
-The value in which the list of the matched action ties by '/' delimitation is
+The value in which the list of the matched action ties by '/' delimitation is 
 returned.
 
-=head2 label ([NUMBER])
+=head2 label ( [NUMBER] )
 
 The list of the matched action is returned by the ARRAY reference.
 
@@ -448,8 +533,8 @@ When the figure is given, the corresponding value is returned.
 =head1 SEE ALSO
 
 L<Egg::Release>,
-L<Egg::Dispatch>,
-L<Tie::RefHash>, 
+L<Egg::Dispatch>, 
+L<Tie::RefHash>,
 
 =head1 AUTHOR
 

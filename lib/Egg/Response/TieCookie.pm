@@ -2,12 +2,12 @@ package Egg::Response::TieCookie;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: TieCookie.pm 337 2008-05-14 12:30:09Z lushe $
+# $Id: TieCookie.pm 338 2008-05-19 11:22:55Z lushe $
 #
 use strict;
 use Tie::Hash;
 
-our $VERSION = '3.00';
+our $VERSION = '3.01';
 
 our @ISA = 'Tie::ExtraHash';
 
@@ -53,9 +53,10 @@ sub _clear { $_[0]->[$COOKIE]= {} }
 
 package Egg::Response::FetchCookie;
 use strict;
-use base qw/Class::Accessor::Fast/;
+use base qw/ Class::Accessor::Fast /;
 
-__PACKAGE__->mk_accessors(qw/name value path domain expires secure/);
+__PACKAGE__->mk_accessors
+  (qw/ name value path domain expires secure max_age httponly /);
 
 sub new { bless $_[1], $_[0] }
 

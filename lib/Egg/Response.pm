@@ -2,12 +2,12 @@ package Egg::Response;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Response.pm 337 2008-05-14 12:30:09Z lushe $
+# $Id: Response.pm 338 2008-05-19 11:22:55Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '3.00';
+our $VERSION = '3.01';
 
 our $CRLF= "\015\012";
 
@@ -138,12 +138,14 @@ sub header {
 				}
 			} else {
 				my $cookie= $hash->{obj} || CGI::Cookie->new(
-				  -name   => $name,
-				  -value  => $hash->{value},
-				  -expires=> $hash->{expires},
-				  -domain => $hash->{domain},
-				  -path   => $hash->{path},
-				  -secure => $hash->{secure},
+				  '-name'    => $name,
+				  '-value'   => $hash->{value},
+				  '-expires' => $hash->{expires},
+				  '-domain'  => $hash->{domain},
+				  '-path'    => $hash->{path},
+				  '-secure'  => $hash->{secure},
+				  '-max-age' => $hash->{max_age},
+				  '-httponly'=> $hash->{httponly},
 				  ) || next;
 				$header.= "Set-Cookie: ". $cookie->as_string. $CRLF;
 			}

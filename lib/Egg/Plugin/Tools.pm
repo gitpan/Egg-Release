@@ -2,13 +2,13 @@ package Egg::Plugin::Tools;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Tools.pm 337 2008-05-14 12:30:09Z lushe $
+# $Id: Tools.pm 340 2008-05-19 11:50:24Z lushe $
 #
 use strict;
 use warnings;
 use Carp qw/croak/;
 
-our $VERSION = '3.01';
+our $VERSION = '3.03';
 
 {
 	require URI::Escape;
@@ -98,8 +98,14 @@ sub referer_check {
 	my $e= shift;
 	if ($_[0]) { $e->req->is_post || return 0 }
 	my $refer= $e->req->referer   || return 1;
-	my $host = $e->req->host_name || return 0;
-	$refer=~m{^https?\://$host} ? 1: 0;
+	my $regex= $e->global->{referer_check_regexp} ||= do {
+		$e->config->{allow_referer_regex} || do {
+			$e->req->host_name
+			  ? "^https?\://@{[ quotemeta($e->req->host_name) ]}"
+			  : die '$e->request->host_name is empty.';
+		  };
+	  };
+	$refer=~m{$regex} ? 1: 0;
 }
 sub gettimeofday {
 	require Time::HiRes;

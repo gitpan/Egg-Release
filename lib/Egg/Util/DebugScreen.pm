@@ -2,14 +2,14 @@ package Egg::Util::DebugScreen;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DebugScreen.pm 337 2008-05-14 12:30:09Z lushe $
+# $Id: DebugScreen.pm 338 2008-05-19 11:22:55Z lushe $
 #
 use strict;
 use warnings;
 use Egg::Release;
 use HTML::Entities;
 
-our $VERSION = '3.02';
+our $VERSION = '3.03';
 
 sub _debug_screen {
 	my($e)= @_;
@@ -42,7 +42,7 @@ sub _content {
          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="${clang}">
 <head>
-<meta http-equiv="content-language" content="${clang}" />
+<meta http-equiv="Content-Language" content="${clang}" />
 <meta http-equiv="Content-Type" content="${ctype}" />
 <meta http-equiv="Content-Style-Type" content="text/css" />
 <meta name="robots" content="noindex,nofollow,noarchive" /> 
@@ -50,10 +50,10 @@ sub _content {
 <style type="text/css">@{[ _style() ]}</style>
 </head>
 <body>
-<div id="container">
+<div id="egg_error_container">
 <h1>$e->{namespace} v@{[ $e->VERSION ]}</h1>
-<div id="content"> $err $querys </div>
-<div id="footer">
+<div id="egg_error_content"> $err $querys </div>
+<div id="egg_error_footer">
 <a href="$Egg::Release::DISTURL" target="_blank">
 Powered by Egg <strong>$Egg::Release::VERSION</strong></a>
 </div>
@@ -74,41 +74,41 @@ h1 {
 	background:#FFBF00;
 	border:#B7974E solid 2px; border-bottom:0px;
 	}
-#container {
+#egg_error_container {
 	margin:10px auto 0px auto; padding:0px;
 	width:720px;
 	text-align:left;
 	}
-#content {
+#egg_error_content {
 	background:#FFF;
 	margin:0px; padding:10px;
 	border-right:#B7974E solid 2px; border-left:#B7974E solid 2px;
 	text-align:left;
 	}
-#content .querys {
+#egg_error_content .querys {
 	margin:10px; padding:2px;
 	background:#F9D787; color:#555;
 	border:#333 solid 1px;
 	font-size:10px;
 	}
-#content .querys table {
+#egg_error_content .querys table {
 	width:99.5%;
 	border-collapse:collapse;
 	font-size:12px; color:#000;
 	}
-#content .querys table th, #content .querys table td {
+#egg_error_content .querys table th, #egg_error_content .querys table td {
 	padding:2px 3px 1px 5px;
 	border-bottom:#C5AB6A solid 1px;
 	}
-#content .querys table th { background:#FFF1B9 }
-#content .querys table td { background:#FFFFED }
-#footer {
+#egg_error_content .querys table th { background:#FFF1B9 }
+#egg_error_content .querys table td { background:#FFFFED }
+#egg_error_footer {
 	background:#FFBF00;
 	border:#B7974E solid 2px; border-top:0px;
 	font:italic 10pt Times,sans-serif;
 	text-align:right;
 	}
-#footer a { color:#000 }
+#egg_error_footer a { color:#000 }
 END_STYLE
 }
 

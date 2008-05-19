@@ -83,6 +83,7 @@ can_ok $e, 'referer_check';
   ok $e->referer_check(1), q{$e->referer_check(1)};
   $ENV{HTTP_REFERER}= 'http://a.com/page.html';
   ok ! $e->referer_check(1), q{! $e->referer_check(1)};
+  $e->global->{referer_check_regexp}= "";
   $e->req->{host_name}= 'a.com';
   ok $e->referer_check(1), q{$e->referer_check(1)};
 
