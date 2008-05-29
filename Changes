@@ -1,5 +1,9 @@
 Revision history for Perl extension .
 
+3.14  2008/05/20
+	- fixed for Egg::Util::DebugScreen.
+	- bugfix for Egg::Dispatch::Standard.
+
 3.13  2008/05/19
 	- bugfix for Egg::Dispatch::Standard.
 

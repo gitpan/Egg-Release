@@ -2,14 +2,14 @@ package Egg::Dispatch::Standard;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Standard.pm 339 2008-05-19 11:37:57Z lushe $
+# $Id: Standard.pm 342 2008-05-29 16:05:06Z lushe $
 #
 use strict;
 use warnings;
 use Tie::RefHash;
 use base qw/ Egg::Dispatch /;
 
-our $VERSION= '3.06';
+our $VERSION= '3.07';
 
 {
 	no strict 'refs';  ## no critic
@@ -51,15 +51,14 @@ sub import {
 	}
 	$class->SUPER::import;
 }
+#sub _setup {
+#	my($e)= @_;
+#	my $default= $e->config->{deispath_default_name} ||= '_default';
+#	$e->dispatch_map->{$default}= sub {} unless $e->dispatch_map->{$default};
+#	$e->next::method;
+#}
 sub dispatch {
 	$_[0]->{Dispatch} ||= Egg::Dispatch::Standard::handler->new(@_);
-}
-sub dispatch_map {
-	my $e= shift;
-	my $map= $e->SUPER::dispatch_map(@_);
-	$e->config->{deispath_default_name} ||= '_default';
-	$map->{$e->config->{deispath_default_name}} ||= sub {};
-	$map;
 }
 sub _dispatch_map_check {
 	my($self, $hash, $myname)= @_;

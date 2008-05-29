@@ -2,14 +2,14 @@ package Egg::Util::DebugScreen;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DebugScreen.pm 338 2008-05-19 11:22:55Z lushe $
+# $Id: DebugScreen.pm 342 2008-05-29 16:05:06Z lushe $
 #
 use strict;
 use warnings;
 use Egg::Release;
 use HTML::Entities;
 
-our $VERSION = '3.03';
+our $VERSION = '3.04';
 
 sub _debug_screen {
 	my($e)= @_;
@@ -21,29 +21,30 @@ sub _debug_screen {
 sub _content {
 	my($e)= @_;
 	my $err= $e->errstr || 'Internal Error.';
-	my($querys, $ignore, $param)= ('', q{'"&<>@});
-	$err= encode_entities($err, $ignore);
+	my($res, $querys, $escape)= ($e->response, '', q{'"&<>@});
+	$err= encode_entities($err, $escape);
 	$err=~s{\n} [<br />\n]sg;
+	my $param;
 	if ($param= $e->request->params and %$param) {
-		$querys = q{<div class="querys"><b>Request Querys:</b><table>};
+		$querys = q{ <div class="querys"><b>Request Querys:</b><table>};
 		while (my($key, $value)= each %$param) {
-			$querys.= q{<tr><th>}. encode_entities($key, $ignore). qq{</th>};
-			$value  = encode_entities($value, $ignore) unless ref($value);
+			$querys.= q{<tr><th>}. encode_entities($key, $escape). qq{</th>};
+			$value  = encode_entities($value, $escape) unless ref($value);
 			$querys.= qq{<td>${value}</td></tr>\n};
 		}
 		$querys.= q{</table></div>};
 	}
-	my $clang=
-	   $e->response->content_language($e->config->{content_language} || 'en');
-	my $ctype=
-	   $e->response->content_type($e->config->{content_typ} || 'text/html');
 	<<END_OF_DISP;
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="${clang}">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="@{[
+  $res->content_language($e->config->{content_language} || 'en')
+  ]}">
 <head>
-<meta http-equiv="Content-Language" content="${clang}" />
-<meta http-equiv="Content-Type" content="${ctype}" />
+<meta http-equiv="Content-Language" content="@{[ $res->content_language ]}" />
+<meta http-equiv="Content-Type" content="@{[
+  $res->content_type($e->config->{content_type} || 'text/html')
+  ]}" />
 <meta http-equiv="Content-Style-Type" content="text/css" />
 <meta name="robots" content="noindex,nofollow,noarchive" /> 
 <title>EGG - Error.</title>
@@ -52,7 +53,7 @@ sub _content {
 <body>
 <div id="egg_error_container">
 <h1>$e->{namespace} v@{[ $e->VERSION ]}</h1>
-<div id="egg_error_content"> $err $querys </div>
+<div id="egg_error_content"> $err$querys </div>
 <div id="egg_error_footer">
 <a href="$Egg::Release::DISTURL" target="_blank">
 Powered by Egg <strong>$Egg::Release::VERSION</strong></a>
